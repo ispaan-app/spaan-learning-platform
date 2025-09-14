@@ -121,16 +121,17 @@
             margin-bottom: 1rem;
         }
         
-        .countdown {
+        .coming-soon {
             font-size: 1.1rem;
             margin-top: 1rem;
             opacity: 0.8;
+            font-style: italic;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="status">🟢 Application Ready</div>
+        <div class="status">🟢 Platform Ready</div>
         <div class="logo">iSpaan</div>
         <h1 class="title">Learning Platform</h1>
         <p class="subtitle">Empowering learners through innovative education technology</p>
@@ -168,8 +169,8 @@
             </div>
         </div>
         
-        <a href="https://ispaan-j74l4egvu-sifisos-projects-ff41ac19.vercel.app" class="button">
-            🚀 Launch Full Application
+        <a href="/login" class="button">
+            🚀 Get Started
         </a>
         
         <a href="https://console.firebase.google.com/project/ispaan-app" class="button secondary">
@@ -177,7 +178,7 @@
         </a>
         
         <div class="info">
-            <p><strong>Full Application Features:</strong></p>
+            <p><strong>Platform Features:</strong></p>
             <ul style="text-align: left; margin-top: 1rem; list-style: none;">
                 <li>✅ Complete user authentication system</li>
                 <li>✅ Real-time data synchronization</li>
@@ -190,38 +191,18 @@
             </ul>
         </div>
         
-        <div class="countdown" id="countdown">
-            Auto-redirecting to full application in <span id="timer">10</span> seconds...
+        <div class="coming-soon">
+            🎯 Full application features coming soon...
         </div>
     </div>
     
     <script>
-        // Auto-redirect after 10 seconds
-        let timeLeft = 10;
-        const timer = document.getElementById('timer');
-        
-        const countdown = setInterval(() => {
-            timeLeft--;
-            timer.textContent = timeLeft;
-            
-            if (timeLeft <= 0) {
-                clearInterval(countdown);
-                window.location.href = 'https://ispaan-j74l4egvu-sifisos-projects-ff41ac19.vercel.app';
-            }
-        }, 1000);
-        
         // Add interactive effects
         document.addEventListener('mousemove', (e) => {
             const container = document.querySelector('.container');
             const x = (e.clientX / window.innerWidth) * 100;
             const y = (e.clientY / window.innerHeight) * 100;
             container.style.background = `linear-gradient(${x}deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8))`;
-        });
-        
-        // Add click to stop redirect
-        document.addEventListener('click', () => {
-            clearInterval(countdown);
-            document.getElementById('countdown').style.display = 'none';
         });
     </script>
 </body>
