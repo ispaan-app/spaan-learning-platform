@@ -5,25 +5,41 @@
 ✅ **Firebase configuration**: firebase.json properly configured  
 ✅ **Next.js configuration**: Optimized for App Hosting  
 ✅ **Environment variables**: All values identified  
+✅ **New GitHub repository**: https://github.com/ispaan-app/ispaan-app.git
 
-## Step 1: Create GitHub Repository
+## Step 1: GitHub Repository Setup
 
-1. **Go to GitHub**: https://github.com/new
-2. **Repository name**: `ispaan-learning-platform`
-3. **Description**: `Spaans Learning Platform - Next.js with Firebase integration`
-4. **Visibility**: Public or Private (your choice)
-5. **Initialize**: Do NOT initialize with README, .gitignore, or license
-6. **Click "Create repository"**
+✅ **Repository Created**: https://github.com/ispaan-app/ispaan-app.git  
+✅ **Remote Updated**: `git remote set-url origin https://github.com/ispaan-app/ispaan-app.git`
 
-## Step 2: Push Your Code
+### Repository Details:
+- **Repository URL**: https://github.com/ispaan-app/ispaan-app.git
+- **Repository Name**: `ispaan-app`
+- **Organization**: `ispaan-app`
+- **Status**: Empty and ready for code
 
-After creating the repository, run these commands:
+## Step 2: Push Your Code (Authentication Required)
+
+**Note**: You may encounter authentication issues when pushing to the new repository. Here are the solutions:
+
+### Option A: Use Firebase Console (Recommended)
+Skip Git push and set up Firebase App Hosting directly through the web console.
+
+### Option B: Fix Git Authentication
+If you want to push via Git, you'll need to authenticate with your new GitHub account:
 
 ```bash
-git remote add origin https://github.com/BoloBitz/ispaan-learning-platform.git
-git branch -M main
+# Update remote (already done)
+git remote set-url origin https://github.com/ispaan-app/ispaan-app.git
+
+# Try pushing (may require authentication)
 git push -u origin main
 ```
+
+### Option C: Use Personal Access Token
+1. Go to GitHub → Settings → Developer settings → Personal access tokens
+2. Generate new token with `repo` permissions
+3. Use token in remote URL: `https://YOUR_USERNAME:YOUR_TOKEN@github.com/ispaan-app/ispaan-app.git`
 
 ## Step 3: Firebase Console Setup
 
@@ -42,9 +58,11 @@ git push -u origin main
 1. Click "Connect repository"
 2. Choose "GitHub" as Git provider
 3. Authorize Firebase to access GitHub
-4. Select repository: `BoloBitz/ispaan-learning-platform`
+4. Select repository: `ispaan-app/ispaan-app`
 5. Choose branch: `main`
 6. Click "Connect"
+
+**Note**: If you haven't pushed code yet, Firebase will show an empty repository. This is normal - Firebase will handle the initial deployment.
 
 ### 3.4 Configure Build Settings
 Firebase will auto-detect your Next.js app. Verify:
@@ -103,6 +121,15 @@ Once set up, your app will automatically deploy when you:
 
 ## Troubleshooting
 
+### Git Authentication Issues
+**Problem**: `remote: Permission to ispaan-app/ispaan-app.git denied to BoloBitz`
+
+**Solutions**:
+1. **Use Firebase Console** (Recommended): Skip Git push and connect repository directly in Firebase Console
+2. **Clear Git credentials**: `git config --global --unset credential.helper`
+3. **Use Personal Access Token**: Generate token and use in remote URL
+4. **Use SSH keys**: Generate SSH key and add to GitHub
+
 ### Build Fails
 - Check environment variables are set correctly
 - Verify Node.js version (should be 18 or later)
@@ -117,6 +144,11 @@ Once set up, your app will automatically deploy when you:
 - Check Firebase Auth is enabled in Firebase Console
 - Verify API keys are correct
 - Ensure authorized domains include your app URL
+
+### Repository Connection Issues
+- Ensure repository exists and is accessible
+- Check GitHub organization permissions
+- Verify Firebase has access to your GitHub account
 
 ## Your Configuration Files
 
@@ -136,8 +168,15 @@ Once set up, your app will automatically deploy when you:
 
 ## Next Steps
 
-1. Create the GitHub repository
-2. Push your code
-3. Set up Firebase App Hosting
-4. Add environment variables
-5. Deploy and test
+### Immediate Actions:
+1. ✅ **Repository created**: https://github.com/ispaan-app/ispaan-app.git
+2. ✅ **Remote updated**: `git remote set-url origin https://github.com/ispaan-app/ispaan-app.git`
+3. 🔄 **Set up Firebase App Hosting** (Recommended next step)
+4. **Add environment variables** in Firebase Console
+5. **Deploy and test** your application
+
+### Recommended Approach:
+**Skip Git push for now** and set up Firebase App Hosting directly through the web console. Firebase will handle the repository connection and initial deployment.
+
+### Alternative:
+If you want to push code first, resolve Git authentication issues using one of the methods in the troubleshooting section.
