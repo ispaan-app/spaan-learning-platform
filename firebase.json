@@ -1,0 +1,11 @@
+{
+  "hosting": {
+    "source": ".",
+    "use": "@firebase/nextjs-hosting",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
+}

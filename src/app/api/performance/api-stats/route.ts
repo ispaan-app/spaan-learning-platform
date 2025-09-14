@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { apiPerformanceMonitor } from '@/lib/performance-monitoring'
 import { requireSuperAdmin } from '@/lib/auth'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     // Check if user is super admin

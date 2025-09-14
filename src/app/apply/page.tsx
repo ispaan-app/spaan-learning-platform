@@ -16,6 +16,12 @@ interface Program {
 
 async function getPrograms(): Promise<Program[]> {
   try {
+    // Check if Firebase Admin SDK is properly configured
+    if (!process.env.FIREBASE_ADMIN_PROJECT_ID) {
+      console.log('Firebase Admin SDK not configured, using default programs')
+      throw new Error('Firebase Admin SDK not configured')
+    }
+    
     const programsSnapshot = await adminDb
       .collection('programs')
       .where('available', '==', true)
