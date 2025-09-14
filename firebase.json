@@ -20,6 +20,10 @@
   "apphosting": {
     "backend": {
       "serviceAccount": "./credentials/service-account-key.json"
+    },
+    "source": {
+      "repository": "https://github.com/bolonomics/spaan-learning-platform.git",
+      "branch": "main"
     }
   }
 }

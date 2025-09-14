@@ -135,3 +135,4 @@ console.log(`2. Deploy the .next folder`);
 console.log(`3. Set environment variables on your hosting platform`);
 console.log(`4. Your production app will be clean and test-free!`);
 
+
