@@ -1,0 +1,11 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "apphosting": {
+    "backend": {
+      "serviceAccount": "./credentials/service-account-key.json"
+    }
+  }
+}

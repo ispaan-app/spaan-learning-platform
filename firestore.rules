@@ -1,0 +1,124 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super-admin'];
+    }
+    
+    function isSuperAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super-admin';
+    }
+    
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    // Users collection - users can read/write their own data
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow create: if isAuthenticated() && (isAdmin() || request.auth.uid == userId);
+    }
+    
+    // Applications collection
+    match /applications/{applicationId} {
+      allow read, write: if isAuthenticated() && (
+        isOwner(resource.data.userId) || 
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+    
+    // Programs collection - read-only for authenticated users
+    match /programs/{programId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Attendance records
+    match /attendance/{attendanceId} {
+      allow read, write: if isAuthenticated() && (
+        isOwner(resource.data.userId) || 
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+    
+    // Leave requests
+    match /leaveRequests/{leaveId} {
+      allow read, write: if isAuthenticated() && (
+        isOwner(resource.data.userId) || 
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+    
+    // Stipend reports
+    match /stipendReports/{reportId} {
+      allow read, write: if isAuthenticated() && (
+        isOwner(resource.data.learnerId) || 
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.learnerId;
+    }
+    
+    // Issue reports
+    match /issueReports/{issueId} {
+      allow read, write: if isAuthenticated() && (
+        isOwner(resource.data.userId) || 
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+    }
+    
+    // Notifications - users can read their own, admins can read all
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.userId) || 
+        isAdmin()
+      );
+      allow create: if isAdmin();
+      allow update: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+    
+    // Audit logs - only super admins can read
+    match /auditLogs/{logId} {
+      allow read: if isSuperAdmin();
+      allow create: if isAuthenticated(); // System can create logs
+    }
+    
+    // System settings - only super admins
+    match /settings/{settingId} {
+      allow read, write: if isSuperAdmin();
+    }
+    
+    // Performance metrics - only super admins
+    match /performance/{metricId} {
+      allow read, write: if isSuperAdmin();
+    }
+    
+    // Security logs - only super admins
+    match /securityLogs/{logId} {
+      allow read: if isSuperAdmin();
+      allow create: if isAuthenticated(); // System can create logs
+    }
+    
+    // Default deny rule for any unmatched paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

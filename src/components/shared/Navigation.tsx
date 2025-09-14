@@ -1,0 +1,44 @@
+'use client'
+
+import React from 'react'
+import Link from 'next/link'
+import { useAuth } from '@/contexts/AuthContext'
+import { Button } from '@/components/ui/button'
+import { AvatarHeader } from '@/components/shared/AvatarHeader'
+
+export function Navigation() {
+  const { user, logout } = useAuth()
+
+  return (
+    <nav className="bg-white shadow-lg">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex items-center">
+            <Link href="/" className="flex items-center space-x-2">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-purple-500 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-xl">iS</span>
+              </div>
+              <span className="text-xl font-bold text-gray-900">iSpaan</span>
+            </Link>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            {user ? (
+              <AvatarHeader />
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="outline">Sign In</Button>
+                </Link>
+                <Link href="/apply">
+                  <Button>Apply Now</Button>
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </nav>
+  )
+}
+
