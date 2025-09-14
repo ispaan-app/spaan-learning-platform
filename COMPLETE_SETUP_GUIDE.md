@@ -35,7 +35,8 @@ git push -u origin main
 ### 3.2 Create Web App
 1. Click "Add app" → "Web app" (</> icon)
 2. Enter app name: `spaan-learning-platform`
-3. Click "Create app"
+3. ✅ **Check "Also set up Firebase Hosting for this app"** ← **Important!**
+4. Click "Create app"
 
 ### 3.3 Connect GitHub Repository
 1. Click "Connect repository"
