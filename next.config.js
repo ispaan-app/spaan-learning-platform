@@ -1,20 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Configure for Firebase App Hosting with src directory
+  // Configure for Vercel with src directory
   srcDir: 'src',
   images: {
     domains: ['localhost', 'firebasestorage.googleapis.com'],
   },
-  // Configure for Firebase App Hosting (dynamic Next.js app)
-  output: 'standalone',
+  // Configure for Vercel (remove standalone output)
   trailingSlash: false,
   // Enable static optimization where possible
   experimental: {
     missingSuspenseWithCSRBailout: false,
-  },
-  // Generate build ID for caching
-  generateBuildId: async () => {
-    return 'build-' + Date.now()
   },
   // Enable static optimization with timeout
   staticPageGenerationTimeout: 60,
