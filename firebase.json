@@ -4,6 +4,7 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
+    "site": "ispaan-app-1302b",
     "public": "public",
     "ignore": [
       "firebase.json",
@@ -42,7 +43,7 @@
       "serviceAccount": "./credentials/service-account-key.json"
     },
     "source": {
-      "repository": "https://github.com/BoloBitz/ispaan-learning-platform.git",
+      "repository": "https://github.com/ispaan-app/ispaan-app.git",
       "branch": "main"
     }
   }

@@ -1,22 +1,24 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Configure for Firebase App Hosting with src directory
+  srcDir: 'src',
   images: {
     domains: ['localhost', 'firebasestorage.googleapis.com'],
   },
-  // Configure for Firebase App Hosting (standalone) and Firebase Hosting (export)
-  output: process.env.BUILD_TARGET === 'export' ? 'export' : 'standalone',
+  // Configure for Firebase App Hosting (dynamic Next.js app)
+  output: 'standalone',
   trailingSlash: false,
-  // Disable static optimization for dynamic pages
+  // Enable static optimization where possible
   experimental: {
     missingSuspenseWithCSRBailout: false,
   },
-  // Force all pages to be dynamic
+  // Generate build ID for caching
   generateBuildId: async () => {
     return 'build-' + Date.now()
   },
-  // Disable static optimization completely
-  staticPageGenerationTimeout: 0,
-  // Force dynamic rendering
+  // Enable static optimization with timeout
+  staticPageGenerationTimeout: 60,
+  // Optimize builds
   swcMinify: true,
   // Server Actions are enabled by default in Next.js 14+
   // Exclude test files and pages from production builds
