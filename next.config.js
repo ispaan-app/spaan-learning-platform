@@ -3,8 +3,8 @@ const nextConfig = {
   images: {
     domains: ['localhost', 'firebasestorage.googleapis.com'],
   },
-  // Configure for Firebase App Hosting
-  output: 'standalone',
+  // Configure for Firebase App Hosting (standalone) and Firebase Hosting (export)
+  output: process.env.BUILD_TARGET === 'export' ? 'export' : 'standalone',
   trailingSlash: false,
   // Disable static optimization for dynamic pages
   experimental: {

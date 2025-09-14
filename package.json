@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "build:production": "npm run prepare-production && npm run build",
+    "build:firebase-hosting": "BUILD_TARGET=export npm run build",
+    "build:firebase-app-hosting": "npm run build",
     "prepare-production": "node scripts/prepare-production.js",
     "start": "next start",
     "lint": "next lint",

@@ -4,7 +4,7 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
-    "public": "firebase-hosting",
+    "public": "out",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -15,6 +15,26 @@
         "source": "**",
         "destination": "/index.html"
       }
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(js|css)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=31536000"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(jpg|jpeg|gif|png|svg|webp)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=31536000"
+          }
+        ]
+      }
     ]
   },
   "apphosting": {
@@ -22,7 +42,7 @@
       "serviceAccount": "./credentials/service-account-key.json"
     },
     "source": {
-      "repository": "https://github.com/bolonomics/spaan-learning-platform.git",
+      "repository": "https://github.com/BoloBitz/ispaan-learning-platform.git",
       "branch": "main"
     }
   }
