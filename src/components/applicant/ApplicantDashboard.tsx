@@ -86,6 +86,23 @@ const requiredDocuments = [
 export function ApplicantDashboard({ applicantData }: ApplicantDashboardProps) {
   const { firstName, lastName, program, status, documents } = applicantData
 
+  // Helper function to safely convert dates
+  const formatDate = (dateValue: any): string => {
+    if (!dateValue) return 'Not uploaded'
+    
+    try {
+      // If it's a Firestore Timestamp, convert it
+      if (dateValue.toDate && typeof dateValue.toDate === 'function') {
+        return dateValue.toDate().toLocaleDateString()
+      }
+      // If it's already a Date object or valid date string
+      return new Date(dateValue).toLocaleDateString()
+    } catch (error) {
+      console.error('Error formatting date:', error)
+      return 'Invalid Date'
+    }
+  }
+
   // Calculate document completion status
   const totalRequired = requiredDocuments.filter(doc => doc.required).length
   const approvedRequired = documents.filter(doc => 
@@ -326,7 +343,7 @@ export function ApplicantDashboard({ applicantData }: ApplicantDashboardProps) {
                       </p>
                       {'uploadedAt' in docDetails && docDetails.uploadedAt && (
                         <p className="text-xs text-gray-500 mt-1">
-                          📅 Uploaded: {new Date(docDetails.uploadedAt).toLocaleDateString()}
+                          📅 Uploaded: {formatDate(docDetails.uploadedAt)}
                         </p>
                       )}
                     </div>

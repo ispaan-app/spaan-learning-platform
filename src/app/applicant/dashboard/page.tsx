@@ -221,6 +221,23 @@ export default function ApplicantDashboardPage() {
 
   // Profile functionality removed
 
+  // Helper function to safely convert dates
+  const formatDate = (dateValue: any): string => {
+    if (!dateValue) return 'Not uploaded'
+    
+    try {
+      // If it's a Firestore Timestamp, convert it
+      if (dateValue.toDate && typeof dateValue.toDate === 'function') {
+        return dateValue.toDate().toLocaleDateString()
+      }
+      // If it's already a Date object or valid date string
+      return new Date(dateValue).toLocaleDateString()
+    } catch (error) {
+      console.error('Error formatting date:', error)
+      return 'Invalid Date'
+    }
+  }
+
   const handleDocumentStatusUpdate = async (documentType: string, status: string, rejectionReason?: string) => {
     if (!user) return
 
@@ -501,7 +518,7 @@ export default function ApplicantDashboardPage() {
                             </div>
                             <div className="mt-1 space-y-1">
                         <p className="text-xs text-gray-500">
-                                {doc.uploadedAt ? `Uploaded ${new Date(doc.uploadedAt).toLocaleDateString()}` : 'Not uploaded'}
+                                {doc.uploadedAt ? `Uploaded ${formatDate(doc.uploadedAt)}` : 'Not uploaded'}
                               </p>
                               {doc.rejectionReason && (
                                 <div className="p-2 bg-red-100 rounded text-xs text-red-700">

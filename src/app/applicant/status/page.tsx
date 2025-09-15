@@ -17,6 +17,23 @@ export default function ApplicationStatusPage() {
   const [loading, setLoading] = useState(true)
   const [applicationData, setApplicationData] = useState<any>(null)
 
+  // Helper function to safely convert dates
+  const formatDate = (dateValue: any): string => {
+    if (!dateValue) return 'Not uploaded'
+    
+    try {
+      // If it's a Firestore Timestamp, convert it
+      if (dateValue.toDate && typeof dateValue.toDate === 'function') {
+        return dateValue.toDate().toLocaleDateString()
+      }
+      // If it's already a Date object or valid date string
+      return new Date(dateValue).toLocaleDateString()
+    } catch (error) {
+      console.error('Error formatting date:', error)
+      return 'Invalid Date'
+    }
+  }
+
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login/user')
@@ -173,7 +190,7 @@ export default function ApplicationStatusPage() {
                             {documentNames[key as keyof typeof documentNames] || key.replace(/([A-Z])/g, ' $1').trim()}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {doc.uploadedAt ? `Uploaded ${new Date(doc.uploadedAt).toLocaleDateString()}` : 'Not uploaded'}
+                            {doc.uploadedAt ? `Uploaded ${formatDate(doc.uploadedAt)}` : 'Not uploaded'}
                           </p>
                         </div>
                       </div>
