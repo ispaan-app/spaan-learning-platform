@@ -123,12 +123,12 @@ class SessionTracker {
   }
 
   private startActivityTracking() {
-    // Update activity every 2 minutes
+    // Update activity every 5 minutes (less frequent to reduce listener triggers)
     this.activityInterval = setInterval(async () => {
       await this.updateActivity()
-    }, 2 * 60 * 1000)
+    }, 5 * 60 * 1000)
 
-    // Also update on page visibility change
+    // Update on page visibility change (only when coming back from hidden)
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
         this.updateActivity()
@@ -150,6 +150,7 @@ class SessionTracker {
         lastActivity: serverTimestamp(),
         updatedAt: serverTimestamp()
       })
+      console.log('Session activity updated:', this.sessionId)
     } catch (error) {
       console.error('Error updating activity:', error)
     }

@@ -66,6 +66,7 @@ export function ActiveSessionsManagement() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [isConnected, setIsConnected] = useState(true)
+  const [lastUpdate, setLastUpdate] = useState<number>(0)
   const toast = useToast()
   const { user } = useAuth()
 
@@ -74,24 +75,32 @@ export function ActiveSessionsManagement() {
     if (!user) return
 
     setLoading(true)
+    console.log('Setting up active sessions listener...')
     
+    // Use a simpler query without orderBy to avoid index issues
     const q = query(
       collection(db, 'active-sessions'),
-      where('isActive', '==', true),
-      orderBy('lastActivity', 'desc')
+      where('isActive', '==', true)
     )
 
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
         try {
+          const now = Date.now()
+          // Debounce updates to prevent excessive re-renders (minimum 2 seconds between updates)
+          if (now - lastUpdate < 2000) {
+            console.log('Skipping update - too frequent')
+            return
+          }
+          
           const sessionsData = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
           })) as ActiveSession[]
 
           // Filter out sessions that are actually inactive (last activity > 30 minutes)
-          const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000)
+          const thirtyMinutesAgo = new Date(now - 30 * 60 * 1000)
           const activeSessions = sessionsData.filter(session => {
             const lastActivity = session.lastActivity?.toDate ? session.lastActivity.toDate() : new Date(session.lastActivity)
             return lastActivity > thirtyMinutesAgo
@@ -99,6 +108,8 @@ export function ActiveSessionsManagement() {
 
           setSessions(activeSessions)
           setIsConnected(true)
+          setLastUpdate(now)
+          console.log('Active sessions updated:', activeSessions.length, 'total docs:', sessionsData.length)
         } catch (error) {
           console.error('Error processing sessions data:', error)
           setIsConnected(false)
@@ -110,12 +121,14 @@ export function ActiveSessionsManagement() {
         console.error('Error listening to active sessions:', error)
         setIsConnected(false)
         setLoading(false)
-        toast.error('Failed to connect to session data')
       }
     )
 
-    return () => unsubscribe()
-  }, [user, toast])
+    return () => {
+      console.log('Cleaning up active sessions listener')
+      unsubscribe()
+    }
+  }, [user])
 
 
   const handleEndSession = async (sessionId: string, userEmail: string) => {
