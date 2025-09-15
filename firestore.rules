@@ -133,6 +133,13 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
     
+    // Active sessions collection - for session tracking
+    match /active-sessions/{sessionId} {
+      allow read, write: if isSuperAdmin(); // Only super admins can manage sessions
+      allow create: if isAuthenticated(); // Users can create their own sessions
+      allow read, update: if isOwner(resource.data.userId); // Users can read/update their own sessions
+    }
+    
     // Allow all authenticated users to read most collections for dashboard functionality
     match /{collection}/{document} {
       allow read: if isAuthenticated() && 

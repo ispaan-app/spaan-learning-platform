@@ -10,6 +10,7 @@ import {
   updateProfile
 } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
+import { sessionTracker } from '@/lib/session-tracker'
 
 interface AuthContextType {
   user: User | null
@@ -32,10 +33,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(user)
       if (user) {
         // Get user role from custom claims or Firestore
-        // For now, we'll use a simple approach based on email
         const role = await getUserRole(user.uid)
         setUserRole(role)
+        
+        // Initialize session tracking for authenticated users
+        try {
+          await sessionTracker.initializeSession({
+            userId: user.uid,
+            userEmail: user.email || '',
+            userName: user.displayName || user.email?.split('@')[0] || 'Unknown User',
+            userRole: role
+          })
+        } catch (error) {
+          console.error('Error initializing session tracking:', error)
+        }
       } else {
+        // End session tracking when user logs out
+        try {
+          await sessionTracker.endSession()
+        } catch (error) {
+          console.error('Error ending session:', error)
+        }
+        
         // Check for test login data in localStorage
         const testRole = localStorage.getItem('userRole')
         if (testRole) {
@@ -46,6 +65,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: 'test@example.com',
             displayName: localStorage.getItem('userName') || 'Test User'
           } as any)
+          
+          // Initialize session tracking for test user
+          try {
+            await sessionTracker.initializeSession({
+              userId: 'test-user',
+              userEmail: 'test@example.com',
+              userName: localStorage.getItem('userName') || 'Test User',
+              userRole: testRole
+            })
+          } catch (error) {
+            console.error('Error initializing test session tracking:', error)
+          }
         } else {
           setUserRole(null)
         }
@@ -79,10 +110,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
+      // End session tracking before signing out
+      await sessionTracker.endSession()
+      
       await signOut(auth)
       // Clear test login data
       localStorage.removeItem('userRole')
       localStorage.removeItem('userName')
+      localStorage.removeItem('userPermissions')
       setUser(null)
       setUserRole(null)
     } catch (error) {

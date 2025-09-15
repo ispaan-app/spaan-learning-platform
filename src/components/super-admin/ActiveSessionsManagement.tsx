@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,9 +20,25 @@ import {
   CheckCircle,
   Search,
   Loader2,
-  Globe
+  Globe,
+  Wifi,
+  WifiOff
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { db } from '@/lib/firebase'
+import { 
+  collection, 
+  onSnapshot, 
+  doc, 
+  updateDoc, 
+  deleteDoc, 
+  query, 
+  orderBy, 
+  where,
+  serverTimestamp,
+  writeBatch
+} from 'firebase/firestore'
+import { useAuth } from '@/hooks/useAuth'
 
 interface ActiveSession {
   id: string
@@ -35,9 +51,13 @@ interface ActiveSession {
   operatingSystem: string
   ipAddress: string
   location?: string
-  lastActivity: string
-  sessionStart: string
+  lastActivity: any // Firestore timestamp
+  sessionStart: any // Firestore timestamp
   isActive: boolean
+  sessionToken?: string
+  userAgent?: string
+  createdAt: any // Firestore timestamp
+  updatedAt: any // Firestore timestamp
 }
 
 export function ActiveSessionsManagement() {
@@ -45,88 +65,113 @@ export function ActiveSessionsManagement() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [isConnected, setIsConnected] = useState(true)
   const toast = useToast()
+  const { user } = useAuth()
 
+  // Real-time listener for active sessions
   useEffect(() => {
-    loadActiveSessions()
-    // Refresh sessions every 30 seconds
-    const interval = setInterval(loadActiveSessions, 30000)
-    return () => clearInterval(interval)
-  }, [])
+    if (!user) return
 
-  const loadActiveSessions = async () => {
-    try {
-      setLoading(true)
-      // Simulate loading active sessions
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Mock data - in real implementation, this would fetch from your session store
-      const mockSessions: ActiveSession[] = [
-        {
-          id: '1',
-          userId: 'user1',
-          userEmail: 'john.doe@example.com',
-          userName: 'John Doe',
-          userRole: 'learner',
-          deviceType: 'desktop',
-          browser: 'Chrome 120.0',
-          operatingSystem: 'Windows 11',
-          ipAddress: '192.168.1.100',
-          location: 'Johannesburg, South Africa',
-          lastActivity: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 minutes ago
-          sessionStart: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-          isActive: true
-        },
-        {
-          id: '2',
-          userId: 'user2',
-          userEmail: 'jane.smith@example.com',
-          userName: 'Jane Smith',
-          userRole: 'admin',
-          deviceType: 'mobile',
-          browser: 'Safari 17.0',
-          operatingSystem: 'iOS 17.1',
-          ipAddress: '192.168.1.101',
-          location: 'Cape Town, South Africa',
-          lastActivity: new Date(Date.now() - 15 * 60 * 1000).toISOString(), // 15 minutes ago
-          sessionStart: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(), // 1 hour ago
-          isActive: true
-        },
-        {
-          id: '3',
-          userId: 'user3',
-          userEmail: 'mike.wilson@example.com',
-          userName: 'Mike Wilson',
-          userRole: 'learner',
-          deviceType: 'tablet',
-          browser: 'Chrome 120.0',
-          operatingSystem: 'Android 14',
-          ipAddress: '192.168.1.102',
-          location: 'Durban, South Africa',
-          lastActivity: new Date(Date.now() - 45 * 60 * 1000).toISOString(), // 45 minutes ago
-          sessionStart: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(), // 3 hours ago
-          isActive: true
+    setLoading(true)
+    
+    // Query for active sessions (last activity within 30 minutes)
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000)
+    
+    const q = query(
+      collection(db, 'active-sessions'),
+      where('isActive', '==', true),
+      orderBy('lastActivity', 'desc')
+    )
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        try {
+          const sessionsData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as ActiveSession[]
+
+          // Filter out sessions that are actually inactive (last activity > 30 minutes)
+          const activeSessions = sessionsData.filter(session => {
+            const lastActivity = session.lastActivity?.toDate ? session.lastActivity.toDate() : new Date(session.lastActivity)
+            return lastActivity > thirtyMinutesAgo
+          })
+
+          setSessions(activeSessions)
+          setIsConnected(true)
+        } catch (error) {
+          console.error('Error processing sessions data:', error)
+          setIsConnected(false)
+        } finally {
+          setLoading(false)
         }
-      ]
+      },
+      (error) => {
+        console.error('Error listening to active sessions:', error)
+        setIsConnected(false)
+        setLoading(false)
+        toast.error('Failed to connect to session data')
+      }
+    )
 
-      setSessions(mockSessions)
+    return () => unsubscribe()
+  }, [user, toast])
+
+  // Auto-cleanup inactive sessions
+  const cleanupInactiveSessions = useCallback(async () => {
+    try {
+      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000)
+      
+      const q = query(
+        collection(db, 'active-sessions'),
+        where('isActive', '==', true),
+        where('lastActivity', '<', thirtyMinutesAgo)
+      )
+
+      const batch = writeBatch(db)
+      const inactiveSessions = sessions.filter(session => {
+        const lastActivity = session.lastActivity?.toDate ? session.lastActivity.toDate() : new Date(session.lastActivity)
+        return lastActivity <= thirtyMinutesAgo
+      })
+
+      inactiveSessions.forEach(session => {
+        const sessionRef = doc(db, 'active-sessions', session.id)
+        batch.update(sessionRef, { 
+          isActive: false, 
+          endedAt: serverTimestamp(),
+          endedBy: 'system-auto-cleanup'
+        })
+      })
+
+      if (inactiveSessions.length > 0) {
+        await batch.commit()
+        console.log(`Auto-cleaned ${inactiveSessions.length} inactive sessions`)
+      }
     } catch (error) {
-      console.error('Error loading active sessions:', error)
-      toast.error('Failed to load active sessions')
-    } finally {
-      setLoading(false)
+      console.error('Error cleaning up inactive sessions:', error)
     }
-  }
+  }, [sessions])
+
+  // Cleanup every 5 minutes
+  useEffect(() => {
+    const cleanupInterval = setInterval(cleanupInactiveSessions, 5 * 60 * 1000)
+    return () => clearInterval(cleanupInterval)
+  }, [cleanupInactiveSessions])
 
   const handleEndSession = async (sessionId: string, userEmail: string) => {
     if (!confirm(`Are you sure you want to end the session for ${userEmail}?`)) return
 
     setActionLoading(sessionId)
     try {
-      // Simulate ending session
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const sessionRef = doc(db, 'active-sessions', sessionId)
+      await updateDoc(sessionRef, {
+        isActive: false,
+        endedAt: serverTimestamp(),
+        endedBy: user?.email || 'super-admin'
+      })
       
-      setSessions(prev => prev.filter(session => session.id !== sessionId))
       toast.success(`Session ended for ${userEmail}`)
     } catch (error) {
       console.error('Error ending session:', error)
@@ -141,14 +186,80 @@ export function ActiveSessionsManagement() {
 
     setActionLoading('end-all')
     try {
-      // Simulate ending all sessions
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      const batch = writeBatch(db)
       
-      setSessions([])
+      sessions.forEach(session => {
+        const sessionRef = doc(db, 'active-sessions', session.id)
+        batch.update(sessionRef, {
+          isActive: false,
+          endedAt: serverTimestamp(),
+          endedBy: user?.email || 'super-admin'
+        })
+      })
+
+      await batch.commit()
       toast.success('All active sessions have been ended')
     } catch (error) {
       console.error('Error ending all sessions:', error)
       toast.error('Failed to end all sessions')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleRefreshSessions = async () => {
+    try {
+      // Force refresh by reconnecting the listener
+      setLoading(true)
+      toast.success('Sessions refreshed')
+    } catch (error) {
+      console.error('Error refreshing sessions:', error)
+      toast.error('Failed to refresh sessions')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCreateTestSessions = async () => {
+    try {
+      setActionLoading('create-test')
+      
+      // Create multiple test sessions
+      const testSessions = [
+        {
+          userEmail: 'john.doe@example.com',
+          userName: 'John Doe',
+          userRole: 'learner'
+        },
+        {
+          userEmail: 'jane.smith@example.com',
+          userName: 'Jane Smith',
+          userRole: 'admin'
+        },
+        {
+          userEmail: 'mike.wilson@example.com',
+          userName: 'Mike Wilson',
+          userRole: 'learner'
+        }
+      ]
+
+      for (const session of testSessions) {
+        await fetch('/api/sessions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'create-test-session',
+            ...session
+          })
+        })
+      }
+
+      toast.success('Test sessions created successfully')
+    } catch (error) {
+      console.error('Error creating test sessions:', error)
+      toast.error('Failed to create test sessions')
     } finally {
       setActionLoading(null)
     }
@@ -182,8 +293,8 @@ export function ActiveSessionsManagement() {
     }
   }
 
-  const getActivityStatus = (lastActivity: string) => {
-    const lastActivityDate = new Date(lastActivity)
+  const getActivityStatus = (lastActivity: any) => {
+    const lastActivityDate = lastActivity?.toDate ? lastActivity.toDate() : new Date(lastActivity)
     const now = new Date()
     const diffMinutes = Math.floor((now.getTime() - lastActivityDate.getTime()) / (1000 * 60))
 
@@ -194,6 +305,12 @@ export function ActiveSessionsManagement() {
     } else {
       return { status: 'idle', color: 'text-red-600', text: `${diffMinutes}m ago` }
     }
+  }
+
+  const formatTimestamp = (timestamp: any) => {
+    if (!timestamp) return 'Unknown'
+    const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp)
+    return date.toLocaleTimeString()
   }
 
   const filteredSessions = sessions.filter(session =>
@@ -296,9 +413,31 @@ export function ActiveSessionsManagement() {
                   className="pl-10 w-64"
                 />
               </div>
-              <Button variant="outline" onClick={loadActiveSessions} disabled={loading}>
+              <div className="flex items-center space-x-2">
+                {isConnected ? (
+                  <Wifi className="w-4 h-4 text-green-500" />
+                ) : (
+                  <WifiOff className="w-4 h-4 text-red-500" />
+                )}
+                <span className="text-xs text-muted-foreground">
+                  {isConnected ? 'Live' : 'Disconnected'}
+                </span>
+              </div>
+              <Button variant="outline" onClick={handleRefreshSessions} disabled={loading}>
                 <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleCreateTestSessions}
+                disabled={actionLoading === 'create-test'}
+              >
+                {actionLoading === 'create-test' ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Users className="w-4 h-4 mr-2" />
+                )}
+                Create Test Sessions
               </Button>
               <Button 
                 variant="destructive" 
@@ -362,8 +501,8 @@ export function ActiveSessionsManagement() {
                     </div>
                     <div className="flex items-center space-x-3">
                       <div className="text-right text-sm text-gray-500">
-                        <p>Started: {new Date(session.sessionStart).toLocaleTimeString()}</p>
-                        <p>Last seen: {new Date(session.lastActivity).toLocaleTimeString()}</p>
+                        <p>Started: {formatTimestamp(session.sessionStart)}</p>
+                        <p>Last seen: {formatTimestamp(session.lastActivity)}</p>
                       </div>
                       <Button
                         variant="outline"
