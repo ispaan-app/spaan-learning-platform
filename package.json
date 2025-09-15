@@ -14,7 +14,11 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "test:all": "npm run test:ci && npm run test:e2e"
+    "test:all": "npm run test:ci && npm run test:e2e",
+    "setup:env": "node scripts/setup-comprehensive-env.js",
+    "fix:permissions": "node scripts/fix-firebase-permissions.js",
+    "validate:rules": "node scripts/validate-firestore-rules.js",
+    "setup:firebase": "npm run setup:env && npm run validate:rules && npm run fix:permissions"
   },
   "dependencies": {
     "@genkit-ai/ai": "^1.19.2",

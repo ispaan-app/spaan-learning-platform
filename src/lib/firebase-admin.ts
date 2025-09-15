@@ -20,6 +20,7 @@ if (!projectId || !clientEmail || !privateKey) {
     'Firebase Admin SDK environment variables are not set. Using mock Admin SDK services. ' +
     'Server-side Firebase features will not work.'
   );
+  console.warn('To fix this, run: node scripts/setup-comprehensive-env.js');
   // Provide mock objects for each service to prevent crashes during build/dev
   app = undefined;
   adminAuth = {} as Auth;
