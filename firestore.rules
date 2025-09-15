@@ -42,6 +42,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if isOwner(userId);
       allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
       allow read: if isAuthenticated(); // Allow all authenticated users to read for dashboard stats
       allow create: if isAuthenticated(); // Allow user creation
     }
@@ -50,6 +51,7 @@ service cloud.firestore {
     match /applications/{applicationId} {
       allow create: if isLearner();
       allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
       allow read: if isOwner(resource.data.userId);
       allow read: if isAuthenticated(); // Allow reading for dashboard stats
     }
@@ -58,11 +60,13 @@ service cloud.firestore {
     match /programs/{programId} {
       allow read: if true; // Public programs for application
       allow write: if isAdmin();
+      allow write: if isSuperAdmin();
     }
     
     // Placements collection - comprehensive access for dashboard queries
     match /placements/{placementId} {
       allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
       allow read: if isAuthenticated(); // Allow all authenticated users to read for dashboard stats
     }
     
@@ -70,13 +74,17 @@ service cloud.firestore {
     match /attendance/{attendanceId} {
       allow read: if isOwner(resource.data.userId);
       allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
       allow create: if isLearner();
+      allow read: if isAuthenticated(); // Allow reading for dashboard stats
     }
     
     // Leave requests collection
     match /leaveRequests/{leaveId} {
       allow read, create: if isOwner(resource.data.userId);
       allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
+      allow read: if isAuthenticated(); // Allow reading for dashboard stats
     }
     
     // Stipend reports collection
@@ -99,13 +107,16 @@ service cloud.firestore {
     match /learnerProfiles/{profileId} {
       allow read, write: if isOwner(resource.data.userId);
       allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
       allow create: if isLearner();
+      allow read: if isAuthenticated(); // Allow reading for dashboard stats
     }
     
     // Notifications collection
     match /notifications/{notificationId} {
       allow read, write: if isOwner(resource.data.userId);
       allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
       allow read: if isAuthenticated(); // Allow reading for dashboard stats
     }
     
@@ -169,6 +180,13 @@ service cloud.firestore {
       allow read: if isSuperAdmin(); // Super admin can read any collection
       allow write: if isAdmin();
       allow write: if isSuperAdmin(); // Super admin can write to any collection
+    }
+    
+    // Emergency rule for stipend reports - allow all authenticated users
+    match /stipendReports/{reportId} {
+      allow read, write: if isAuthenticated();
+      allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
     }
     
     // Development rule - more permissive for testing (remove in production)

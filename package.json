@@ -18,6 +18,7 @@
     "setup:env": "node scripts/setup-comprehensive-env.js",
     "fix:permissions": "node scripts/fix-firebase-permissions.js",
     "validate:rules": "node scripts/validate-firestore-rules.js",
+    "emergency:firestore": "node scripts/emergency-firestore-fix.js",
     "setup:firebase": "npm run setup:env && npm run validate:rules && npm run fix:permissions"
   },
   "dependencies": {
