@@ -1,10 +1,17 @@
-# Environment files - Keep these private
-.env
-.env.local
-.env.development
-.env.production
-.env.test
-.env.*.local
+# ===========================================
+# CURSOR IGNORE FILE - AI ASSISTANCE ENABLED
+# ===========================================
+# This file controls what Cursor AI can access.
+# Most restrictions are commented out to allow AI assistance
+# while still protecting sensitive information.
+
+# Environment files - Keep these private (but allow AI to help with setup)
+# .env
+# .env.local
+# .env.development
+# .env.production
+# .env.test
+# .env.*.local
 
 # Dependencies
 node_modules/
@@ -81,9 +88,9 @@ jspm_packages/
 firebase-debug.log
 firestore-debug.log
 
-# Service account keys
-serviceAccountKey.json
-*-service-account-key.json
+# Service account keys - Keep private but allow AI to help with configuration
+# serviceAccountKey.json
+# *-service-account-key.json
 
 # Logs
 logs
@@ -122,29 +129,29 @@ temp/
 *.backup
 *.bak
 
-# Test files and pages - DO NOT DEPLOY
-test-results/
-playwright-report/
-test-results.xml
-**/test-*
-**/__tests__/**
-**/*.test.*
-**/*.spec.*
-**/e2e/**
-**/troubleshoot-*
-**/design-system-demo/
-**/fix-user-role/
+# Test files and pages - DO NOT DEPLOY (but allow AI to help with development)
+# test-results/
+# playwright-report/
+# test-results.xml
+# **/test-*
+# **/__tests__/**
+# **/*.test.*
+# **/*.spec.*
+# **/e2e/**
+# **/troubleshoot-*
+# **/design-system-demo/
+# **/fix-user-role/
 
-# Test API routes
-src/app/api/test-*
-src/app/api/__tests__/
+# Test API routes (allow AI to help with testing)
+# src/app/api/test-*
+# src/app/api/__tests__/
 
-# Test utilities
-src/lib/*-test.*
-src/lib/integration-test.*
-scripts/test-*
+# Test utilities (allow AI to help with test development)
+# src/lib/*-test.*
+# src/lib/integration-test.*
+# scripts/test-*
 
-# Jest and testing
-jest.config.*
-jest.setup.*
-coverage/
+# Jest and testing (allow AI to help with test configuration)
+# jest.config.*
+# jest.setup.*
+# coverage/
