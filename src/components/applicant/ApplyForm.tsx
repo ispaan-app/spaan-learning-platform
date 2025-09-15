@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -14,18 +14,24 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { db } from '@/lib/firebase'
+import { collection, getDocs, query, where, orderBy } from 'firebase/firestore'
 
 interface Program {
   id: string
   name: string
   description: string
-  duration: string
-  level: string
-  available: boolean
+  duration?: string
+  level?: string
+  status: 'active' | 'inactive'
+  createdAt: string
+  updatedAt: string
+  projectId?: string
+  projectName?: string
 }
 
 interface ApplyFormProps {
-  programs: Program[]
+  programs?: Program[]
 }
 
 // Zod schema for form validation - matching the blueprint exactly
@@ -52,7 +58,9 @@ const applyFormSchema = z.object({
 
 type ApplyFormData = z.infer<typeof applyFormSchema>
 
-export function ApplyForm({ programs }: ApplyFormProps) {
+export function ApplyForm({ programs: initialPrograms }: ApplyFormProps) {
+  const [programs, setPrograms] = useState<Program[]>(initialPrograms || [])
+  const [programsLoading, setProgramsLoading] = useState(!initialPrograms)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -85,6 +93,69 @@ export function ApplyForm({ programs }: ApplyFormProps) {
   })
 
   const { handleSubmit, formState: { errors }, watch, setValue } = form
+
+  // Fetch programs from Firestore
+  useEffect(() => {
+    if (!initialPrograms) {
+      const fetchPrograms = async () => {
+        try {
+          setProgramsLoading(true)
+          const programsQuery = query(
+            collection(db, 'programs'),
+            where('status', '==', 'active'),
+            orderBy('name', 'asc')
+          )
+          
+          const snapshot = await getDocs(programsQuery)
+          const programsData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as Program[]
+          
+          setPrograms(programsData)
+        } catch (error) {
+          console.error('Error fetching programs:', error)
+          // Fallback to default programs if Firestore fails
+          setPrograms([
+            {
+              id: 'computer-science',
+              name: 'Computer Science',
+              description: 'Comprehensive computer science fundamentals',
+              duration: '12 months',
+              level: 'Beginner to Advanced',
+              status: 'active',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            },
+            {
+              id: 'data-science',
+              name: 'Data Science',
+              description: 'Data analysis, machine learning, and statistics',
+              duration: '10 months',
+              level: 'Intermediate',
+              status: 'active',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            },
+            {
+              id: 'web-development',
+              name: 'Web Development',
+              description: 'Full-stack web development with modern frameworks',
+              duration: '8 months',
+              level: 'Beginner',
+              status: 'active',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            }
+          ])
+        } finally {
+          setProgramsLoading(false)
+        }
+      }
+      
+      fetchPrograms()
+    }
+  }, [initialPrograms])
 
   const validateSection = (section: 'personal' | 'qualifications'): boolean => {
     const personalFields = ['firstName', 'lastName', 'email', 'phone', 'age', 'gender', 'idNumber', 'nationality', 'streetAddress', 'suburb', 'province']
@@ -545,26 +616,41 @@ export function ApplyForm({ programs }: ApplyFormProps) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Program of Interest *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={programsLoading}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a program" />
+                              <SelectValue placeholder={programsLoading ? "Loading programs..." : "Select a program"} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {programs.map((program) => (
-                              <SelectItem key={program.id} value={program.id}>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{program.name}</span>
-                                  <span className="text-sm text-gray-500">
-                                    {program.duration} • {program.level}
-                                  </span>
-                                </div>
+                            {programsLoading ? (
+                              <SelectItem value="" disabled>
+                                Loading programs...
                               </SelectItem>
-                            ))}
+                            ) : programs.length === 0 ? (
+                              <SelectItem value="" disabled>
+                                No programs available
+                              </SelectItem>
+                            ) : (
+                              programs.map((program) => (
+                                <SelectItem key={program.id} value={program.id}>
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{program.name}</span>
+                                    <span className="text-sm text-gray-500">
+                                      {program.description}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
                         <FormMessage />
+                        {programsLoading && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            Loading programs from database...
+                          </p>
+                        )}
                       </FormItem>
                     )}
                   />
