@@ -432,7 +432,7 @@ export function SystemHealthMonitoring() {
     loadSystemHealth()
 
     if (autoRefresh) {
-      const interval = setInterval(loadSystemHealth, 30000) // Refresh every 30 seconds
+      const interval = setInterval(loadSystemHealth, 180000) // Refresh every 3 minutes
       return () => clearInterval(interval)
     }
   }, [loadSystemHealth, autoRefresh])
@@ -563,7 +563,7 @@ export function SystemHealthMonitoring() {
               className="rounded"
             />
             <label htmlFor="auto-refresh" className="text-sm text-muted-foreground">
-              Auto-refresh
+              Auto-refresh (3min)
             </label>
           </div>
           <div className="text-sm text-muted-foreground">
