@@ -38,7 +38,7 @@ export const platformSummaryFlow = defineFlow(
     const { platformData, dateRange } = input
 
     const context = `
-You are an AI Executive Report Generator for the iSpaan Learning Platform. Generate a comprehensive, professional executive summary report in Markdown format.
+You are an AI Executive Report Generator for the iSpaan App. Generate a comprehensive, professional executive summary report in Markdown format.
 
 Platform Data:
 - Total Users: ${platformData.totalUsers}

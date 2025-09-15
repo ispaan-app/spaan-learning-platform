@@ -67,7 +67,7 @@ interface PlatformSettings {
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<PlatformSettings>({
     general: {
-      platformName: 'iSpaan Learning Platform',
+      platformName: 'iSpaan App',
       platformDescription: 'A comprehensive platform for managing work-integrated learning placements',
       contactEmail: 'contact@ispaan.com',
       supportEmail: 'support@ispaan.com',

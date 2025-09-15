@@ -1,6 +1,6 @@
 # iSpaan Documentation
 
-Welcome to the iSpaan AI-Powered Learning Platform documentation. This comprehensive guide will help you understand, deploy, and maintain the platform.
+Welcome to the iSpaan AI-Powered App documentation. This comprehensive guide will help you understand, deploy, and maintain the platform.
 
 ## Table of Contents
 

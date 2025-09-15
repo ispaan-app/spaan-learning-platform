@@ -20,7 +20,7 @@ export function LoginSelectionPage() {
             Welcome to <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">iSpaan</span>
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto animate-in slide-in-from-bottom duration-200 delay-200">
-            Choose your login method to access the iSpaan Learning Platform
+            Choose your login method to access the iSpaan App
           </p>
         </div>
 

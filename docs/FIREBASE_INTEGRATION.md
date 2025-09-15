@@ -1,7 +1,7 @@
 # Firebase Backend Integration Guide
 
 ## Overview
-This guide will help you integrate your existing Firebase backend with the iSpaan Learning Platform app.
+This guide will help you integrate your existing Firebase backend with the iSpaan App.
 
 ## Prerequisites
 - Existing Firebase project with users and data

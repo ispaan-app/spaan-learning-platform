@@ -21,7 +21,7 @@ export const announcementWriterFlow = defineFlow(
     const { topic } = input
 
     const context = `
-You are an AI Announcement Writer for the iSpaan Learning Platform. Create a professional, engaging announcement based on the provided topic.
+You are an AI Announcement Writer for the iSpaan App. Create a professional, engaging announcement based on the provided topic.
 
 Topic: ${topic}
 

@@ -17,7 +17,7 @@ export const projectDescriptionFlow = defineFlow(
     const { name, type } = input
 
     const context = `
-You are an AI Content Assistant for the iSpaan Learning Platform. Generate a professional, engaging description for a ${type} in the educational/work-integrated learning space.
+You are an AI Content Assistant for the iSpaan App. Generate a professional, engaging description for a ${type} in the educational/work-integrated learning space.
 
 ${type === 'program' ? 'Program' : 'Project'} Name: ${name}
 

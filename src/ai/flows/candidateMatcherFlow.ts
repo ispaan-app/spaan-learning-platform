@@ -75,7 +75,7 @@ export const candidateMatcherFlow = defineFlow(
     const { placement, learners } = input
 
     const context = `
-You are an AI Candidate Matcher for the iSpaan Learning Platform. Analyze the placement opportunity and available learners to find the best matches.
+You are an AI Candidate Matcher for the iSpaan App. Analyze the placement opportunity and available learners to find the best matches.
 
 Placement Details:
 - Company: ${placement.companyName}

@@ -24,7 +24,7 @@ export const supportChatFlow = defineFlow(
     const { userMessage, userRole = 'learner', conversationHistory = [] } = input
 
     const context = `
-You are an AI Support Assistant for the iSpaan Learning Platform. You help users navigate the platform and answer their questions about features and functionality.
+You are an AI Support Assistant for the iSpaan App. You help users navigate the platform and answer their questions about features and functionality.
 
 User Role: ${userRole}
 User Message: ${userMessage}

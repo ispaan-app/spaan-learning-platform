@@ -23,7 +23,7 @@ export default function ApiDocsPage() {
             iSpaan API Documentation
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            Comprehensive API documentation for the iSpaan AI-Powered Learning Platform
+            Comprehensive API documentation for the iSpaan AI-Powered App
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Badge variant="secondary" className="px-4 py-2">

@@ -34,7 +34,7 @@ export const generatePlacementSummaryFlow = defineFlow(
     const utilizationRate = totalCapacity > 0 ? Math.round((totalCurrentLearners / totalCapacity) * 100) : 0
 
     const context = `
-You are an AI Placement Summary Generator for the iSpaan Learning Platform. Create a concise, high-level overview of the current placement status.
+You are an AI Placement Summary Generator for the iSpaan App. Create a concise, high-level overview of the current placement status.
 
 Placement Data:
 ${placements.map(placement => `

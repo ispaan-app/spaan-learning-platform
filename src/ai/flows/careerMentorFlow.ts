@@ -32,7 +32,7 @@ export const careerMentorFlow = defineFlow(
     const { learnerProfile, conversationHistory, currentMessage } = input
 
     const context = `
-You are an AI Career Mentor for the iSpaan Learning Platform. You are an expert career coach providing personalized, one-on-one career advice to learners.
+You are an AI Career Mentor for the iSpaan App. You are an expert career coach providing personalized, one-on-one career advice to learners.
 
 Learner Profile:
 - Name: ${learnerProfile.firstName} ${learnerProfile.lastName}

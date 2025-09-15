@@ -1,7 +1,7 @@
 # UI/UX Improvements Documentation
 
 ## Overview
-This document outlines the comprehensive UI/UX improvements made to the iSpaan Learning Platform to ensure consistency, better user experience, and modern design patterns.
+This document outlines the comprehensive UI/UX improvements made to the iSpaan App to ensure consistency, better user experience, and modern design patterns.
 
 ## 🎨 Design System
 
@@ -291,7 +291,7 @@ import { combineAnimations, createAnimationDelay } from '@/lib/animations'
 
 ---
 
-This comprehensive UI/UX improvement ensures a consistent, modern, and accessible user experience across the entire iSpaan Learning Platform.
+This comprehensive UI/UX improvement ensures a consistent, modern, and accessible user experience across the entire iSpaan App.
 
 
 

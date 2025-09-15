@@ -6,7 +6,7 @@ const options: swaggerJSDoc.Options = {
     info: {
       title: 'iSpaan API',
       version: '1.0.0',
-      description: 'Comprehensive API documentation for the iSpaan AI-Powered Learning Platform',
+      description: 'Comprehensive API documentation for the iSpaan AI-Powered App',
       contact: {
         name: 'iSpaan Development Team',
         email: 'dev@ispaan.co.za',

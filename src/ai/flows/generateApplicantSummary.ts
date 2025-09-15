@@ -25,7 +25,7 @@ export const generateApplicantSummaryFlow = defineFlow(
     const { applicantData } = input
 
     const context = `
-You are an AI Applicant Summary Generator for the iSpaan Learning Platform. Create a concise, professional 2-3 sentence summary of this applicant's profile.
+You are an AI Applicant Summary Generator for the iSpaan App. Create a concise, professional 2-3 sentence summary of this applicant's profile.
 
 Applicant Data:
 - Name: ${applicantData.firstName} ${applicantData.lastName}

@@ -71,7 +71,7 @@ export const dropoutRiskAnalyzerFlow = defineFlow(
 
     // Create context for the AI
     const context = `
-You are an AI Dropout Risk Analyzer for the iSpaan Learning Platform. Analyze the following learners to identify those at risk of dropping out.
+You are an AI Dropout Risk Analyzer for the iSpaan App. Analyze the following learners to identify those at risk of dropping out.
 
 Learner Data:
 ${learners.map(learner => `

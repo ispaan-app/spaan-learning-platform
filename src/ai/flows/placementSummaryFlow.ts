@@ -54,7 +54,7 @@ export const placementSummaryFlow = defineFlow(
 
     // Create context for the AI
     const context = `
-You are an AI Placement Analyst for the iSpaan Learning Platform. Analyze the following placement data and provide strategic insights.
+You are an AI Placement Analyst for the iSpaan App. Analyze the following placement data and provide strategic insights.
 
 Placement Data:
 ${placements.map(placement => `

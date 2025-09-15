@@ -16,7 +16,7 @@ export const imagePromptFlow = defineFlow(
     const { concept } = input
 
     const context = `
-You are an AI Image Prompt Generator for the iSpaan Learning Platform. Create a detailed, professional prompt for generating a high-quality hero image for an educational platform.
+You are an AI Image Prompt Generator for the iSpaan App. Create a detailed, professional prompt for generating a high-quality hero image for an educational platform.
 
 Concept: ${concept}
 

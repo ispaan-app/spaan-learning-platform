@@ -10,7 +10,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'iSpaan - AI-Powered Learning Platform',
+  title: 'iSpaan - AI-Powered App',
   description: 'A comprehensive learning platform with AI-powered features for students, applicants, and administrators.',
   manifest: '/manifest.json',
   icons: {
