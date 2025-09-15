@@ -104,8 +104,12 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
     
-    // Audit logs collection - super admin only
+    // Audit logs collection - super admin only (both naming conventions)
     match /auditLogs/{logId} {
+      allow read, write: if isSuperAdmin();
+    }
+    
+    match /audit-logs/{logId} {
       allow read, write: if isSuperAdmin();
     }
     
@@ -133,7 +137,9 @@ service cloud.firestore {
     match /{collection}/{document} {
       allow read: if isAuthenticated() && 
         collection in ['users', 'applications', 'placements', 'programs', 'notifications'];
+      allow read: if isSuperAdmin(); // Super admin can read any collection
       allow write: if isAdmin();
+      allow write: if isSuperAdmin(); // Super admin can write to any collection
     }
   }
 }
