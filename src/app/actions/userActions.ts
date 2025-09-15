@@ -1,8 +1,6 @@
 'use server'
 
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
-import { adminDb } from '@/lib/firebase-admin'
+import { adminDb, adminAuth } from '@/lib/firebase-admin'
 import { z } from 'zod'
 
 const ApplicationSchema = z.object({
@@ -49,19 +47,15 @@ export async function createUser(formData: FormData) {
     // Generate a random 6-digit PIN
     const pin = Math.floor(100000 + Math.random() * 900000).toString()
 
-    // Create Firebase Auth user
-    const userCredential = await createUserWithEmailAndPassword(
-      auth, 
-      validatedData.email, 
-      pin // Use PIN as initial password
-    )
-
-    const user = userCredential.user
-
-    // Update user profile
-    await updateProfile(user, {
-      displayName: `${validatedData.firstName} ${validatedData.lastName}`
+    // Create Firebase Auth user using Admin SDK
+    const userRecord = await adminAuth.createUser({
+      email: validatedData.email,
+      password: pin, // Use PIN as initial password
+      displayName: `${validatedData.firstName} ${validatedData.lastName}`,
+      uid: undefined // Let Firebase generate the UID
     })
+
+    const user = userRecord
 
     // Hash the PIN for secure storage
     const crypto = await import('crypto')
@@ -94,10 +88,30 @@ export async function createUser(formData: FormData) {
       message: 'Application submitted successfully! Please save your PIN for login.'
     }
   } catch (error) {
+    console.error('User creation error:', error)
+    
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors[0].message }
     }
-    return { success: false, error: 'Failed to create user account' }
+    
+    // Handle specific Firebase errors
+    if (error && typeof error === 'object' && 'code' in error) {
+      const firebaseError = error as any
+      switch (firebaseError.code) {
+        case 'auth/email-already-exists':
+          return { success: false, error: 'An account with this email already exists' }
+        case 'auth/invalid-email':
+          return { success: false, error: 'Invalid email address' }
+        case 'auth/weak-password':
+          return { success: false, error: 'Password is too weak' }
+        case 'auth/operation-not-allowed':
+          return { success: false, error: 'User creation is not enabled' }
+        default:
+          return { success: false, error: `Firebase error: ${firebaseError.message || 'Unknown error'}` }
+      }
+    }
+    
+    return { success: false, error: `Failed to create user account: ${error instanceof Error ? error.message : 'Unknown error'}` }
   }
 }
 

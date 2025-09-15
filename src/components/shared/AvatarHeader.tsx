@@ -167,6 +167,8 @@ export function AvatarHeader() {
         return '/super-admin/profile'
       case 'admin':
         return '/admin/profile'
+      case 'applicant':
+        return '/applicant/dashboard'
       default:
         return '/profile'
     }

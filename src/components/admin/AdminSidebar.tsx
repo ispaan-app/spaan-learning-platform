@@ -139,18 +139,6 @@ const navigationItems = {
       href: '/applicant/dashboard',
       icon: LayoutDashboard,
       description: 'Your applications'
-    },
-    {
-      title: 'Apply',
-      href: '/applicant/apply',
-      icon: Upload,
-      description: 'Submit application'
-    },
-    {
-      title: 'Profile',
-      href: '/applicant/profile',
-      icon: User,
-      description: 'Your profile'
     }
   ],
   'learner': [

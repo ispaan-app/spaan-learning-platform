@@ -41,7 +41,7 @@ if (!projectId || !clientEmail || !privateKey) {
     } else {
       app = initializeApp({
         credential: cert(serviceAccount),
-        storageBucket: `${projectId}.appspot.com`,
+        storageBucket: 'ispaan-app.firebasestorage.app',
       });
     }
 

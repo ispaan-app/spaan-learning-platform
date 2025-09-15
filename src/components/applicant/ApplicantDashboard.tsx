@@ -364,16 +364,6 @@ export function ApplicantDashboard({ applicantData }: ApplicantDashboardProps) {
               </Link>
             </Button>
             
-            <Button asChild variant="outline" className="h-auto p-4 group hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
-              <Link href="/applicant/profile" className="flex items-center space-x-3">
-                <User className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
-                <div className="text-left">
-                  <div className="font-medium group-hover:text-blue-600 transition-colors">View Profile</div>
-                  <div className="text-sm text-gray-600 group-hover:text-gray-700 transition-colors">Review your application details</div>
-                </div>
-                <ArrowRight className="w-4 h-4 ml-auto group-hover:translate-x-1 transition-transform duration-300" />
-              </Link>
-            </Button>
           </div>
         </CardContent>
       </Card>

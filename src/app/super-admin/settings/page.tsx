@@ -1,6 +1,4 @@
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
-export const runtime = 'nodejs'
+'use client'
 
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'

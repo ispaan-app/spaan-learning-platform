@@ -230,7 +230,7 @@ export function HomePageContent({ heroImageUrl }: HomePageContentProps) {
             <div>
               <h4 className="text-lg font-semibold mb-4">For Students</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/apply" className="hover:text-white transition-colors">Apply Now</Link></li>
+                <li><Link href="/login/user" className="hover:text-white transition-colors">Apply Now</Link></li>
                 <li><Link href="/login/user" className="hover:text-white transition-colors">Student Login</Link></li>
                 <li><Link href="/programs" className="hover:text-white transition-colors">Programs</Link></li>
               </ul>

@@ -5,7 +5,7 @@ import { z } from 'zod'
 
 const DocumentUploadSchema = z.object({
   userId: z.string().min(1, 'User ID is required'),
-  documentType: z.enum(['certifiedId', 'cv', 'qualifications', 'references']),
+  documentType: z.enum(['certifiedId', 'proofOfAddress', 'highestQualification', 'proofOfBanking', 'taxNumber']),
   fileName: z.string().min(1, 'File name is required'),
   fileSize: z.number().min(1, 'File size must be greater than 0'),
   fileType: z.string().min(1, 'File type is required'),
@@ -48,17 +48,15 @@ export async function uploadDocument(formData: FormData) {
 
     // Upload to Firebase Storage
     const fileName = `${userId}/${documentType}/${Date.now()}_${file.name}`
-    const bucket = adminStorage.bucket()
+    const bucket = adminStorage.bucket('ispaan-app.firebasestorage.app')
     const fileUpload = bucket.file(fileName)
 
     await fileUpload.save(buffer, {
       metadata: {
         contentType: file.type,
-        metadata: {
-          userId,
-          documentType,
-          originalName: file.name,
-        }
+        userId,
+        documentType,
+        originalName: file.name,
       }
     })
 

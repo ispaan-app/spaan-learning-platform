@@ -14,6 +14,7 @@ interface SuccessPopupProps {
   className?: string
 }
 
+
 export function SuccessPopup({
   isVisible,
   onClose,
@@ -22,35 +23,15 @@ export function SuccessPopup({
   redirectTo,
   userRole,
   className
-}: SuccessPopupProps) {
-  const [countdown, setCountdown] = useState(3)
-  const [isRedirecting, setIsRedirecting] = useState(false)
+}: SuccessPopupProps): JSX.Element | null {
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
-    if (!isVisible) return
-
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          setIsRedirecting(true)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [isVisible])
-
-  useEffect(() => {
-    if (isVisible && countdown === 0 && !isRedirecting) {
-      setIsRedirecting(true)
-      // Small delay before redirect to show the redirecting state
-      setTimeout(() => {
-        window.location.href = redirectTo
-      }, 500)
+    if (isVisible && !isRedirecting) {
+      setIsRedirecting(true);
+      window.location.href = redirectTo;
     }
-  }, [countdown, isVisible, redirectTo, isRedirecting])
+  }, [isVisible, redirectTo, isRedirecting]);
 
   if (!isVisible) return null
 
@@ -104,28 +85,9 @@ export function SuccessPopup({
           {/* Content */}
           <div className="p-6">
             <div className="text-center space-y-4">
-              {userRole && (
-                <div className="flex items-center justify-center space-x-2">
-                  <span className="text-sm text-gray-600">Welcome,</span>
-                  <span className={cn("font-semibold", getRoleColor(userRole))}>
-                    {getRoleDisplayName(userRole)}
-                  </span>
-                </div>
-              )}
-
               <div className="flex items-center justify-center space-x-2 text-sm text-gray-600">
-                {isRedirecting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin text-coral" />
-                    <span>Redirecting to your dashboard...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Redirecting in</span>
-                    <span className="font-bold text-coral text-lg">{countdown}</span>
-                    <span>seconds</span>
-                  </>
-                )}
+                <Loader2 className="h-4 w-4 animate-spin text-coral" />
+                <span>Redirecting to your dashboard...</span>
               </div>
 
               <div className="flex items-center justify-center space-x-2 text-xs text-gray-500">
@@ -139,9 +101,7 @@ export function SuccessPopup({
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
                   className="bg-gradient-coral h-2 rounded-full transition-all duration-1000 ease-out"
-                  style={{ 
-                    width: isRedirecting ? '100%' : `${((3 - countdown) / 3) * 100}%` 
-                  }}
+                  style={{ width: '100%' }}
                 />
               </div>
             </div>
@@ -179,7 +139,7 @@ export function SuccessPopup({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 

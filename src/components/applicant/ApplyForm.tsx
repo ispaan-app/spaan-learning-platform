@@ -62,6 +62,7 @@ export function ApplyForm({ programs: initialPrograms }: ApplyFormProps) {
   const [programs, setPrograms] = useState<Program[]>(initialPrograms || [])
   const [programsLoading, setProgramsLoading] = useState(!initialPrograms)
   const [error, setError] = useState('')
+  const [programsError, setProgramsError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [userPin, setUserPin] = useState('')
@@ -100,21 +101,23 @@ export function ApplyForm({ programs: initialPrograms }: ApplyFormProps) {
       const fetchPrograms = async () => {
         try {
           setProgramsLoading(true)
+          setProgramsError(null)
           const programsQuery = query(
             collection(db, 'programs'),
             where('status', '==', 'active'),
             orderBy('name', 'asc')
           )
-          
           const snapshot = await getDocs(programsQuery)
           const programsData = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
           })) as Program[]
-          
           setPrograms(programsData)
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error fetching programs:', error)
+          setProgramsError(
+            error?.message ? `Failed to load programs: ${error.message}` : 'Failed to load programs from database.'
+          )
           // Fallback to default programs if Firestore fails
           setPrograms([
             {
@@ -152,7 +155,6 @@ export function ApplyForm({ programs: initialPrograms }: ApplyFormProps) {
           setProgramsLoading(false)
         }
       }
-      
       fetchPrograms()
     }
   }, [initialPrograms])
@@ -476,8 +478,6 @@ export function ApplyForm({ programs: initialPrograms }: ApplyFormProps) {
                             <SelectContent>
                               <SelectItem value="male">Male</SelectItem>
                               <SelectItem value="female">Female</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                              <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -610,6 +610,11 @@ export function ApplyForm({ programs: initialPrograms }: ApplyFormProps) {
                   </div>
 
                   {/* Program Selection */}
+                  {programsError && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{programsError}</AlertDescription>
+                    </Alert>
+                  )}
                   <FormField
                     control={form.control}
                     name="program"
@@ -634,12 +639,7 @@ export function ApplyForm({ programs: initialPrograms }: ApplyFormProps) {
                             ) : (
                               programs.map((program) => (
                                 <SelectItem key={program.id} value={program.id}>
-                                  <div className="flex flex-col">
-                                    <span className="font-medium">{program.name}</span>
-                                    <span className="text-sm text-gray-500">
-                                      {program.description}
-                                    </span>
-                                  </div>
+                                  {program.name}
                                 </SelectItem>
                               ))
                             )}
