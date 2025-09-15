@@ -75,9 +75,6 @@ export function ActiveSessionsManagement() {
 
     setLoading(true)
     
-    // Query for active sessions (last activity within 30 minutes)
-    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000)
-    
     const q = query(
       collection(db, 'active-sessions'),
       where('isActive', '==', true),
@@ -94,6 +91,7 @@ export function ActiveSessionsManagement() {
           })) as ActiveSession[]
 
           // Filter out sessions that are actually inactive (last activity > 30 minutes)
+          const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000)
           const activeSessions = sessionsData.filter(session => {
             const lastActivity = session.lastActivity?.toDate ? session.lastActivity.toDate() : new Date(session.lastActivity)
             return lastActivity > thirtyMinutesAgo
@@ -119,46 +117,6 @@ export function ActiveSessionsManagement() {
     return () => unsubscribe()
   }, [user, toast])
 
-  // Auto-cleanup inactive sessions
-  const cleanupInactiveSessions = useCallback(async () => {
-    try {
-      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000)
-      
-      const q = query(
-        collection(db, 'active-sessions'),
-        where('isActive', '==', true),
-        where('lastActivity', '<', thirtyMinutesAgo)
-      )
-
-      const batch = writeBatch(db)
-      const inactiveSessions = sessions.filter(session => {
-        const lastActivity = session.lastActivity?.toDate ? session.lastActivity.toDate() : new Date(session.lastActivity)
-        return lastActivity <= thirtyMinutesAgo
-      })
-
-      inactiveSessions.forEach(session => {
-        const sessionRef = doc(db, 'active-sessions', session.id)
-        batch.update(sessionRef, { 
-          isActive: false, 
-          endedAt: serverTimestamp(),
-          endedBy: 'system-auto-cleanup'
-        })
-      })
-
-      if (inactiveSessions.length > 0) {
-        await batch.commit()
-        console.log(`Auto-cleaned ${inactiveSessions.length} inactive sessions`)
-      }
-    } catch (error) {
-      console.error('Error cleaning up inactive sessions:', error)
-    }
-  }, [sessions])
-
-  // Cleanup every 5 minutes
-  useEffect(() => {
-    const cleanupInterval = setInterval(cleanupInactiveSessions, 5 * 60 * 1000)
-    return () => clearInterval(cleanupInterval)
-  }, [cleanupInactiveSessions])
 
   const handleEndSession = async (sessionId: string, userEmail: string) => {
     if (!confirm(`Are you sure you want to end the session for ${userEmail}?`)) return
@@ -207,18 +165,6 @@ export function ActiveSessionsManagement() {
     }
   }
 
-  const handleRefreshSessions = async () => {
-    try {
-      // Force refresh by reconnecting the listener
-      setLoading(true)
-      toast.success('Sessions refreshed')
-    } catch (error) {
-      console.error('Error refreshing sessions:', error)
-      toast.error('Failed to refresh sessions')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleCreateTestSessions = async () => {
     try {
@@ -423,10 +369,6 @@ export function ActiveSessionsManagement() {
                   {isConnected ? 'Live' : 'Disconnected'}
                 </span>
               </div>
-              <Button variant="outline" onClick={handleRefreshSessions} disabled={loading}>
-                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
               <Button 
                 variant="outline" 
                 onClick={handleCreateTestSessions}

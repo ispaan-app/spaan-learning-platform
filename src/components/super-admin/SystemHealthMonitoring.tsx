@@ -130,7 +130,6 @@ export function SystemHealthMonitoring() {
   const [performanceLogs, setPerformanceLogs] = useState<PerformanceLog[]>([])
   const [loading, setLoading] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
-  const [autoRefresh, setAutoRefresh] = useState(true)
   const [showDetails, setShowDetails] = useState<string | null>(null)
   const toast = useToast()
 
@@ -427,15 +426,10 @@ export function SystemHealthMonitoring() {
     }
   }
 
-  // Auto-refresh effect
+  // Load system health data once on mount
   useEffect(() => {
     loadSystemHealth()
-
-    if (autoRefresh) {
-      const interval = setInterval(loadSystemHealth, 180000) // Refresh every 3 minutes
-      return () => clearInterval(interval)
-    }
-  }, [loadSystemHealth, autoRefresh])
+  }, [])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -555,16 +549,10 @@ export function SystemHealthMonitoring() {
         </div>
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="auto-refresh"
-              checked={autoRefresh}
-              onChange={(e) => setAutoRefresh(e.target.checked)}
-              className="rounded"
-            />
-            <label htmlFor="auto-refresh" className="text-sm text-muted-foreground">
-              Auto-refresh (3min)
-            </label>
+            <Wifi className="w-4 h-4 text-green-500" />
+            <span className="text-xs text-muted-foreground">
+              Live Data
+            </span>
           </div>
           <div className="text-sm text-muted-foreground">
             Last updated: {lastRefresh.toLocaleTimeString()}
@@ -576,7 +564,7 @@ export function SystemHealthMonitoring() {
             size="sm"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            Manual Refresh
           </Button>
         </div>
       </div>
