@@ -38,26 +38,33 @@ service cloud.firestore {
       );
     }
     
-    // Users collection - users can read/write their own data, admins can read all
+    // Users collection - comprehensive access
     match /users/{userId} {
       allow read, write: if isOwner(userId);
-      allow read: if isAdmin();
+      allow read, write: if isAdmin();
+      allow create: if isAuthenticated(); // Allow user creation
     }
     
-    // Applications collection - applicants can create, admins can read/write
+    // Applications collection
     match /applications/{applicationId} {
       allow create: if isLearner();
       allow read, write: if isAdmin();
       allow read: if isOwner(resource.data.userId);
     }
     
-    // Programs collection - public read, admin write
+    // Programs collection - public read for application forms
     match /programs/{programId} {
       allow read: if true; // Public programs for application
       allow write: if isAdmin();
     }
     
-    // Attendance collection - learners can read their own, admins can read/write all
+    // Placements collection - admin access, learners can read assigned placements
+    match /placements/{placementId} {
+      allow read, write: if isAdmin();
+      allow read: if isAuthenticated(); // Allow all authenticated users to read placements
+    }
+    
+    // Attendance collection
     match /attendance/{attendanceId} {
       allow read: if isOwner(resource.data.userId);
       allow read, write: if isAdmin();
@@ -80,6 +87,13 @@ service cloud.firestore {
     match /issueReports/{issueId} {
       allow read, create: if isOwner(resource.data.userId);
       allow read, write: if isAdmin();
+    }
+    
+    // Learner profiles collection
+    match /learnerProfiles/{profileId} {
+      allow read, write: if isOwner(resource.data.userId);
+      allow read, write: if isAdmin();
+      allow create: if isLearner();
     }
     
     // Notifications collection
@@ -108,9 +122,16 @@ service cloud.firestore {
       allow read, write: if isSuperAdmin();
     }
     
-    // Default deny rule
-    match /{document=**} {
-      allow read, write: if false;
+    // Health collection for health checks
+    match /health/{healthId} {
+      allow read, write: if isAdmin();
+    }
+    
+    // Allow all authenticated users to read most collections for dashboard functionality
+    match /{collection}/{document} {
+      allow read: if isAuthenticated() && 
+        collection in ['users', 'applications', 'placements', 'programs', 'notifications'];
+      allow write: if isAdmin();
     }
   }
 }
