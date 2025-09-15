@@ -92,7 +92,7 @@ export function ProfileStats({ userRole, stats }: ProfileStatsProps) {
           
           return (
             <Card key={stat.key} className="relative overflow-hidden group hover:shadow-lg transition-all duration-300">
-              <div className={`absolute top-0 right-0 w-20 h-20 ${config.secondaryColor} rounded-full -translate-y-10 translate-x-10 group-hover:scale-110 transition-transform duration-300`}></div>
+              <div className={`absolute top-0 right-0 w-20 h-20 ${config.secondaryColor} rounded-full -translate-y-10 translate-x-10 group-hover:scale-105 transition-transform duration-300`}></div>
               
               <CardContent className="p-4 relative z-10">
                 <div className="flex items-center justify-between mb-2">

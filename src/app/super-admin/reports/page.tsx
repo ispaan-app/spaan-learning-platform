@@ -256,7 +256,7 @@ export default function SuperAdminReportsPage() {
           {reportTypes.map((type) => {
             const IconComponent = type.icon
             return (
-              <Card key={type.value} className="shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer">
+              <Card key={type.value} className="shadow-lg hover:shadow-lg transition-all duration-300 cursor-pointer">
                 <CardContent className="p-4 text-center">
                   <IconComponent className="h-8 w-8 text-coral mx-auto mb-2" />
                   <h3 className="font-medium text-dark-blue">{type.label}</h3>

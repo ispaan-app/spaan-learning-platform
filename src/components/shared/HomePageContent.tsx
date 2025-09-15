@@ -88,7 +88,7 @@ export function HomePageContent({ heroImageUrl }: HomePageContentProps) {
           
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* User Login */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-8 rounded-2xl border border-blue-200 hover:shadow-xl transition-all duration-300">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-8 rounded-2xl border border-blue-200 hover:shadow-lg transition-all duration-300">
               <div className="text-center">
                 <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
                   <Users className="w-8 h-8 text-white" />
@@ -108,7 +108,7 @@ export function HomePageContent({ heroImageUrl }: HomePageContentProps) {
             </div>
 
             {/* Admin Login */}
-            <div className="bg-gradient-to-br from-purple-50 to-pink-100 p-8 rounded-2xl border border-purple-200 hover:shadow-xl transition-all duration-300">
+            <div className="bg-gradient-to-br from-purple-50 to-pink-100 p-8 rounded-2xl border border-purple-200 hover:shadow-lg transition-all duration-300">
               <div className="text-center">
                 <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
                   <Shield className="w-8 h-8 text-white" />
@@ -142,7 +142,7 @@ export function HomePageContent({ heroImageUrl }: HomePageContentProps) {
           
           <div className="grid md:grid-cols-3 gap-8">
             {/* Seamless Application */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-lg transition-all duration-300 transform hover:scale-102">
               <div className="w-16 h-16 bg-gradient-to-r from-green-400 to-blue-400 rounded-2xl flex items-center justify-center mb-6">
                 <CheckCircle className="w-8 h-8 text-white" />
               </div>
@@ -154,7 +154,7 @@ export function HomePageContent({ heroImageUrl }: HomePageContentProps) {
             </div>
 
             {/* Secure Check-In */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-lg transition-all duration-300 transform hover:scale-102">
               <div className="w-16 h-16 bg-gradient-to-r from-purple-400 to-pink-400 rounded-2xl flex items-center justify-center mb-6">
                 <Shield className="w-8 h-8 text-white" />
               </div>
@@ -166,7 +166,7 @@ export function HomePageContent({ heroImageUrl }: HomePageContentProps) {
             </div>
 
             {/* AI-Powered Assistance */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-lg transition-all duration-300 transform hover:scale-102">
               <div className="w-16 h-16 bg-gradient-to-r from-orange-400 to-red-400 rounded-2xl flex items-center justify-center mb-6">
                 <Brain className="w-8 h-8 text-white" />
               </div>

@@ -276,7 +276,7 @@ export default function DocumentsPage() {
             {documents.length > 0 ? (
               <div className="space-y-4">
                 {documents.map((document) => (
-                  <div key={document.id} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
+                  <div key={document.id} className="p-4 border rounded-lg hover:shadow-sm transition-shadow">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-3 flex-1">
                         {getDocumentIcon(document.type)}

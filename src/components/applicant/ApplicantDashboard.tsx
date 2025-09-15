@@ -314,7 +314,7 @@ export function ApplicantDashboard({ applicantData }: ApplicantDashboardProps) {
               return (
                 <div 
                   key={doc.id}
-                  className={`flex items-center justify-between p-4 rounded-lg border transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 animate-in slide-in-from-bottom duration-500 ${
+                  className={`flex items-center justify-between p-4 rounded-lg border transition-all duration-300 hover:shadow-sm animate-in slide-in-from-bottom duration-500 ${
                     docStatus === 'approved' 
                       ? 'border-green-200 bg-green-50 hover:bg-green-100' 
                       : docStatus === 'rejected'
@@ -324,7 +324,7 @@ export function ApplicantDashboard({ applicantData }: ApplicantDashboardProps) {
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="transition-transform duration-300 hover:scale-110">
+                    <div className="transition-transform duration-300 hover:scale-105">
                       {getStatusIcon(docStatus)}
                     </div>
                     <div>
@@ -370,9 +370,9 @@ export function ApplicantDashboard({ applicantData }: ApplicantDashboardProps) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Button asChild variant="outline" className="h-auto p-4 group hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+            <Button asChild variant="outline" className="h-auto p-4 group hover:shadow-sm transition-all duration-300">
               <Link href="/applicant/documents" className="flex items-center space-x-3">
-                <FileText className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                <FileText className="w-5 h-5 group-hover:scale-105 transition-transform duration-300" />
                 <div className="text-left">
                   <div className="font-medium group-hover:text-blue-600 transition-colors">Manage Documents</div>
                   <div className="text-sm text-gray-600 group-hover:text-gray-700 transition-colors">Upload and view all documents</div>

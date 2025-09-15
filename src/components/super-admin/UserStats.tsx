@@ -51,7 +51,7 @@ export function UserStats({ stats }: UserStatsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
       {statCards.map((stat, index) => (
-        <Card key={index} className="shadow-lg hover:shadow-xl transition-all duration-300">
+        <Card key={index} className="shadow-lg hover:shadow-lg transition-all duration-300">
           <CardContent className="p-6">
             <div className="flex items-center space-x-4">
               <div className={`p-3 ${stat.bgColor} rounded-xl`}>

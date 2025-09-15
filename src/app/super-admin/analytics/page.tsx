@@ -112,7 +112,7 @@ export default function SuperAdminAnalyticsPage() {
 
         {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-          <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
+          <Card className="shadow-lg hover:shadow-lg transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-gradient-coral rounded-xl shadow-coral">
@@ -130,7 +130,7 @@ export default function SuperAdminAnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
+          <Card className="shadow-lg hover:shadow-lg transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-green-500 rounded-xl shadow-lg">
@@ -148,7 +148,7 @@ export default function SuperAdminAnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
+          <Card className="shadow-lg hover:shadow-lg transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-gold rounded-xl shadow-gold">
@@ -166,7 +166,7 @@ export default function SuperAdminAnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
+          <Card className="shadow-lg hover:shadow-lg transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-dark-blue rounded-xl shadow-dark-blue">
@@ -184,7 +184,7 @@ export default function SuperAdminAnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
+          <Card className="shadow-lg hover:shadow-lg transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-purple-500 rounded-xl shadow-lg">
@@ -202,7 +202,7 @@ export default function SuperAdminAnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
+          <Card className="shadow-lg hover:shadow-lg transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-red-500 rounded-xl shadow-lg">

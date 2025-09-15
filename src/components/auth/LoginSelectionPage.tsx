@@ -27,10 +27,10 @@ export function LoginSelectionPage() {
         {/* Login Options */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* User Login */}
-          <Card className="shadow-lg border-0 hover:shadow-xl transition-all duration-200 ease-out hover:-translate-y-1 group animate-in slide-in-from-left duration-200 delay-250">
+          <Card className="shadow-lg border-0 hover:shadow-lg transition-all duration-200 ease-out group animate-in slide-in-from-left duration-200 delay-250">
             <CardHeader className="text-center pb-4">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform duration-200 ease-out">
-                <User className="w-8 h-8 text-blue-600 group-hover:scale-105 transition-transform duration-200 ease-out" />
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-102 transition-transform duration-200 ease-out">
+                <User className="w-8 h-8 text-blue-600 group-hover:scale-102 transition-transform duration-200 ease-out" />
               </div>
               <CardTitle className="text-2xl text-gray-900 group-hover:text-blue-600 transition-colors">User Login</CardTitle>
               <p className="text-gray-600 group-hover:text-gray-700 transition-colors">
@@ -63,10 +63,10 @@ export function LoginSelectionPage() {
           </Card>
 
           {/* Admin Login */}
-          <Card className="shadow-lg border-0 hover:shadow-xl transition-all duration-200 ease-out hover:-translate-y-1 group animate-in slide-in-from-right duration-200 delay-250">
+          <Card className="shadow-lg border-0 hover:shadow-lg transition-all duration-200 ease-out group animate-in slide-in-from-right duration-200 delay-250">
             <CardHeader className="text-center pb-4">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-105 transition-transform duration-200 ease-out">
-                <Shield className="w-8 h-8 text-purple-600 group-hover:scale-105 transition-transform duration-200 ease-out" />
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-102 transition-transform duration-200 ease-out">
+                <Shield className="w-8 h-8 text-purple-600 group-hover:scale-102 transition-transform duration-200 ease-out" />
               </div>
               <CardTitle className="text-2xl text-gray-900 group-hover:text-purple-600 transition-colors">Admin Login</CardTitle>
               <p className="text-gray-600 group-hover:text-gray-700 transition-colors">

@@ -210,7 +210,7 @@ export function DashboardNav({ userRole }: DashboardNavProps) {
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 <IconComponent className={cn(
-                  "w-5 h-5 transition-transform duration-300 group-hover:scale-110",
+                  "w-5 h-5 transition-transform duration-300 group-hover:scale-105",
                   isActive ? "text-blue-700" : "text-gray-500 group-hover:text-gray-700"
                 )} />
                 <span className="animate-in slide-in-from-left duration-500" style={{ animationDelay: `${index * 50 + 200}ms` }}>

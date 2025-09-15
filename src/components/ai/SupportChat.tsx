@@ -153,7 +153,7 @@ export function SupportChat({ userRole = 'learner' }: SupportChatProps) {
       <div className="fixed bottom-6 right-6 z-50">
         <Button
           onClick={() => setIsOpen(true)}
-          className="w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200"
+          className="w-14 h-14 rounded-full shadow-lg hover:shadow-lg transition-all duration-200"
           size="lg"
         >
           <MessageCircle className="w-6 h-6" />

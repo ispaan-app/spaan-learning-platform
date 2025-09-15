@@ -774,7 +774,7 @@ export function AppearanceManagement() {
               <Button 
                 onClick={handleSave}
                 disabled={saving || !hasChanges}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:bg-gray-400 shadow-lg hover:shadow-xl transition-all duration-200 ease-out"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:bg-gray-400 shadow-lg hover:shadow-lg transition-all duration-200 ease-out"
               >
                 {saving ? (
                   <>

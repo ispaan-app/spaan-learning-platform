@@ -293,7 +293,7 @@ export default function IssuesPage() {
                 {filteredIssues.map((issue) => (
                   <div
                     key={issue.id}
-                    className="p-4 border rounded-lg hover:shadow-md transition-shadow"
+                    className="p-4 border rounded-lg hover:shadow-sm transition-shadow"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 space-y-3">
