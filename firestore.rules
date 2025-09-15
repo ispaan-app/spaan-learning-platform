@@ -13,18 +13,29 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      return isAuthenticated() && 
-        request.auth.token.role in ['admin', 'super-admin'];
+      return isAuthenticated() && (
+        request.auth.token.role in ['admin', 'super-admin'] ||
+        request.auth.token.email == 'developer@ispaan.com' ||
+        request.auth.token.email == 'sifiso@thegaselagroup.co.za' ||
+        request.auth.token.email == 'skitzoc9@gmail.com'
+      );
     }
     
     function isSuperAdmin() {
-      return isAuthenticated() && 
-        request.auth.token.role == 'super-admin';
+      return isAuthenticated() && (
+        request.auth.token.role == 'super-admin' ||
+        request.auth.token.email == 'developer@ispaan.com' ||
+        request.auth.token.email == 'sifiso@thegaselagroup.co.za' ||
+        request.auth.token.email == 'skitzoc9@gmail.com'
+      );
     }
     
     function isLearner() {
-      return isAuthenticated() && 
-        request.auth.token.role in ['learner', 'applicant'];
+      return isAuthenticated() && (
+        request.auth.token.role in ['learner', 'applicant'] ||
+        // Allow authenticated users who aren't admins to be treated as learners
+        (request.auth.token.role == null && !isAdmin())
+      );
     }
     
     // Users collection - users can read/write their own data, admins can read all
