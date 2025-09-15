@@ -152,30 +152,13 @@ export default function SuperAdminSystemPage() {
   const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null)
   const [loading, setLoading] = useState(false)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
-  const [autoRefresh, setAutoRefresh] = useState(true)
-  const [refreshInterval, setRefreshInterval] = useState(30) // seconds
-  const [nextRefresh, setNextRefresh] = useState<Date>(new Date(Date.now() + 30000))
-  const [refreshError, setRefreshError] = useState<string | null>(null)
-  const [consecutiveErrors, setConsecutiveErrors] = useState(0)
   const [selectedLog, setSelectedLog] = useState<SystemLog | null>(null)
-  const [refreshTimer, setRefreshTimer] = useState<NodeJS.Timeout | null>(null)
-  const [isPageVisible, setIsPageVisible] = useState(true)
+  const [isConnected, setIsConnected] = useState(true)
   const toast = useToast()
 
-  // Page visibility detection to pause auto-refresh when tab is not visible
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      setIsPageVisible(!document.hidden)
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [])
-
-  // Load all system data with enhanced error handling
-  const loadSystemData = useCallback(async (isAutoRefresh = false) => {
+  // Load all system data
+  const loadSystemData = useCallback(async () => {
     setLoading(true)
-    setRefreshError(null)
     
     try {
       await Promise.all([
@@ -188,28 +171,16 @@ export default function SuperAdminSystemPage() {
       ])
       
       setLastRefresh(new Date())
-      setConsecutiveErrors(0)
-      
-      if (!isAutoRefresh) {
-        toast.success('System data refreshed successfully')
-      }
+      setIsConnected(true)
+      console.log('System data loaded successfully')
     } catch (error) {
       console.error('Error loading system data:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      setRefreshError(errorMessage)
-      setConsecutiveErrors(prev => prev + 1)
-      
-      if (!isAutoRefresh) {
-        toast.error('Failed to refresh system data')
-      } else if (consecutiveErrors >= 3) {
-        // Disable auto-refresh after 3 consecutive errors
-        setAutoRefresh(false)
-        toast.error('Auto-refresh disabled due to repeated errors. Please check system status.')
-      }
+      setIsConnected(false)
+      toast.error('Failed to load system data')
     } finally {
       setLoading(false)
     }
-  }, [toast, consecutiveErrors])
+  }, [toast])
 
   // Load system metrics
   const loadSystemMetrics = async () => {
@@ -489,50 +460,10 @@ export default function SuperAdminSystemPage() {
     }
   }
 
-  // Enhanced auto-refresh effect with configurable intervals and safety measures
+  // Load system data once on mount
   useEffect(() => {
-    // Initial load
     loadSystemData()
-
-    // Clear existing timer
-    if (refreshTimer) {
-      clearTimeout(refreshTimer)
-    }
-
-    if (autoRefresh && isPageVisible) {
-      const scheduleNextRefresh = () => {
-        const nextRefreshTime = new Date(Date.now() + refreshInterval * 1000)
-        setNextRefresh(nextRefreshTime)
-        
-        const timer = setTimeout(() => {
-          // Only refresh if page is still visible and auto-refresh is still enabled
-          if (autoRefresh && isPageVisible) {
-            loadSystemData(true) // Mark as auto-refresh
-            scheduleNextRefresh() // Schedule next refresh
-          }
-        }, refreshInterval * 1000)
-        
-        setRefreshTimer(timer)
-      }
-      
-      scheduleNextRefresh()
-    }
-
-    return () => {
-      if (refreshTimer) {
-        clearTimeout(refreshTimer)
-      }
-    }
-  }, [loadSystemData, autoRefresh, refreshInterval, isPageVisible])
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (refreshTimer) {
-        clearTimeout(refreshTimer)
-      }
-    }
-  }, [refreshTimer])
+  }, [loadSystemData])
 
   const restartService = async (serviceName: string) => {
     try {
@@ -647,81 +578,22 @@ export default function SuperAdminSystemPage() {
             <div>
               <div className="flex items-center space-x-2">
                 <h1 className="text-2xl font-bold text-dark-blue">System Monitoring</h1>
-                {autoRefresh && (
-                  <div className="flex items-center space-x-1">
-                    <div className={`w-2 h-2 rounded-full ${isPageVisible ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`}></div>
-                    <span className={`text-xs font-medium ${isPageVisible ? 'text-green-600' : 'text-yellow-600'}`}>
-                      {isPageVisible ? 'Live' : 'Paused'}
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center space-x-1">
+                  <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                  <span className={`text-xs font-medium ${isConnected ? 'text-green-600' : 'text-red-600'}`}>
+                    {isConnected ? 'Connected' : 'Disconnected'}
+                  </span>
+                </div>
               </div>
-              <p className="text-muted-foreground">Real-time system performance and health metrics</p>
+              <p className="text-muted-foreground">System performance and health metrics</p>
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            {/* Auto-refresh controls */}
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="auto-refresh"
-                  checked={autoRefresh}
-                  onChange={(e) => setAutoRefresh(e.target.checked)}
-                  className="rounded"
-                />
-                <label htmlFor="auto-refresh" className="text-sm text-muted-foreground">
-                  Auto-refresh
-                </label>
-              </div>
-              
-              {autoRefresh && (
-                <select
-                  value={refreshInterval}
-                  onChange={(e) => {
-                    const newInterval = Number(e.target.value)
-                    // Safety check: minimum 15 seconds to prevent excessive API calls
-                    if (newInterval >= 15) {
-                      setRefreshInterval(newInterval)
-                    }
-                  }}
-                  className="text-sm border rounded px-2 py-1"
-                >
-                  <option value={15}>15s</option>
-                  <option value={30}>30s</option>
-                  <option value={60}>1m</option>
-                  <option value={120}>2m</option>
-                  <option value={300}>5m</option>
-                </select>
-              )}
+            <div className="text-sm text-muted-foreground">
+              Last updated: {lastRefresh.toLocaleTimeString()}
             </div>
-
-            {/* Status indicators */}
-            <div className="flex items-center space-x-3">
-              {refreshError && (
-                <div className="flex items-center space-x-1 text-red-600">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span className="text-xs">Error: {refreshError}</span>
-                </div>
-              )}
-              
-              {autoRefresh && (
-                <div className="flex items-center space-x-1 text-blue-600">
-                  <Activity className="h-4 w-4" />
-                  <span className="text-xs">
-                    {isPageVisible ? `Next: ${nextRefresh.toLocaleTimeString()}` : 'Paused (tab hidden)'}
-                  </span>
-                </div>
-              )}
-              
-              <div className="text-sm text-muted-foreground">
-                Last: {lastRefresh.toLocaleTimeString()}
-              </div>
-            </div>
-
-            {/* Manual refresh button */}
             <Button
-              onClick={() => loadSystemData(false)}
+              onClick={loadSystemData}
               disabled={loading}
               variant="outline"
               size="sm"
@@ -732,35 +604,6 @@ export default function SuperAdminSystemPage() {
           </div>
         </div>
 
-        {/* Auto-refresh status warning */}
-        {consecutiveErrors >= 3 && !autoRefresh && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-600" />
-              <div>
-                <h3 className="text-sm font-medium text-yellow-800">Auto-refresh Disabled</h3>
-                <p className="text-sm text-yellow-700">
-                  Auto-refresh was disabled due to {consecutiveErrors} consecutive errors. 
-                  Please check your connection and try refreshing manually.
-                </p>
-                <div className="mt-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setConsecutiveErrors(0)
-                      setRefreshError(null)
-                      setAutoRefresh(true)
-                    }}
-                    className="text-yellow-700 border-yellow-300 hover:bg-yellow-100"
-                  >
-                    Re-enable Auto-refresh
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* System Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
