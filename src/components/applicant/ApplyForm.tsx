@@ -143,32 +143,34 @@ export function ApplyForm({ programs }: ApplyFormProps) {
 
   if (success) {
     return (
-      <Card className="text-center">
-        <CardHeader>
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <CardTitle className="text-3xl font-bold text-gray-900 mb-2">
-            Application Submitted Successfully!
-          </CardTitle>
-          <p className="text-gray-600">
-            Your application has been received and is being processed
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-8">
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-8">
-            <h3 className="text-xl font-semibold text-blue-900 mb-4">Your Login Credentials</h3>
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-6 max-w-4xl">
+          <Card className="text-center shadow-lg">
+            <CardHeader className="p-4 md:p-6">
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
+                <svg className="w-8 h-8 md:w-10 md:h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <CardTitle className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+                Application Submitted Successfully!
+              </CardTitle>
+              <p className="text-sm md:text-base text-gray-600">
+                Your application has been received and is being processed
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6 md:space-y-8 p-4 md:p-6">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 md:p-8">
+                <h3 className="text-lg md:text-xl font-semibold text-blue-900 mb-4">Your Login Credentials</h3>
             <div className="space-y-4">
-              <div className="bg-white rounded-lg p-4 border border-blue-200">
-                <p className="text-sm text-blue-700 mb-1">ID Number (Username)</p>
-                <p className="text-lg font-mono font-bold text-blue-900">{watch('idNumber')}</p>
-              </div>
-              <div className="bg-white rounded-lg p-4 border border-blue-200">
-                <p className="text-sm text-blue-700 mb-1">Temporary PIN</p>
-                <p className="text-2xl font-mono font-bold text-blue-900">{userPin}</p>
-              </div>
+                <div className="bg-white rounded-lg p-4 border border-blue-200">
+                  <p className="text-sm text-blue-700 mb-1">ID Number (Username)</p>
+                  <p className="text-base md:text-lg font-mono font-bold text-blue-900 break-all">{watch('idNumber')}</p>
+                </div>
+                <div className="bg-white rounded-lg p-4 border border-blue-200">
+                  <p className="text-sm text-blue-700 mb-1">Temporary PIN</p>
+                  <p className="text-xl md:text-2xl font-mono font-bold text-blue-900">{userPin}</p>
+                </div>
             </div>
             <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-sm text-yellow-800">
@@ -222,65 +224,76 @@ export function ApplyForm({ programs }: ApplyFormProps) {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              onClick={() => router.push('/login/user')}
-              className="bg-blue-600 hover:bg-blue-700 px-8 py-3 text-lg"
-            >
-              Log In Now
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => {
-                setSuccess(false)
-                setUserPin('')
-                setCurrentSection('personal')
-                form.reset()
-              }}
-              className="px-8 py-3 text-lg"
-            >
-              Submit Another Application
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  onClick={() => router.push('/login/user')}
+                  className="bg-blue-600 hover:bg-blue-700 px-6 py-3 text-base md:text-lg md:px-8 w-full sm:w-auto"
+                >
+                  Log In Now
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setSuccess(false)
+                    setUserPin('')
+                    setCurrentSection('personal')
+                    form.reset()
+                  }}
+                  className="px-6 py-3 text-base md:text-lg md:px-8 w-full sm:w-auto"
+                >
+                  Submit Another Application
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     )
   }
 
   return (
-    <div className="space-y-8">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Apply to iSpaan
-        </h1>
-        <p className="text-xl text-gray-600 mb-6">
-          Complete the form below to start your learning journey
-        </p>
-        
-        {/* Progress Indicator */}
-        <div className="flex justify-center mb-8">
-          <div className="flex items-center space-x-4">
-            <div className={`flex items-center space-x-2 ${currentSection === 'personal' ? 'text-blue-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentSection === 'personal' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
-                1
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-6 max-w-4xl">
+        <div className="space-y-6">
+          <div className="text-center">
+            <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-4">
+              Apply to iSpaan
+            </h1>
+            <p className="text-base md:text-xl text-gray-600 mb-6">
+              Complete the form below to start your learning journey
+            </p>
+            
+            {/* Progress Indicator - Mobile Optimized */}
+            <div className="flex justify-center mb-6 md:mb-8">
+              <div className="flex items-center space-x-2 md:space-x-4">
+                <div className={`flex items-center space-x-1 md:space-x-2 ${currentSection === 'personal' ? 'text-blue-600' : 'text-gray-400'}`}>
+                  <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm font-medium ${currentSection === 'personal' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+                    1
+                  </div>
+                  <span className="font-medium text-sm md:text-base hidden sm:inline">Personal Details</span>
+                </div>
+                <div className="w-6 md:w-12 h-0.5 bg-gray-300"></div>
+                <div className={`flex items-center space-x-1 md:space-x-2 ${currentSection === 'qualifications' ? 'text-blue-600' : 'text-gray-400'}`}>
+                  <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm font-medium ${currentSection === 'qualifications' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+                    2
+                  </div>
+                  <span className="font-medium text-sm md:text-base hidden sm:inline">Qualifications & Experience</span>
+                </div>
               </div>
-              <span className="font-medium">Personal Details</span>
             </div>
-            <div className="w-12 h-0.5 bg-gray-300"></div>
-            <div className={`flex items-center space-x-2 ${currentSection === 'qualifications' ? 'text-blue-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentSection === 'qualifications' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
-                2
-              </div>
-              <span className="font-medium">Qualifications & Experience</span>
+            
+            {/* Mobile Progress Labels */}
+            <div className="sm:hidden text-center mb-4">
+              <p className="text-sm font-medium text-gray-600">
+                Step {currentSection === 'personal' ? '1' : '2'} of 2: {currentSection === 'personal' ? 'Personal Details' : 'Qualifications & Experience'}
+              </p>
             </div>
           </div>
-        </div>
-      </div>
 
-      <Card>
-        <CardContent className="p-8">
+      <Card className="shadow-lg">
+        <CardContent className="p-4 md:p-8">
           <Form {...form}>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 md:space-y-8">
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
@@ -288,14 +301,14 @@ export function ApplyForm({ programs }: ApplyFormProps) {
               )}
               
               {currentSection === 'personal' && (
-                <fieldset className="space-y-8">
-                  <div className="border-b border-gray-200 pb-6">
-                    <legend className="text-2xl font-semibold text-gray-900 mb-2">Personal Details</legend>
-                    <p className="text-gray-600">Tell us about yourself and your contact information</p>
+                <fieldset className="space-y-6 md:space-y-8">
+                  <div className="border-b border-gray-200 pb-4 md:pb-6">
+                    <legend className="text-xl md:text-2xl font-semibold text-gray-900 mb-2">Personal Details</legend>
+                    <p className="text-sm md:text-base text-gray-600">Tell us about yourself and your contact information</p>
                   </div>
 
                   {/* Name Fields */}
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-4 md:gap-6 sm:grid-cols-2">
                     <FormField
                       control={form.control}
                       name="firstName"
@@ -326,7 +339,7 @@ export function ApplyForm({ programs }: ApplyFormProps) {
                   </div>
 
                   {/* Contact Information */}
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-4 md:gap-6 sm:grid-cols-2">
                     <FormField
                       control={form.control}
                       name="email"
@@ -357,7 +370,7 @@ export function ApplyForm({ programs }: ApplyFormProps) {
                   </div>
 
                   {/* Age, Gender, and ID */}
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-4 md:gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     <FormField
                       control={form.control}
                       name="age"
@@ -420,7 +433,7 @@ export function ApplyForm({ programs }: ApplyFormProps) {
                   </div>
 
                   {/* Nationality */}
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-4 md:gap-6 sm:grid-cols-2">
                     <FormField
                       control={form.control}
                       name="nationality"
@@ -437,9 +450,9 @@ export function ApplyForm({ programs }: ApplyFormProps) {
                   </div>
 
                   {/* Address Information */}
-                  <div className="space-y-6">
-                    <h3 className="text-lg font-medium text-gray-900">Address Information</h3>
-                    <div className="grid grid-cols-1 gap-6">
+                  <div className="space-y-4 md:space-y-6">
+                    <h3 className="text-base md:text-lg font-medium text-gray-900">Address Information</h3>
+                    <div className="grid grid-cols-1 gap-4 md:gap-6">
                       <FormField
                         control={form.control}
                         name="streetAddress"
@@ -458,7 +471,7 @@ export function ApplyForm({ programs }: ApplyFormProps) {
                         )}
                       />
 
-                      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                      <div className="grid grid-cols-1 gap-4 md:gap-6 sm:grid-cols-2">
                         <FormField
                           control={form.control}
                           name="suburb"
@@ -505,23 +518,24 @@ export function ApplyForm({ programs }: ApplyFormProps) {
                     </div>
                   </div>
 
-                  <div className="flex justify-end">
+                  <div className="flex justify-end pt-4">
                     <Button
                       type="button"
                       onClick={handleNext}
-                      className="bg-blue-600 hover:bg-blue-700 px-8 py-3"
+                      className="bg-blue-600 hover:bg-blue-700 px-6 py-3 text-sm md:text-base md:px-8 w-full sm:w-auto"
                     >
-                      Next: Qualifications & Experience
+                      <span className="hidden sm:inline">Next: Qualifications & Experience</span>
+                      <span className="sm:hidden">Next Step</span>
                     </Button>
                   </div>
                 </fieldset>
               )}
 
               {currentSection === 'qualifications' && (
-                <fieldset className="space-y-8">
-                  <div className="border-b border-gray-200 pb-6">
-                    <legend className="text-2xl font-semibold text-gray-900 mb-2">Qualifications & Experience</legend>
-                    <p className="text-gray-600">Tell us about your educational background and experience</p>
+                <fieldset className="space-y-6 md:space-y-8">
+                  <div className="border-b border-gray-200 pb-4 md:pb-6">
+                    <legend className="text-xl md:text-2xl font-semibold text-gray-900 mb-2">Qualifications & Experience</legend>
+                    <p className="text-sm md:text-base text-gray-600">Tell us about your educational background and experience</p>
                   </div>
 
                   {/* Program Selection */}
@@ -556,9 +570,9 @@ export function ApplyForm({ programs }: ApplyFormProps) {
                   />
 
                   {/* Educational Background */}
-                  <div className="space-y-6">
-                    <h3 className="text-lg font-medium text-gray-900">Educational Background</h3>
-                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  <div className="space-y-4 md:space-y-6">
+                    <h3 className="text-base md:text-lg font-medium text-gray-900">Educational Background</h3>
+                    <div className="grid grid-cols-1 gap-4 md:gap-6 sm:grid-cols-2">
                       <FormField
                         control={form.control}
                         name="highestQualification"
@@ -604,8 +618,8 @@ export function ApplyForm({ programs }: ApplyFormProps) {
                   </div>
 
                   {/* Work Experience */}
-                  <div className="space-y-6">
-                    <h3 className="text-lg font-medium text-gray-900">Work Experience</h3>
+                  <div className="space-y-4 md:space-y-6">
+                    <h3 className="text-base md:text-lg font-medium text-gray-900">Work Experience</h3>
                     <FormField
                       control={form.control}
                       name="yearsOfExperience"
@@ -629,19 +643,20 @@ export function ApplyForm({ programs }: ApplyFormProps) {
                   </div>
 
 
-                  <div className="flex justify-between">
+                  <div className="flex flex-col sm:flex-row gap-4 sm:justify-between pt-4">
                     <Button
                       type="button"
                       variant="outline"
                       onClick={handleBack}
-                      className="px-8 py-3"
+                      className="px-6 py-3 text-sm md:text-base md:px-8 w-full sm:w-auto order-2 sm:order-1"
                     >
-                      Back: Personal Details
+                      <span className="hidden sm:inline">Back: Personal Details</span>
+                      <span className="sm:hidden">Back</span>
                     </Button>
                     <LoadingButton
                       type="submit"
                       loading={loading}
-                      className="bg-blue-600 hover:bg-blue-700 px-8 py-3"
+                      className="bg-blue-600 hover:bg-blue-700 px-6 py-3 text-sm md:text-base md:px-8 w-full sm:w-auto order-1 sm:order-2"
                     >
                       Submit Application
                     </LoadingButton>
@@ -652,6 +667,8 @@ export function ApplyForm({ programs }: ApplyFormProps) {
           </Form>
         </CardContent>
       </Card>
+        </div>
+      </div>
     </div>
   )
 }
