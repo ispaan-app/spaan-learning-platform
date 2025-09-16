@@ -7,32 +7,7 @@
 
 ## 🎯 Recommended Deployment Options
 
-### 1. **Vercel (Recommended)**
-**Best for Next.js applications with API routes**
-
-#### Setup Steps:
-1. Go to [vercel.com](https://vercel.com)
-2. Sign in with your GitHub account
-3. Click "New Project"
-4. Import your repository: `ispaan-app/spaan-learning-platform`
-5. Vercel will automatically detect Next.js and configure settings
-6. Deploy with one click!
-
-#### Advantages:
-- ✅ Zero configuration
-- ✅ Automatic deployments on git push
-- ✅ Built-in CDN and performance optimization
-- ✅ Supports API routes and serverless functions
-- ✅ Custom domain support
-- ✅ Free tier available
-
-#### Custom Domain:
-- Add `ispaan.web.app` in Vercel dashboard
-- Update DNS settings as instructed
-
----
-
-### 2. **Netlify**
+### 1. **Netlify (Recommended)**
 **Good alternative with easy setup**
 
 #### Setup Steps:
@@ -53,7 +28,7 @@
 
 ---
 
-### 3. **Railway**
+### 2. **Railway**
 **Good for full-stack applications**
 
 #### Setup Steps:
@@ -70,7 +45,7 @@
 
 ---
 
-### 4. **Firebase Hosting**
+### 3. **Firebase Hosting**
 **Google's hosting platform**
 
 #### Setup Steps:
@@ -90,22 +65,7 @@
 
 ## 🔧 Manual Deployment Steps
 
-### For Vercel (Recommended):
-
-1. **Prepare Repository:**
-   ```bash
-   git add .
-   git commit -m "Prepare for Vercel deployment"
-   git push origin main
-   ```
-
-2. **Deploy to Vercel:**
-   - Visit [vercel.com](https://vercel.com)
-   - Import repository
-   - Configure domain: `ispaan.web.app`
-   - Deploy!
-
-### For Netlify:
+### For Netlify (Recommended):
 
 1. **Build Locally:**
    ```bash
@@ -158,14 +118,15 @@
 
 ## 🚀 Quick Start Deployment
 
-**Easiest Option - Vercel:**
+**Easiest Option - Netlify:**
 
-1. Go to [vercel.com](https://vercel.com)
-2. Click "New Project"
+1. Go to [netlify.com](https://netlify.com)
+2. Click "New site from Git"
 3. Import `ispaan-app/spaan-learning-platform`
-4. Click "Deploy"
-5. Add custom domain `ispaan.web.app`
-6. Done! 🎉
+4. Configure build settings
+5. Click "Deploy"
+6. Add custom domain `ispaan.web.app`
+7. Done! 🎉
 
 ---
 
