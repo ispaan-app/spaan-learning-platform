@@ -58,7 +58,7 @@ export function HomePageContent({
           <div className="space-y-8">
             <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full mb-8 border border-white/20 shadow-lg">
               <Sparkles className="w-5 h-5 text-blue-600 mr-2 animate-pulse" />
-              <span className="text-blue-700 font-semibold">Revolutionary Learning Platform</span>
+              <span className="text-blue-700 font-semibold">Revolutionary Monitoring Platform</span>
             </div>
             
             <h1 className="text-5xl md:text-7xl font-bold leading-tight">
