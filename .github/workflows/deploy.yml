@@ -1,177 +1,38 @@
-name: Deploy to Production
+name: Deploy to Vercel
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
-
-env:
-  NODE_VERSION: '20.x'
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  test:
-    name: Run Tests
+  build-and-deploy:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run unit tests
-        run: npm run test:ci
-
-      - name: Run integration tests
-        run: npm run test:integration
-
-      - name: Run E2E tests
-        run: npm run test:e2e
-
-      - name: Run security tests
-        run: npm run test:security
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: test-results
-          path: |
-            coverage/
-            test-results/
-            playwright-report/
-
-  build:
-    name: Build Application
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build application
-        run: npm run build
-        env:
-          NODE_ENV: production
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: build-files
-          path: |
-            .next/
-            public/
-            package.json
-            package-lock.json
-
-  docker:
-    name: Build Docker Image
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: build-files
-          path: .
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    needs: docker
-    environment: staging
-    steps:
-      - name: Deploy to staging
-        run: |
-          echo "Deploying to staging environment"
-          # Add your staging deployment commands here
-          # This could be kubectl, helm, or any other deployment tool
-
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs: [docker, deploy-staging]
-    environment: production
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Deploy to production
-        run: |
-          echo "Deploying to production environment"
-          # Add your production deployment commands here
-          # This could be kubectl, helm, or any other deployment tool
-
-      - name: Run health checks
-        run: |
-          echo "Running health checks"
-          # Add health check commands here
-
-      - name: Notify deployment
-        run: |
-          echo "Deployment completed successfully"
-          # Add notification logic here (Slack, email, etc.)
-
-  rollback:
-    name: Rollback Deployment
-    runs-on: ubuntu-latest
-    if: failure()
-    steps:
-      - name: Rollback deployment
-        run: |
-          echo "Rolling back deployment"
-          # Add rollback commands here
-
-      - name: Notify rollback
-        run: |
-          echo "Deployment rolled back"
-          # Add notification logic here
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build application
+      run: npm run build
+      env:
+        NODE_ENV: production
+        
+    - name: Deploy to Vercel
+      uses: amondnet/vercel-action@v25
+      if: github.ref == 'refs/heads/main'
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.ORG_ID }}
+        vercel-project-id: ${{ secrets.PROJECT_ID }}
+        vercel-args: '--prod'

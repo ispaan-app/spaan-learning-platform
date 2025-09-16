@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Basic configuration only
+  // Basic configuration for development and deployment
   images: {
     domains: ['localhost', 'firebasestorage.googleapis.com'],
   },
