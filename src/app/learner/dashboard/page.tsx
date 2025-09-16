@@ -7,6 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { WelcomeCard } from '@/components/ui/welcome-card'
+import { Settings } from 'lucide-react'
+import { useLearnerDashboardPrefs } from '@/hooks/useLearnerDashboardPrefs'
+import { LearnerNotificationsPanel } from '@/components/learner/LearnerNotificationsPanel'
+import { useNotifications } from '@/hooks/useNotifications'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { 
   Clock, 
@@ -28,8 +32,10 @@ import {
   Zap
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { LearnerService, LearnerStats, RecentActivity, UpcomingClass, PlacementInfo } from '@/lib/services/learner-service'
+import { db } from '@/lib/firebase'
+import { collection, query, where, orderBy, limit, onSnapshot, doc, getDoc } from 'firebase/firestore'
 import { MonthlyHoursProgress } from '@/components/shared/monthly-hours-progress'
 import { ReportIssueModal } from '@/components/learner/report-issue-modal'
 import { useRouter } from 'next/navigation'
@@ -38,6 +44,9 @@ import { getLearnerMonthlyHours, reportStipendIssueAction } from '@/app/learner/
 
 export default function LearnerDashboard() {
   const { user, userRole } = useAuth()
+  const { notifications, markAsRead, deleteNotification } = useNotifications();
+  const { prefs, setWidgetVisible } = useLearnerDashboardPrefs(user?.uid);
+  const [showPrefs, setShowPrefs] = useState(false);
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -56,62 +65,248 @@ export default function LearnerDashboard() {
   const [placementInfo, setPlacementInfo] = useState<PlacementInfo | null>(null)
   const [monthlyHours, setMonthlyHours] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  // Keep refs to unsub functions for cleanup
+  const unsubRefs = useRef<any[]>([])
 
-  const loadDashboardData = async () => {
-    if (!user) return
-
-    try {
-      setIsRefreshing(true)
-      setError(null)
-
-      const currentDate = new Date()
-      const [stats, activity, classes, placement, hours] = await Promise.all([
-        LearnerService.getLearnerStats(user.uid),
-        LearnerService.getRecentActivity(user.uid),
-        LearnerService.getUpcomingClasses(user.uid),
-        LearnerService.getPlacementInfo(user.uid),
-        getLearnerMonthlyHours(user.uid, currentDate.getFullYear(), currentDate.getMonth() + 1)
-      ])
-
-      setLearnerStats(stats)
-      setRecentActivity(activity)
-      setUpcomingClasses(classes)
-      setPlacementInfo(placement)
-      setMonthlyHours(hours)
-    } catch (err) {
-      console.error('Error loading dashboard data:', err)
-      setError('Failed to load dashboard data. Please try again.')
-    } finally {
-      setIsLoading(false)
-      setIsRefreshing(false)
-    }
-  }
-
+  // Real-time Firestore listeners for stats, activity, and classes
   useEffect(() => {
-    loadDashboardData()
-  }, [user])
+    if (!user) return;
+    setIsLoading(true);
+    setError(null);
+    // Cleanup previous listeners
+    unsubRefs.current.forEach(unsub => unsub && unsub());
+    unsubRefs.current = [];
+
+    // Attendance (work hours, activity)
+    const attendanceQuery = query(
+      collection(db, 'attendance'),
+      where('userId', '==', user.uid),
+      where('checkOutTime', '!=', null),
+      orderBy('checkInTime', 'desc'),
+      limit(10)
+    );
+    const unsubAttendance = onSnapshot(attendanceQuery, async (snapshot) => {
+      let totalWorkHours = 0;
+      const activities: RecentActivity[] = [];
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        if (data.checkInTime && data.checkOutTime) {
+          const checkIn = data.checkInTime.toDate();
+          const checkOut = data.checkOutTime.toDate();
+          const hours = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60);
+          totalWorkHours += hours;
+        }
+        const checkInTime = data.checkInTime?.toDate?.() || new Date();
+        const isCheckedOut = data.checkOutTime !== null;
+        activities.push({
+          id: docSnap.id,
+          type: isCheckedOut ? 'checkout' : 'checkin',
+          title: isCheckedOut ? 'Checked out from work' : 'Checked in to work',
+          description: isCheckedOut 
+            ? `Completed work session at ${data.placementId ? 'work placement' : 'training session'}`
+            : `Started work session at ${data.placementId ? 'work placement' : 'training session'}`,
+          timestamp: checkInTime,
+          status: 'success'
+        });
+      });
+      setLearnerStats(prev => ({ ...prev, workHours: Math.round(totalWorkHours * 10) / 10 }));
+      setRecentActivity(prev => {
+        // Merge with other activities (leave, docs) below
+        return [
+          ...activities.map(a => ({
+            ...a,
+            type: a.type as RecentActivity['type'],
+            status: a.status as RecentActivity['status'],
+          } as RecentActivity)),
+          ...prev.filter(a => a.type !== 'checkin' && a.type !== 'checkout')
+        ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 10);
+      });
+    }, (err) => setError('Failed to load attendance data'));
+    unsubRefs.current.push(unsubAttendance);
+
+    // Completed Courses
+    const coursesQuery = query(
+      collection(db, 'learnerCourses'),
+      where('userId', '==', user.uid),
+      where('status', '==', 'completed')
+    );
+    const unsubCourses = onSnapshot(coursesQuery, (snapshot) => {
+      setLearnerStats(prev => ({ ...prev, completedCourses: snapshot.size }));
+    }, (err) => setError('Failed to load courses data'));
+    unsubRefs.current.push(unsubCourses);
+
+    // Certificates
+    const certsQuery = query(
+      collection(db, 'certificates'),
+      where('userId', '==', user.uid),
+      where('status', '==', 'issued')
+    );
+    const unsubCerts = onSnapshot(certsQuery, (snapshot) => {
+      setLearnerStats(prev => ({ ...prev, certificates: snapshot.size }));
+    }, (err) => setError('Failed to load certificates data'));
+    unsubRefs.current.push(unsubCerts);
+
+    // Upcoming Classes
+    const today = new Date();
+    const nextMonth = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const classesQuery = query(
+      collection(db, 'classSessions'),
+      where('date', '>=', today),
+      where('date', '<=', nextMonth),
+      where('participants', 'array-contains', user.uid),
+      orderBy('date', 'asc')
+    );
+    const unsubClasses = onSnapshot(classesQuery, (snapshot) => {
+      setUpcomingClasses(snapshot.docs.map(docSnap => {
+        const data = docSnap.data();
+        const classDate = data.date.toDate();
+        return {
+          id: docSnap.id,
+          title: data.title,
+          date: classDate.toLocaleDateString(),
+          time: classDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          location: data.location,
+          instructor: data.instructor,
+          type: data.type || 'training',
+          status: data.status || 'scheduled'
+        };
+      }));
+      setLearnerStats(prev => ({ ...prev, upcomingClasses: snapshot.size }));
+    }, (err) => setError('Failed to load classes data'));
+    unsubRefs.current.push(unsubClasses);
+
+    // Leave Requests
+    const leaveQuery = query(
+      collection(db, 'leaveRequests'),
+      where('userId', '==', user.uid),
+      orderBy('submittedAt', 'desc'),
+      limit(3)
+    );
+    const unsubLeave = onSnapshot(leaveQuery, (snapshot) => {
+      setLearnerStats(prev => ({ ...prev, leaveRequests: snapshot.size }));
+      const leaveActs = snapshot.docs.map(docSnap => {
+        const data = docSnap.data();
+        const submittedAt = data.submittedAt.toDate();
+        const status: RecentActivity['status'] = data.status === 'approved' ? 'success' : data.status === 'rejected' ? 'error' : 'pending';
+        return {
+          id: docSnap.id,
+          type: 'leave_request',
+          title: `Leave request ${data.status}`,
+          description: `${data.type} leave for ${data.days} day(s) - ${data.reason}`,
+          timestamp: submittedAt,
+          status
+        } as RecentActivity;
+      });
+      setRecentActivity(prev => {
+        // Merge with other activities
+        return [
+          ...prev.filter(a => a.type !== 'leave_request'),
+          ...leaveActs
+        ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 10);
+      });
+    }, (err) => setError('Failed to load leave requests'));
+    unsubRefs.current.push(unsubLeave);
+
+    // Pending Documents
+    const docsQuery = query(
+      collection(db, 'documents'),
+      where('userId', '==', user.uid),
+      where('status', '==', 'pending'),
+      orderBy('uploadedAt', 'desc'),
+      limit(3)
+    );
+    const unsubDocs = onSnapshot(docsQuery, (snapshot) => {
+      setLearnerStats(prev => ({ ...prev, pendingDocuments: snapshot.size }));
+      const docActs = snapshot.docs.map(docSnap => {
+        const data = docSnap.data();
+        const uploadedAt = data.uploadedAt.toDate();
+        const status: RecentActivity['status'] = data.status === 'approved' ? 'success' : data.status === 'rejected' ? 'error' : 'pending';
+        return {
+          id: docSnap.id,
+          type: 'document_upload',
+          title: `Document ${data.status}`,
+          description: `Uploaded ${data.name} - ${data.status}`,
+          timestamp: uploadedAt,
+          status
+        } as RecentActivity;
+      });
+      setRecentActivity(prev => {
+        // Merge with other activities
+        return [
+          ...prev.filter(a => a.type !== 'document_upload'),
+          ...docActs
+        ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 10);
+      });
+    }, (err) => setError('Failed to load documents'));
+    unsubRefs.current.push(unsubDocs);
+
+    // Placement Status
+    let unsubPlacement: any = null;
+    (async () => {
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+      const userData = userDoc.data();
+      if (userData?.placementId) {
+        const placementRef = doc(db, 'placements', userData.placementId);
+        unsubPlacement = onSnapshot(placementRef, (placementDoc) => {
+          if (placementDoc.exists()) {
+            const placementData = placementDoc.data();
+            setLearnerStats(prev => ({ ...prev, placementStatus: placementData.status || 'active' }));
+            setPlacementInfo({ ...(placementData as PlacementInfo), id: placementDoc.id } as PlacementInfo);
+          } else {
+            setLearnerStats(prev => ({ ...prev, placementStatus: 'inactive' }));
+            setPlacementInfo(null);
+          }
+        }, (err) => setError('Failed to load placement info'));
+        unsubRefs.current.push(unsubPlacement);
+      } else {
+        setLearnerStats(prev => ({ ...prev, placementStatus: 'inactive' }));
+        setPlacementInfo(null);
+      }
+    })();
+
+    setIsLoading(false);
+    setIsRefreshing(false);
+    return () => {
+      unsubRefs.current.forEach(unsub => unsub && unsub());
+      unsubRefs.current = [];
+    };
+  }, [user]);
 
   const handleRefresh = () => {
-    loadDashboardData()
-    toast.info('Dashboard refreshed')
+    setIsRefreshing(true);
+    setTimeout(() => setIsRefreshing(false), 500);
+    toast.info('Dashboard refreshed');
   }
 
-  const handleQuickAction = (action: string) => {
-    switch (action) {
-      case 'checkin':
-        router.push('/learner/check-in')
-        break
-      case 'leave':
-        router.push('/learner/leave')
-        break
-      case 'documents':
-        router.push('/learner/documents')
-        break
-      case 'profile':
-        router.push('/learner/profile')
-        break
-      default:
-        break
+  const [quickActionLoading, setQuickActionLoading] = useState<string | null>(null);
+  const handleQuickAction = async (action: string) => {
+    setQuickActionLoading(action);
+    try {
+      switch (action) {
+        case 'checkin':
+          toast.info('Navigating to Check-In...');
+          router.push('/learner/check-in');
+          break;
+        case 'leave':
+          toast.info('Navigating to Leave Request...');
+          router.push('/learner/leave');
+          break;
+        case 'documents':
+          toast.info('Navigating to Documents...');
+          router.push('/learner/documents');
+          break;
+        case 'profile':
+          toast.info('Navigating to Profile...');
+          router.push('/learner/profile');
+          break;
+        default:
+          break;
+      }
+    } catch (err) {
+      toast.error('Failed to perform action.');
+    } finally {
+      setTimeout(() => setQuickActionLoading(null), 800);
     }
   }
 
@@ -179,17 +374,54 @@ export default function LearnerDashboard() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
       </AdminLayout>
-    )
+    );
   }
 
   return (
     <AdminLayout userRole="learner">
       <div className="space-y-6">
+        {/* Dashboard Customization Button */}
+        <div className="flex justify-end">
+          <button
+            className="flex items-center gap-2 px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium border border-gray-200 shadow-sm"
+            onClick={() => setShowPrefs(v => !v)}
+            aria-label="Customize dashboard widgets"
+          >
+            <Settings className="h-4 w-4" />
+            Customize
+          </button>
+        </div>
+        {showPrefs && (
+          <div className="mb-4 p-4 bg-white border rounded shadow-sm animate-in fade-in duration-300">
+            <div className="font-semibold mb-2 text-gray-700">Show/Hide Dashboard Widgets</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {[
+                { key: 'welcome', label: 'Welcome Card' },
+                { key: 'notifications', label: 'Notifications' },
+                { key: 'wilProgress', label: 'WIL Progress' },
+                { key: 'activity', label: 'Recent Activity' },
+                { key: 'placement', label: 'Placement Info' },
+                { key: 'quickActions', label: 'Quick Actions' },
+                { key: 'upcomingClasses', label: 'Upcoming Classes' },
+                { key: 'aiMentor', label: 'AI Career Mentor' },
+              ].map(w => (
+                <label key={w.key} className="flex items-center gap-2 text-xs text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={prefs[w.key as keyof typeof prefs] !== false}
+                    onChange={e => setWidgetVisible(w.key as import('@/hooks/useLearnerDashboardPrefs').LearnerDashboardWidget, e.target.checked)}
+                  />
+                  {w.label}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
         {/* Header with Refresh Button */}
-        <div className="flex items-center justify-between">
+        <header className="flex items-center justify-between" role="banner">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Learner Dashboard</h1>
-            <p className="text-gray-600">Track your WIL progress and manage your learning journey</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900" tabIndex={0} aria-label="Learner Dashboard">Learner Dashboard</h1>
+            <p className="text-gray-600" tabIndex={0}>Track your WIL progress and manage your learning journey</p>
           </div>
           <Button
             onClick={handleRefresh}
@@ -197,12 +429,12 @@ export default function LearnerDashboard() {
             variant="outline"
             size="sm"
             className="flex items-center space-x-2"
+            aria-label="Refresh dashboard"
           >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
             <span>Refresh</span>
           </Button>
-        </div>
-
+        </header>
         {/* Error Alert */}
         {error && (
           <Alert className="border-red-200 bg-red-50">
@@ -210,157 +442,101 @@ export default function LearnerDashboard() {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-
         {/* Welcome Card */}
-        <WelcomeCard 
-          userName={user?.displayName || "Learner"} 
-          userRole="learner" 
-          className="mb-6 animate-in slide-in-from-bottom duration-1000 delay-200 ease-out"
-        />
-
+        {prefs.welcome !== false && (
+          <WelcomeCard 
+            userName={user?.displayName || "Learner"} 
+            userRole="learner" 
+            className="mb-6 animate-in slide-in-from-bottom duration-1000 delay-200 ease-out"
+          />
+        )}
+        {/* Learner Notifications Panel */}
+        {prefs.notifications !== false && (
+          <LearnerNotificationsPanel 
+            notifications={notifications as any}
+            onMarkAsRead={markAsRead}
+            onDelete={deleteNotification}
+          />
+        )}
         {/* Key Performance Indicators */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 animate-in slide-in-from-bottom duration-1000 delay-300 ease-out">
-          <Card className="shadow-lg">
-            <CardContent className="p-3 sm:p-4 md:p-6">
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0">
-                  <Clock className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-blue-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm text-gray-600 truncate">WIL Hours</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-blue-600">{learnerStats.workHours}</p>
-                  <p className="text-xs text-gray-500 truncate">of {learnerStats.targetHours} required</p>
-                </div>
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 animate-in slide-in-from-bottom duration-1000 delay-300 ease-out">
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Work Hours</p>
+                <p className="text-2xl font-bold text-gray-900">{learnerStats.workHours}</p>
+                <p className="text-xs text-gray-500">of {learnerStats.targetHours} target</p>
               </div>
-            </CardContent>
+              <Clock className="h-8 w-8 text-blue-600" />
+            </div>
+            <div className="mt-2">
+              <Progress value={progressPercentage} className="h-2" />
+            </div>
           </Card>
-
-          <Card className="shadow-lg">
-            <CardContent className="p-3 sm:p-4 md:p-6">
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="p-1.5 sm:p-2 bg-green-100 rounded-lg flex-shrink-0">
-                  <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-green-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm text-gray-600 truncate">Training Modules</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-600">{learnerStats.completedCourses}</p>
-                  <p className="text-xs text-gray-500 truncate">Completed</p>
-                </div>
+          
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Courses</p>
+                <p className="text-2xl font-bold text-gray-900">{learnerStats.completedCourses}</p>
+                <p className="text-xs text-gray-500">completed</p>
               </div>
-            </CardContent>
+              <BookOpen className="h-8 w-8 text-green-600" />
+            </div>
           </Card>
-
-          <Card className="shadow-lg">
-            <CardContent className="p-3 sm:p-4 md:p-6">
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="p-1.5 sm:p-2 bg-purple-100 rounded-lg flex-shrink-0">
-                  <Award className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-purple-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm text-gray-600 truncate">Programmes</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-purple-600">{learnerStats.certificates}</p>
-                  <p className="text-xs text-gray-500 truncate">Enrolled</p>
-                </div>
+          
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Certificates</p>
+                <p className="text-2xl font-bold text-gray-900">{learnerStats.certificates}</p>
+                <p className="text-xs text-gray-500">earned</p>
               </div>
-            </CardContent>
+              <Award className="h-8 w-8 text-purple-600" />
+            </div>
           </Card>
-
-          <Card className="shadow-lg">
-            <CardContent className="p-3 sm:p-4 md:p-6">
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="p-1.5 sm:p-2 bg-orange-100 rounded-lg flex-shrink-0">
-                  <Calendar className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-orange-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm text-gray-600 truncate">Training Sessions</p>
-                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-orange-600">{learnerStats.upcomingClasses}</p>
-                  <p className="text-xs text-gray-500 truncate">Scheduled</p>
-                </div>
+          
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Placement</p>
+                <p className="text-2xl font-bold text-gray-900 capitalize">{learnerStats.placementStatus}</p>
+                <p className="text-xs text-gray-500">status</p>
               </div>
-            </CardContent>
+              <MapPin className="h-8 w-8 text-orange-600" />
+            </div>
           </Card>
         </div>
-
         {/* Monthly Hours Progress */}
         <MonthlyHoursProgress 
           loggedHours={monthlyHours}
           targetHours={learnerStats.targetHours}
           className="animate-in slide-in-from-bottom duration-1000 delay-700 ease-out"
         />
-
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 animate-in slide-in-from-bottom duration-1000 delay-500 ease-out">
-          {/* Left Column - WIL Progress and Recent Activity */}
-          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-            {/* WIL Progress */}
-            <Card>
-              <CardHeader className="pb-3 sm:pb-6">
-                <CardTitle className="flex items-center space-x-2 text-sm sm:text-base">
-                  <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
-                  <span className="truncate">Work-Integrated Learning (WIL) Progress</span>
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse flex-shrink-0"></div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 sm:space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs sm:text-sm">
-                    <span className="text-gray-600 truncate">WIL Hours Completed</span>
-                    <span className="font-semibold ml-2">{learnerStats.workHours} / {learnerStats.targetHours}</span>
-                  </div>
-                  <Progress value={progressPercentage} className="h-2 sm:h-3" />
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>0 hours</span>
-                    <span>{learnerStats.targetHours} hours required</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-blue-50 rounded-lg space-y-2 sm:space-y-0">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 rounded-full bg-yellow-500 flex-shrink-0"></div>
-                    <span className="font-medium text-blue-900 text-sm sm:text-base">Prorata Stipend</span>
-                  </div>
-                  <Badge variant="outline" className="bg-blue-100 text-blue-800 w-fit">
-                    {Math.round(progressPercentage)}% Complete
-                  </Badge>
-                </div>
-
-                <Button 
-                  onClick={() => handleQuickAction('checkin')}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-sm sm:text-base"
-                >
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Check-In to Work Placement
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Recent Activity */}
-            <Card>
-              <CardHeader className="pb-3 sm:pb-6">
-                <CardTitle className="flex items-center space-x-2 text-sm sm:text-base">
-                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 animate-in slide-in-from-bottom duration-1000 delay-500 ease-out">
+          {/* Recent Activity */}
+          {prefs.activity !== false && (
+            <Card className="lg:col-span-1">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center space-x-2 text-sm">
+                  <Activity className="h-4 w-4 text-blue-600" />
                   <span>Recent Activity</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3 sm:space-y-4">
+                <div className="space-y-3">
                   {recentActivity.length > 0 ? (
-                    recentActivity.map((activity) => (
-                      <div key={activity.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                    recentActivity.slice(0, 5).map((activity) => (
+                      <div key={activity.id} className="flex items-start space-x-3 p-2 rounded-lg hover:bg-gray-50">
                         <div className="flex-shrink-0 mt-1">
                           {getStatusIcon(activity.type)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">{activity.title}</p>
-                          <p className="text-xs text-gray-600 truncate">{activity.description}</p>
-                          <p className="text-xs text-gray-500 mt-1">{activity.timestamp.toLocaleString()}</p>
+                          <p className="text-sm font-medium text-gray-900 truncate">{activity.title}</p>
+                          <p className="text-xs text-gray-500 truncate">{activity.description}</p>
+                          <p className="text-xs text-gray-400">{activity.timestamp.toLocaleDateString()}</p>
                         </div>
-                        <Badge 
-                          variant="outline" 
-                          className={`text-xs ${getStatusColor(activity.status)}`}
-                        >
-                          {activity.status}
-                        </Badge>
                       </div>
                     ))
                   ) : (
@@ -372,176 +548,152 @@ export default function LearnerDashboard() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          )}
 
-          {/* Right Column - Placement and Quick Actions */}
-          <div className="space-y-4 sm:space-y-6">
-            {/* Current WIL Placement */}
-            <Card>
-              <CardHeader className="pb-3 sm:pb-6">
-                <CardTitle className="flex items-center space-x-2 text-sm sm:text-base">
-                  <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
-                  <span>Current WIL Placement</span>
+          {/* Placement Information */}
+          {prefs.placement !== false && (
+            <Card className="lg:col-span-1">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center space-x-2 text-sm">
+                  <MapPin className="h-4 w-4 text-green-600" />
+                  <span>Placement Info</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 sm:space-y-4">
+              <CardContent>
                 {placementInfo ? (
-                  <>
-                    <div className="p-3 sm:p-4 bg-green-50 rounded-lg">
-                      <h3 className="font-semibold text-green-900 text-sm sm:text-base">{placementInfo.companyName}</h3>
-                      <p className="text-xs sm:text-sm text-green-700">{placementInfo.position}</p>
-                      <Badge className="bg-green-100 text-green-800 mt-2 text-xs">
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{placementInfo.companyName}</p>
+                      <p className="text-xs text-gray-500">{placementInfo.position}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Badge variant={placementInfo.status === 'active' ? 'default' : 'secondary'}>
                         {placementInfo.status}
                       </Badge>
+                      {placementInfo.status === 'active' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleReportStipendIssue}
+                          className="text-xs"
+                        >
+                          Report Issue
+                        </Button>
+                      )}
                     </div>
-                    
-                    <div className="space-y-2">
-                      <Button 
-                        onClick={handleReportStipendIssue}
-                        variant="outline" 
-                        className="w-full border-red-200 text-red-600 hover:bg-red-50 text-xs sm:text-sm"
-                      >
-                        <AlertTriangle className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                        Report Stipend Issue
-                      </Button>
-                      
-                      <Button 
-                        onClick={() => handleQuickAction('documents')}
-                        variant="outline" 
-                        className="w-full text-xs sm:text-sm"
-                      >
-                        <FileText className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                        WIL Documents
-                      </Button>
-                    </div>
-                  </>
+                  </div>
                 ) : (
                   <div className="text-center py-6 text-gray-500">
                     <MapPin className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm">No active placement</p>
-                    <p className="text-xs text-gray-400 mt-1">Contact your administrator</p>
+                    <p className="text-sm">No placement assigned</p>
                   </div>
                 )}
               </CardContent>
             </Card>
+          )}
 
-            {/* AI Career Mentor */}
-            <Card>
-              <CardHeader className="pb-3 sm:pb-6">
-                <CardTitle className="flex items-center space-x-2 text-sm sm:text-base">
-                  <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 flex-shrink-0" />
-                  <span>AI Career Mentor</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">Get personalized WIL guidance and career advice</p>
-                <Button className="w-full bg-orange-600 hover:bg-orange-700 text-xs sm:text-sm">
-                  <MessageCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                  Start Chat
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader className="pb-3 sm:pb-6">
-                <CardTitle className="flex items-center space-x-2 text-sm sm:text-base">
-                  <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 flex-shrink-0" />
+          {/* Quick Actions */}
+          {prefs.quickActions !== false && (
+            <Card className="lg:col-span-1">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center space-x-2 text-sm">
+                  <Zap className="h-4 w-4 text-purple-600" />
                   <span>Quick Actions</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <ReportIssueModal
-                  userRole="learner"
-                  userId={user?.uid || ''}
-                  userName={user?.displayName || 'Learner'}
-                  userEmail={user?.email || ''}
-                  placementInfo={placementInfo ? {
-                    id: placementInfo.id,
-                    companyName: placementInfo.companyName,
-                    position: placementInfo.position
-                  } : undefined}
-                  className="w-full justify-start text-xs sm:text-sm"
-                />
-                <Button 
-                  onClick={() => handleQuickAction('leave')}
-                  variant="outline" 
-                  className="w-full justify-start text-xs sm:text-sm"
-                >
-                  <Calendar className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                  Request Leave
-                </Button>
-                <Button 
-                  onClick={() => handleQuickAction('documents')}
-                  variant="outline" 
-                  className="w-full justify-start text-xs sm:text-sm"
-                >
-                  <FileText className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                  Manage Documents
-                </Button>
-                <Button 
-                  onClick={() => handleQuickAction('profile')}
-                  variant="outline" 
-                  className="w-full justify-start text-xs sm:text-sm"
-                >
-                  <User className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                  Update Profile
-                </Button>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleQuickAction('checkin')}
+                    disabled={quickActionLoading === 'checkin'}
+                    className="text-xs"
+                  >
+                    {quickActionLoading === 'checkin' ? 'Loading...' : 'Check In'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleQuickAction('leave')}
+                    disabled={quickActionLoading === 'leave'}
+                    className="text-xs"
+                  >
+                    {quickActionLoading === 'leave' ? 'Loading...' : 'Leave Request'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleQuickAction('documents')}
+                    disabled={quickActionLoading === 'documents'}
+                    className="text-xs"
+                  >
+                    {quickActionLoading === 'documents' ? 'Loading...' : 'Documents'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleQuickAction('profile')}
+                    disabled={quickActionLoading === 'profile'}
+                    className="text-xs"
+                  >
+                    {quickActionLoading === 'profile' ? 'Loading...' : 'Profile'}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
-          </div>
+          )}
         </div>
-
         {/* Upcoming Training Sessions */}
-        <Card className="animate-in slide-in-from-bottom duration-1000 delay-1100 ease-out">
-          <CardHeader className="pb-3 sm:pb-6">
-            <CardTitle className="flex items-center space-x-2 text-sm sm:text-base">
-              <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 flex-shrink-0" />
-              <span>Upcoming Training Sessions</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {upcomingClasses.length > 0 ? (
-                upcomingClasses.map((classSession) => (
-                  <div key={classSession.id} className="p-3 sm:p-4 border rounded-lg hover:shadow-md transition-shadow">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-2 sm:space-y-0">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{classSession.title}</h4>
-                        <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 mt-2 text-xs sm:text-sm text-gray-600">
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                            <span className="truncate">{classSession.date}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Clock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                            <span className="truncate">{classSession.time}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                            <span className="truncate">{classSession.location}</span>
+        {prefs.upcomingClasses !== false && (
+          <Card className="animate-in slide-in-from-bottom duration-1000 delay-1100 ease-out">
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="flex items-center space-x-2 text-sm sm:text-base">
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 flex-shrink-0" />
+                <span>Upcoming Training Sessions</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {upcomingClasses.length > 0 ? (
+                  upcomingClasses.map((classSession) => (
+                    <div key={classSession.id} className="p-3 sm:p-4 border rounded-lg hover:shadow-md transition-shadow">
+                      <div className="flex flex-col md:flex-row md:items-start md:justify-between space-y-2 md:space-y-0">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{classSession.title}</h4>
+                          <div className="flex flex-col md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-4 mt-2 text-xs sm:text-sm text-gray-600">
+                            <div className="flex items-center space-x-1">
+                              <Calendar className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                              <span className="truncate">{classSession.date}</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <Clock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                              <span className="truncate">{classSession.time}</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <MapPin className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                              <span className="truncate">{classSession.location}</span>
+                            </div>
                           </div>
                         </div>
+                        <Badge variant="outline" className="w-fit text-xs">
+                          {classSession.status}
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className="w-fit text-xs">
-                        {classSession.status}
-                      </Badge>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center py-6 text-gray-500">
+                    <Calendar className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-gray-300" />
+                    <p className="text-sm sm:text-base">No upcoming sessions</p>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-6 text-gray-500">
-                  <Calendar className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 text-gray-300" />
-                  <p className="text-sm sm:text-base">No upcoming sessions</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        {/* AI Support Chatbot */}
+        <AiChatbot />
       </div>
-      
-      {/* AI Support Chatbot */}
-      <AiChatbot />
     </AdminLayout>
-  )
+  );
 }

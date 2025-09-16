@@ -1,3 +1,4 @@
+import { logUserCreated, logUserStatusUpdated } from './auditLogActions'
 'use server'
 
 import { adminDb, adminAuth } from '@/lib/firebase-admin'
@@ -62,7 +63,7 @@ export async function createUser(formData: FormData) {
     const hashedPin = crypto.createHash('sha256').update(pin).digest('hex')
 
     // Save user data to Firestore
-    const userDoc = await adminDb.collection('users').doc(user.uid).set({
+    await adminDb.collection('users').doc(user.uid).set({
       ...validatedData,
       uid: user.uid,
       role: 'applicant',
@@ -80,6 +81,9 @@ export async function createUser(formData: FormData) {
       applicationStatus: 'pending_review',
       approvedAt: null,
     })
+
+    // Audit log: user created
+    await logUserCreated(user.uid, 'applicant', { email: validatedData.email })
 
     return { 
       success: true, 
@@ -130,9 +134,12 @@ export async function updateUserStatus(userId: string, status: string, role?: st
       updateData.approvedAt = new Date()
     }
 
-    await adminDb.collection('users').doc(userId).update(updateData)
+  await adminDb.collection('users').doc(userId).update(updateData)
 
-    return { success: true }
+  // Audit log: user status updated
+  await logUserStatusUpdated(userId, role || 'unknown', status)
+
+  return { success: true }
   } catch (error) {
     return { success: false, error: 'Failed to update user status' }
   }

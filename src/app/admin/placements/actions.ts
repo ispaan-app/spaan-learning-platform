@@ -2,6 +2,7 @@
 
 import { adminDb } from '@/lib/firebase-admin'
 import { revalidatePath } from 'next/cache'
+import { safeToDate } from '@/lib/date-utils'
 
 export interface Placement {
   id?: string
@@ -76,12 +77,16 @@ export async function getPlacementsAction(): Promise<Placement[]> {
     const placementsRef = adminDb.collection('placements')
     const snapshot = await placementsRef.orderBy('createdAt', 'desc').get()
     
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt.toDate(),
-      updatedAt: doc.data().updatedAt.toDate()
-    })) as Placement[]
+    return snapshot.docs.map(doc => {
+      const data = doc.data()
+      
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: safeToDate(data.createdAt),
+        updatedAt: safeToDate(data.updatedAt)
+      }
+    }) as Placement[]
   } catch (error) {
     console.error('Error fetching placements:', error)
     return []
@@ -98,11 +103,12 @@ export async function getPlacementByIdAction(placementId: string): Promise<Place
     }
 
     const data = placementDoc.data()!
+    
     return {
       id: placementDoc.id,
       ...data,
-      createdAt: data.createdAt.toDate(),
-      updatedAt: data.updatedAt.toDate()
+      createdAt: safeToDate(data.createdAt),
+      updatedAt: safeToDate(data.updatedAt)
     } as Placement
   } catch (error) {
     console.error('Error fetching placement:', error)

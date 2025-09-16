@@ -71,14 +71,16 @@ export default function PlacementsPage() {
   }, [])
 
   const filteredPlacements = placements.filter(placement => {
-    const matchesSearch = placement.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         placement.suburb.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         placement.province.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesStatus = statusFilter === 'all' || placement.status === statusFilter
-    
-    return matchesSearch && matchesStatus
-  })
+    const companyName = placement.companyName ? placement.companyName.toLowerCase() : '';
+    const suburb = placement.suburb ? placement.suburb.toLowerCase() : '';
+    const province = placement.province ? placement.province.toLowerCase() : '';
+    const search = searchTerm.toLowerCase();
+    const matchesSearch = companyName.includes(search) ||
+                         suburb.includes(search) ||
+                         province.includes(search);
+    const matchesStatus = statusFilter === 'all' || placement.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {

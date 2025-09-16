@@ -110,12 +110,7 @@ export function LoginSelectionPage() {
                   <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform duration-200 ease-out" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="group hover:shadow-md transition-all duration-200 ease-out">
-                <Link href="/test-login" className="flex items-center">
-                  <Crown className="w-4 h-4 mr-2" />
-                  Test Login (Dev)
-                </Link>
-              </Button>
+              {/* Removed Test Login (Dev) button */}
             </div>
           </div>
         </div>

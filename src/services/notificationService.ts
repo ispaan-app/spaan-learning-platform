@@ -1,3 +1,12 @@
+  /**
+   * Send an announcement notification to all users or users by role.
+   * @param type NotificationType (should be 'announcement')
+   * @param title Title of the announcement
+   * @param message Message body
+   * @param role Optional: restrict to users with this role (e.g., 'learner', 'admin', etc.)
+   * @param data Optional: extra data
+   * @param priority NotificationPriority
+   */
 import { 
   collection, 
   doc, 
@@ -329,6 +338,56 @@ export class NotificationService {
       await batch.commit()
     } catch (error) {
       console.error('Error notifying admins:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Send an announcement notification to all users or users by role.
+   * @param type NotificationType (should be 'announcement')
+   * @param title Title of the announcement
+   * @param message Message body
+   * @param role Optional: restrict to users with this role (e.g., 'learner', 'admin', etc.)
+   * @param data Optional: extra data
+   * @param priority NotificationPriority
+   */
+  async notifyAllUsers(
+    type: NotificationType,
+    title: string,
+    message: string,
+    role?: string,
+    data?: Record<string, any>,
+    priority: NotificationPriority = 'medium'
+  ): Promise<void> {
+    try {
+      const usersRef = collection(db, 'users')
+      const usersQuery = role
+        ? query(usersRef, where('role', '==', role))
+        : usersRef
+      const usersSnapshot = await getDocs(usersQuery)
+
+      const batch = writeBatch(db)
+      const notificationsRef = collection(db, 'notifications')
+
+      usersSnapshot.docs.forEach(userDoc => {
+        const notificationRef = doc(notificationsRef)
+        batch.set(notificationRef, {
+          userId: userDoc.id,
+          type,
+          title,
+          message,
+          data,
+          read: false,
+          priority,
+          category: this.getCategoryFromType(type),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        })
+      })
+
+      await batch.commit()
+    } catch (error) {
+      console.error('Error broadcasting announcement:', error)
       throw error
     }
   }

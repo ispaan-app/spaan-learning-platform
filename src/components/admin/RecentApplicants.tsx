@@ -30,6 +30,22 @@ interface RecentApplicantsProps {
 }
 
 export function RecentApplicants({ applicants }: RecentApplicantsProps) {
+  // Export applicants to CSV
+  const handleExportCSV = () => {
+    if (!applicants.length) return;
+    const header = ['First Name', 'Last Name', 'Email', 'Program', 'Application Date', 'Status'];
+    const rows = applicants.map(a => [a.firstName, a.lastName, a.email, a.program, a.applicationDate, a.status]);
+    const csvContent = [header, ...rows].map(r => r.map(x => `"${x}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'recent_applicants.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending-review':
@@ -91,6 +107,11 @@ export function RecentApplicants({ applicants }: RecentApplicantsProps) {
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end mb-2">
+        <Button size="sm" variant="secondary" onClick={handleExportCSV} disabled={!applicants.length}>
+          Export CSV
+        </Button>
+      </div>
       {applicants.map((applicant) => (
         <div 
           key={applicant.id}

@@ -1,3 +1,4 @@
+import { logDocumentUploaded, logDocumentReviewed } from './auditLogActions'
 'use server'
 
 import { adminDb, adminStorage } from '@/lib/firebase-admin'
@@ -94,6 +95,8 @@ export async function uploadDocument(formData: FormData) {
       updatedAt: new Date(),
     })
 
+    // Audit log: document uploaded
+    await logDocumentUploaded(userId, 'applicant', documentType, { fileName: file.name, documentId: docRef.id })
     return { 
       success: true, 
       documentId: docRef.id,
@@ -141,7 +144,9 @@ export async function reviewDocument(documentId: string, status: 'approved' | 'r
       updatedAt: new Date(),
     })
 
-    return { success: true }
+  // Audit log: document reviewed
+  await logDocumentReviewed(document.userId, 'admin', document.documentType, status, { documentId, reviewedBy, rejectionReason })
+  return { success: true }
   } catch (error) {
     return { success: false, error: 'Failed to review document' }
   }

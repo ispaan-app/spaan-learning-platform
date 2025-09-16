@@ -6,9 +6,17 @@ import { ArrowRight, Users, Shield, Brain, CheckCircle, Star } from 'lucide-reac
 
 interface HomePageContentProps {
   heroImageUrl: string
+  platformName?: string
+  primaryColor?: string
+  secondaryColor?: string
 }
 
-export function HomePageContent({ heroImageUrl }: HomePageContentProps) {
+export function HomePageContent({ 
+  heroImageUrl, 
+  platformName = 'iSpaan',
+  primaryColor = '#4F46E5',
+  secondaryColor = '#7C3AED'
+}: HomePageContentProps) {
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -19,7 +27,7 @@ export function HomePageContent({ heroImageUrl }: HomePageContentProps) {
               <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xl">iS</span>
               </div>
-              <span className="text-2xl font-bold text-gray-900">iSpaan</span>
+              <span className="text-2xl font-bold text-gray-900">{platformName}</span>
             </div>
             <div className="flex items-center space-x-6">
               <Link 
@@ -47,7 +55,7 @@ export function HomePageContent({ heroImageUrl }: HomePageContentProps) {
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
               Welcome to{' '}
               <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                iSpaan
+                {platformName}
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-200 mb-12 max-w-4xl mx-auto leading-relaxed">
@@ -220,7 +228,7 @@ export function HomePageContent({ heroImageUrl }: HomePageContentProps) {
                 <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-xl">iS</span>
                 </div>
-                <span className="text-2xl font-bold">iSpaan</span>
+                <span className="text-2xl font-bold">{platformName}</span>
               </div>
               <p className="text-gray-400">
                 Empowering learners through work-integrated learning experiences.
@@ -256,7 +264,7 @@ export function HomePageContent({ heroImageUrl }: HomePageContentProps) {
           </div>
           
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 iSpaan App. All rights reserved.</p>
+            <p>&copy; 2024 iSpaan. All rights reserved.</p>
           </div>
         </div>
       </footer>

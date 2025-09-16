@@ -1,13 +1,23 @@
+
 'use client'
+import { RecentPlatformActivity } from '@/components/admin/RecentPlatformActivity'
+import { AdminNotificationsPanel } from '@/components/notifications/AdminNotificationsPanel'
+import { useRealtimeAdminActivity } from '@/hooks/useRealtimeAdminActivity'
+import { useRealtimeAdminNotifications } from '@/hooks/useRealtimeAdminNotifications'
+import { useAdminList } from '@/hooks/useAdminList'
 
 import { db } from '@/lib/firebase'
-import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore'
+import { doc, updateDoc } from 'firebase/firestore'
+import { collection, getDocs, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore'
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { notificationActions } from '@/lib/notificationActions'
 import { AiChatbot } from '@/components/ai-chatbot'
 import { FirestoreErrorHandler } from '@/components/ui/dashboard-error-handler'
+import { AdminDashboardErrorHandler } from '@/components/ui/admin-dashboard-error-handler'
 import { StatsCards } from '@/components/admin/StatsCards'
+import { UrgentAlertsPanel, UrgentAlert } from '@/components/admin/UrgentAlertsPanel'
 import { RecentApplicants } from '@/components/admin/RecentApplicants'
+import { BulkApplicantActions } from '@/components/admin/BulkApplicantActions'
 import { PlacementStatusChart } from '@/components/admin/PlacementStatusChart'
 import { OverviewChart } from '@/components/admin/OverviewChart'
 import { LearnerProgramChart } from '@/components/admin/LearnerProgramChart'
@@ -207,55 +217,151 @@ export default function AdminDashboardPage() {
   )
 }
 
+
 function AdminDashboardContent() {
-  const { user, userData } = useAuth()
+  const recentActivity = useRealtimeAdminActivity(10);
+  const adminNotifications = useRealtimeAdminNotifications(10);
+  const [searchRecent, setSearchRecent] = React.useState('');
+  const { user, userData } = useAuth();
+  const admins = useAdminList();
   const [dashboardStats, setDashboardStats] = React.useState<DashboardStats>({
     pendingApplicants: 0,
     totalLearners: 0,
     activePlacements: 0,
     assignedLearners: 0
-  })
-  const [recentApplicants, setRecentApplicants] = React.useState<RecentApplicant[]>([])
+  });
+  const [recentApplicants, setRecentApplicants] = React.useState<RecentApplicant[]>([]);
   const [applicationStatusData, setApplicationStatusData] = React.useState<ApplicationStatusData>({
     pending: 0,
     approved: 0,
     rejected: 0
-  })
-  const [learnerProgramData, setLearnerProgramData] = React.useState<LearnerProgramData[]>([])
-  const [placementStatusData, setPlacementStatusData] = React.useState<PlacementStatusData[]>([])
-  const [loading, setLoading] = React.useState(true)
+  });
+  const [learnerProgramData, setLearnerProgramData] = React.useState<LearnerProgramData[]>([]);
+  const [placementStatusData, setPlacementStatusData] = React.useState<PlacementStatusData[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<Error | null>(null);
+  const [urgentAlerts, setUrgentAlerts] = React.useState<UrgentAlert[]>([]);
 
   React.useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [
-          stats,
-          applicants,
-          appStatus,
-          programData,
-          placementData
-        ] = await Promise.all([
-          getDashboardStats(),
-          getRecentApplicants(),
-          getApplicationStatusData(),
-          getLearnerProgramData(),
-          getPlacementStatusData()
-        ])
+    setError(null);
+    setLoading(true);
 
-        setDashboardStats(stats)
-        setRecentApplicants(applicants)
-        setApplicationStatusData(appStatus)
-        setLearnerProgramData(programData)
-        setPlacementStatusData(placementData)
-      } catch (error) {
-        console.error('Error loading dashboard data:', error)
-      } finally {
-        setLoading(false)
+    // Real-time stats
+    const unsubApplicants = collection(db, 'users');
+    const unsubPlacements = collection(db, 'placements');
+
+    // Pending Applicants
+    const qPending = query(unsubApplicants, where('role', '==', 'applicant'), where('status', '==', 'pending-review'));
+    const unsubPending = onSnapshot(qPending, (snapshot) => {
+      setDashboardStats((prev) => ({ ...prev, pendingApplicants: snapshot.size }));
+      setApplicationStatusData((prev) => ({ ...prev, pending: snapshot.size }));
+    }, (err) => setError(err));
+
+    // Total Learners
+    const qLearners = query(unsubApplicants, where('role', '==', 'learner'));
+    const unsubLearners = onSnapshot(qLearners, (snapshot) => {
+      setDashboardStats((prev) => ({ ...prev, totalLearners: snapshot.size }));
+      // Learner Program Data
+      const programCounts: { [key: string]: number } = {};
+      snapshot.docs.forEach((doc: any) => {
+        const program = doc.data().program;
+        if (program) {
+          programCounts[program] = (programCounts[program] || 0) + 1;
+        }
+      });
+      setLearnerProgramData(Object.entries(programCounts).map(([program, count]) => ({
+        program: program.charAt(0).toUpperCase() + program.slice(1).replace('-', ' '),
+        count
+      })));
+    }, (err) => setError(err));
+
+    // Recent Applicants
+    const qRecent = query(unsubApplicants, where('role', '==', 'applicant'), orderBy('createdAt', 'desc'), limit(4));
+    const unsubRecent = onSnapshot(qRecent, (snapshot) => {
+      setRecentApplicants(snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })));
+    }, (err) => setError(err));
+
+    // Application Status: Approved
+    const qApproved = query(unsubApplicants, where('role', '==', 'applicant'), where('status', '==', 'approved'));
+    const unsubApproved = onSnapshot(qApproved, (snapshot) => {
+      setApplicationStatusData((prev) => ({ ...prev, approved: snapshot.size }));
+    }, (err) => setError(err));
+
+    // Application Status: Rejected
+    const qRejected = query(unsubApplicants, where('role', '==', 'applicant'), where('status', '==', 'rejected'));
+    const unsubRejected = onSnapshot(qRejected, (snapshot) => {
+      setApplicationStatusData((prev) => ({ ...prev, rejected: snapshot.size }));
+    }, (err) => setError(err));
+
+    // Placements: Active
+    const qActivePlacements = query(unsubPlacements, where('status', '==', 'active'));
+    const unsubActivePlacements = onSnapshot(qActivePlacements, (snapshot) => {
+      setDashboardStats((prev) => ({ ...prev, activePlacements: snapshot.size }));
+    }, (err) => setError(err));
+
+    // Placements: Assigned
+    const qAssignedPlacements = query(unsubPlacements, where('assignedLearnerId', '!=', null));
+    const unsubAssignedPlacements = onSnapshot(qAssignedPlacements, (snapshot) => {
+      setDashboardStats((prev) => ({ ...prev, assignedLearners: snapshot.size }));
+    }, (err) => setError(err));
+
+    // Placement Status Data
+    const unsubPlacementStatus = onSnapshot(unsubPlacements, (snapshot) => {
+      const statusCounts: { [key: string]: number } = {};
+      snapshot.docs.forEach((doc: any) => {
+        const status = doc.data().status || 'unknown';
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+      });
+      setPlacementStatusData(Object.entries(statusCounts).map(([status, count]) => ({
+        status: status.charAt(0).toUpperCase() + status.slice(1),
+        count
+      })));
+    }, (err) => setError(err));
+
+
+    // Urgent Alerts logic
+    setUrgentAlerts(() => {
+      const alerts: UrgentAlert[] = [];
+      // Example: Too many pending applicants
+      if (dashboardStats.pendingApplicants > 5) {
+        alerts.push({
+          type: 'applicant',
+          message: `There are ${dashboardStats.pendingApplicants} applicants waiting for review!`,
+          severity: 'warning',
+        });
       }
-    }
+      // Example: Placements at capacity
+      if (dashboardStats.activePlacements > 0 && dashboardStats.activePlacements === dashboardStats.assignedLearners) {
+        alerts.push({
+          type: 'placement',
+          message: 'All active placements are at full capacity!',
+          severity: 'error',
+        });
+      }
+      // Example: Learners at risk (placeholder, real logic can use AI/DropoutRiskAnalyzer)
+      // alerts.push({ type: 'learner', message: 'Some learners are at risk of dropping out.', severity: 'info' });
+      return alerts;
+    });
+    setLoading(false);
 
-    loadData()
-  }, [])
+    return () => {
+      unsubPending();
+      unsubLearners();
+      unsubRecent();
+      unsubApproved();
+      unsubRejected();
+      unsubActivePlacements();
+      unsubAssignedPlacements();
+      unsubPlacementStatus();
+    };
+  }, []);
+
+  const handleRetry = () => {
+    setError(null);
+    setLoading(true);
+    // The listeners will auto-update, so just reset error/loading
+    setTimeout(() => setLoading(false), 500);
+  };
 
   if (loading) {
     return (
@@ -265,8 +371,28 @@ function AdminDashboardContent() {
     )
   }
 
+  if (error) {
+    return (
+      <AdminLayout userRole="admin">
+        <div className="p-6">
+          <AdminDashboardErrorHandler 
+            error={error}
+            onRetry={handleRetry}
+            userRole="admin"
+            isAuthenticated={true}
+          />
+        </div>
+      </AdminLayout>
+    )
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
+  {/* Admin-to-Admin Messaging Inbox removed as requested */}
+      {/* Admin Notifications Panel */}
+      <AdminNotificationsPanel notifications={adminNotifications} />
+      {/* Urgent Alerts Panel */}
+      <UrgentAlertsPanel alerts={urgentAlerts} />
 
       {/* Welcome Card */}
       <WelcomeCard 
@@ -274,6 +400,18 @@ function AdminDashboardContent() {
         userRole="admin" 
         className="mb-6 animate-in slide-in-from-bottom duration-1000 delay-200 ease-out"
       />
+
+
+      {/* Quick Access: Audit Logs */}
+      <div className="flex justify-end mb-2 animate-in fade-in duration-700">
+        <a
+          href="/admin/audit-logs"
+          className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg shadow hover:bg-orange-700 transition-colors font-semibold text-sm gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          View Audit Logs
+        </a>
+      </div>
 
       {/* Key Performance Indicators */}
       <Suspense fallback={<StatsSkeleton />}>
@@ -286,7 +424,19 @@ function AdminDashboardContent() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom duration-1000 delay-400 ease-out">
         {/* Left Column - Recent Activity and Applicants */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Recent Applicants */}
+          {/* Recent Admin Activity Log */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <span>Recent Admin Activity</span>
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RecentPlatformActivity activities={recentActivity} />
+            </CardContent>
+          </Card>
+          {/* Recent Applicants with Quick Actions */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -295,8 +445,82 @@ function AdminDashboardContent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Suspense fallback={<ListSkeleton items={4} />}>
-              <RecentApplicants applicants={recentApplicants} />
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                <BulkApplicantActions
+                  onApproveAll={() => alert('Approve All Applicants (TODO: Implement logic)')}
+                  onSendReminders={() => alert('Send Reminders to Applicants (TODO: Implement logic)')}
+                />
+                <input
+                  type="text"
+                  placeholder="Search applicants..."
+                  className="border rounded px-2 py-1 text-sm w-full sm:w-64"
+                  value={searchRecent}
+                  onChange={e => setSearchRecent(e.target.value)}
+                />
+              </div>
+              <Suspense fallback={<ListSkeleton items={4} />}> 
+                <div className="divide-y">
+                  {recentApplicants.filter(a =>
+                    a.firstName?.toLowerCase().includes(searchRecent.toLowerCase()) ||
+                    a.lastName?.toLowerCase().includes(searchRecent.toLowerCase()) ||
+                    a.email?.toLowerCase().includes(searchRecent.toLowerCase()) ||
+                    a.program?.toLowerCase().includes(searchRecent.toLowerCase())
+                  ).map(applicant => (
+                    <div key={applicant.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 gap-2">
+                      <div>
+                        <div className="font-semibold text-gray-900">{applicant.firstName || 'Unknown'} {applicant.lastName || ''}</div>
+                        <div className="text-xs text-gray-600">{applicant.email || 'No email'}</div>
+                        <div className="text-xs text-gray-500">{applicant.program || 'Unknown program'}</div>
+                        <div className="text-xs text-gray-400">
+                          {applicant.applicationDate && applicant.applicationDate !== 'Invalid Date'
+                            ? new Date(applicant.applicationDate).toLocaleDateString()
+                            : 'No date'}
+                        </div>
+                        <div className="text-xs">
+                          <span className={`inline-block px-2 py-0.5 rounded ${applicant.status === 'pending-review' ? 'bg-yellow-100 text-yellow-800' : applicant.status === 'approved' ? 'bg-green-100 text-green-800' : applicant.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>{applicant.status ? applicant.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown'}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2 items-end">
+                        <a
+                          href={`/admin/applicants/${applicant.id}`}
+                          className="inline-flex items-center px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs font-medium shadow"
+                        >
+                          Review
+                        </a>
+                        {applicant.status === 'pending-review' && (
+                          <div className="flex gap-1">
+                            <button
+                              className="px-2 py-0.5 bg-green-500 text-white rounded text-xs hover:bg-green-600"
+                              onClick={async () => {
+                                try {
+                                  await updateDoc(doc(db, 'users', applicant.id), { status: 'approved' });
+                                } catch (err) {
+                                  alert('Failed to approve applicant.');
+                                }
+                              }}
+                            >Approve</button>
+                            <button
+                              className="px-2 py-0.5 bg-red-500 text-white rounded text-xs hover:bg-red-600"
+                              onClick={async () => {
+                                try {
+                                  await updateDoc(doc(db, 'users', applicant.id), { status: 'rejected' });
+                                } catch (err) {
+                                  alert('Failed to reject applicant.');
+                                }
+                              }}
+                            >Reject</button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {recentApplicants.length === 0 && (
+                    <div className="text-center text-gray-500 py-4">No recent applicants found.</div>
+                  )}
+                </div>
+                <div className="flex justify-end mt-2">
+                  <a href="/admin/applicants" className="text-blue-600 hover:underline text-xs font-medium">View All Applicants &rarr;</a>
+                </div>
               </Suspense>
             </CardContent>
           </Card>

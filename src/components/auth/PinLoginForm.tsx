@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { LoadingButton } from '@/components/ui/loading'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { SuccessPopup } from '@/components/ui/success-popup'
 import { Logo } from '@/components/ui/logo'
+import { SuccessPopup } from '@/components/ui/success-popup'
 
 export function PinLoginForm() {
   const [formData, setFormData] = useState({
@@ -176,17 +176,18 @@ export function PinLoginForm() {
         </div>
       </div>
 
-      {/* Success Popup */}
-      {loginResult && (
-        <SuccessPopup
-          isVisible={showSuccessPopup}
-          onClose={() => setShowSuccessPopup(false)}
-          title="Login Successful!"
-          message="Welcome back! You have successfully logged in to your account."
-          redirectTo={loginResult.redirectTo}
-          userRole={loginResult.userRole}
-        />
-      )}
+  {/* Success Popup with custom redirect message */}
+  {loginResult && (
+    <SuccessPopup
+      isVisible={showSuccessPopup}
+      onClose={() => setShowSuccessPopup(false)}
+      title="Login Successful!"
+      message="Welcome back! You have successfully logged in to your account."
+      redirectTo={loginResult.redirectTo}
+      userRole={loginResult.userRole}
+      redirectMessage="You are being securely redirected to your dashboard..."
+    />
+  )}
     </>
   )
 }

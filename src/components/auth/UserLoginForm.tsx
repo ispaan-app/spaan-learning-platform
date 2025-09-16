@@ -74,7 +74,7 @@ export function UserLoginForm() {
             redirectTo = '/'
           }
 
-          // Set login result and show success popup
+          // Set login result and show success popup with custom redirect message
           setLoginResult({
             userRole: result.userRole,
             redirectTo
@@ -174,17 +174,18 @@ export function UserLoginForm() {
         </div>
       </form>
 
-      {/* Success Popup */}
-      {loginResult && (
-        <SuccessPopup
-          isVisible={showSuccessPopup}
-          onClose={() => setShowSuccessPopup(false)}
-          title="Login Successful!"
-          message="Welcome back! You have successfully logged in to your account."
-          redirectTo={loginResult.redirectTo}
-          userRole={loginResult.userRole}
-        />
-      )}
+  {/* Success Popup with custom redirect message */}
+  {loginResult && (
+    <SuccessPopup
+      isVisible={showSuccessPopup}
+      onClose={() => setShowSuccessPopup(false)}
+      title="Login Successful!"
+      message="Welcome back! You have successfully logged in to your account."
+      redirectTo={loginResult.redirectTo}
+      userRole={loginResult.userRole}
+      redirectMessage="You are being securely redirected to your dashboard..."
+    />
+  )}
     </>
   )
 }

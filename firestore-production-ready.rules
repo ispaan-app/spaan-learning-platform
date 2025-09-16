@@ -1,0 +1,205 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role in ['admin', 'super-admin'] ||
+        request.auth.token.email in ['developer@ispaan.com', 'sifiso@thegaselagroup.co.za', 'skitzoc9@gmail.com']
+      );
+    }
+    
+    function isSuperAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'super-admin' ||
+        request.auth.token.email in ['developer@ispaan.com', 'sifiso@thegaselagroup.co.za', 'skitzoc9@gmail.com']
+      );
+    }
+    
+    function isLearner() {
+      return isAuthenticated() && (
+        request.auth.token.role in ['learner', 'applicant'] ||
+        (request.auth.token.role == null && !isAdmin())
+      );
+    }
+    
+    // Users collection - comprehensive access
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+      allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
+      allow read: if isAuthenticated(); // Allow reading for dashboard stats
+      allow create: if isAuthenticated();
+    }
+    
+    // Applications collection
+    match /applications/{applicationId} {
+      allow create: if isLearner();
+      allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
+      allow read: if isOwner(resource.data.userId);
+      allow read: if isAuthenticated(); // Allow reading for dashboard stats
+    }
+    
+    // Programs collection - public read for application forms
+    match /programs/{programId} {
+      allow read: if true; // Public programs for application
+      allow write: if isAdmin();
+      allow write: if isSuperAdmin();
+    }
+    
+    // Placements collection
+    match /placements/{placementId} {
+      allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
+      allow read: if isAuthenticated(); // Allow reading for dashboard stats
+    }
+    
+    // Attendance collection
+    match /attendance/{attendanceId} {
+      allow read: if isOwner(resource.data.userId);
+      allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
+      allow create: if isLearner();
+      allow read: if isAuthenticated(); // Allow reading for dashboard stats
+    }
+    
+    // Leave requests collection
+    match /leaveRequests/{leaveId} {
+      allow read, create: if isOwner(resource.data.userId);
+      allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
+      allow read: if isAuthenticated(); // Allow reading for dashboard stats
+    }
+    
+    // Stipend reports collection
+    match /stipendReports/{reportId} {
+      allow read, create: if isOwner(resource.data.userId);
+      allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
+      allow read: if isAuthenticated(); // Allow reading for dashboard stats
+      allow create: if isAuthenticated();
+    }
+    
+    // Issue reports collection
+    match /issueReports/{issueId} {
+      allow read, create: if isOwner(resource.data.userId);
+      allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
+      allow read: if isAuthenticated(); // Allow reading for dashboard stats
+    }
+    
+    // Learner profiles collection
+    match /learnerProfiles/{profileId} {
+      allow read, write: if isOwner(resource.data.userId);
+      allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
+      allow create: if isLearner();
+      allow read: if isAuthenticated(); // Allow reading for dashboard stats
+    }
+    
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow read, write: if isOwner(resource.data.userId);
+      allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
+      allow read: if isAuthenticated(); // Allow reading for dashboard stats
+    }
+    
+    // Settings collection - public read for appearance, admin write
+    match /settings/{settingId} {
+      allow read: if true; // Public read for appearance settings
+      allow write: if isSuperAdmin();
+    }
+    
+    // Activities collection
+    match /activities/{activityId} {
+      allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
+      allow create: if isAuthenticated();
+      allow read: if isOwner(resource.data.userId);
+      allow read: if isAuthenticated(); // Allow reading for dashboard stats
+    }
+    
+    // Documents collection
+    match /documents/{documentId} {
+      allow read, write: if isOwner(resource.data.userId);
+      allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
+      allow create: if isAuthenticated();
+      allow read: if isAuthenticated(); // Allow reading for dashboard stats
+    }
+    
+    // Additional collections for admin dashboard
+    match /classSessions/{sessionId} {
+      allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
+      allow read: if isAuthenticated();
+    }
+    
+    match /certificates/{certificateId} {
+      allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
+      allow read: if isOwner(resource.data.userId);
+      allow read: if isAuthenticated();
+    }
+    
+    match /learnerCourses/{courseId} {
+      allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
+      allow read: if isOwner(resource.data.userId);
+      allow read: if isAuthenticated();
+    }
+    
+    // Super admin only collections
+    match /auditLogs/{logId} {
+      allow read, write: if isSuperAdmin();
+    }
+    
+    match /audit-logs/{logId} {
+      allow read, write: if isSuperAdmin();
+    }
+    
+    match /performance/{perfId} {
+      allow read, write: if isSuperAdmin();
+    }
+    
+    match /securityLogs/{logId} {
+      allow read, write: if isSuperAdmin();
+    }
+    
+    match /active-sessions/{sessionId} {
+      allow read, write: if isSuperAdmin();
+      allow create: if isAuthenticated();
+      allow read, update: if isOwner(resource.data.userId);
+    }
+    
+    match /health/{healthId} {
+      allow read, write: if isAdmin();
+      allow read, write: if isSuperAdmin();
+    }
+    
+    // Emergency fallback rule - more permissive for admin access
+    match /{collection}/{document} {
+      allow read: if isAuthenticated() && (
+        request.auth.token.role in ['admin', 'super-admin'] ||
+        request.auth.token.email in ['developer@ispaan.com', 'sifiso@thegaselagroup.co.za', 'skitzoc9@gmail.com']
+      );
+      allow write: if isAuthenticated() && (
+        request.auth.token.role in ['admin', 'super-admin'] ||
+        request.auth.token.email in ['developer@ispaan.com', 'sifiso@thegaselagroup.co.za', 'skitzoc9@gmail.com']
+      );
+    }
+  }
+}
+

@@ -31,16 +31,15 @@ const DEFAULT_CONFIG: SecurityHeadersConfig = {
     defaultSrc: ["'self'"],
     scriptSrc: [
       "'self'",
-      "'unsafe-inline'",
-      "'unsafe-eval'", // Required for Next.js
       'https://www.gstatic.com',
       'https://www.google.com',
-      'https://apis.google.com'
+      'https://apis.google.com',
+      'https://www.googletagmanager.com'
     ],
     styleSrc: [
       "'self'",
-      "'unsafe-inline'",
-      'https://fonts.googleapis.com'
+      'https://fonts.googleapis.com',
+      'https://fonts.gstatic.com'
     ],
     imgSrc: [
       "'self'",

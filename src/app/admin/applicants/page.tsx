@@ -37,10 +37,13 @@ import {
 } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { collection, getDocs, query, where, orderBy, limit, updateDoc, doc } from 'firebase/firestore'
+import { getProgramsAction } from '../placements/actions'
 import { toast as sonnerToast } from 'sonner'
+import { generateApplicantIdWithName, formatApplicantIdForDisplay } from '@/lib/applicant-id-generator'
 
 interface Applicant {
   id: string
+  friendlyId?: string
   firstName: string
   lastName: string
   email: string
@@ -48,19 +51,19 @@ interface Applicant {
   program: string
   applicationDate: string
   status: 'pending-review' | 'document-review' | 'approved' | 'rejected' | 'waitlisted'
-  documents: {
-    id: boolean
-    cv: boolean
-    transcript: boolean
-    portfolio?: boolean
-    references?: boolean
+  documents?: {
+    certifiedId: boolean
+    proofOfAddress: boolean
+    highestQualification: boolean
+    proofOfBanking: boolean
+    taxNumber: boolean
   }
-  documentStatus: {
-    id: 'pending' | 'approved' | 'rejected'
-    cv: 'pending' | 'approved' | 'rejected'
-    transcript: 'pending' | 'approved' | 'rejected'
-    portfolio?: 'pending' | 'approved' | 'rejected'
-    references?: 'pending' | 'approved' | 'rejected'
+  documentStatus?: {
+    certifiedId: 'pending' | 'approved' | 'rejected'
+    proofOfAddress: 'pending' | 'approved' | 'rejected'
+    highestQualification: 'pending' | 'approved' | 'rejected'
+    proofOfBanking: 'pending' | 'approved' | 'rejected'
+    taxNumber: 'pending' | 'approved' | 'rejected'
   }
   rejectionReasons?: string[]
   profile: {
@@ -94,6 +97,9 @@ export default function AdminApplicantsPage() {
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showRejectionModal, setShowRejectionModal] = useState(false)
   const [rejectionReason, setRejectionReason] = useState('')
+  const [programs, setPrograms] = useState<Array<{ id: string; name: string; description?: string }>>([])
+  const [programMap, setProgramMap] = useState<Record<string, string>>({})
+  const [refreshing, setRefreshing] = useState(false)
   const [stats, setStats] = useState<ApplicationStats>({
     total: 0,
     pendingReview: 0,
@@ -108,30 +114,118 @@ export default function AdminApplicantsPage() {
 
   useEffect(() => {
     loadApplicants()
+    loadPrograms()
   }, [])
 
-  const loadApplicants = async () => {
+  const loadPrograms = async () => {
     try {
-      setLoading(true)
+      const programsData = await getProgramsAction()
+      setPrograms(programsData)
+      
+      // Create a mapping from program ID to program name
+      const mapping: Record<string, string> = {}
+      programsData.forEach(program => {
+        mapping[program.id] = program.name
+      })
+      setProgramMap(mapping)
+    } catch (error) {
+      console.error('Error loading programs:', error)
+    }
+  }
+
+  const loadApplicants = async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true)
+      } else {
+        setLoading(true)
+      }
+      console.log('Loading applicants from Firestore...')
+      
       const applicantsSnapshot = await getDocs(query(
         collection(db, 'users'),
         where('role', '==', 'applicant'),
         orderBy('createdAt', 'desc')
       ))
 
-      const applicantsData = applicantsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Applicant[]
+      console.log(`Found ${applicantsSnapshot.docs.length} applicants`)
 
+
+// Centralized required documents config
+const REQUIRED_DOCUMENTS = {
+  certifiedId: true,
+  proofOfAddress: true,
+  highestQualification: true,
+  proofOfBanking: true,
+  taxNumber: true
+};
+
+const REQUIRED_DOCUMENTS_STATUS = {
+  certifiedId: 'pending',
+  proofOfAddress: 'pending',
+  highestQualification: 'pending',
+  proofOfBanking: 'pending',
+  taxNumber: 'pending'
+};
+
+      const applicantsData = applicantsSnapshot.docs.map(doc => {
+        const data = doc.data()
+        console.log('Processing applicant:', doc.id, data.firstName, data.lastName)
+        return {
+          id: doc.id,
+          // Basic information with fallbacks
+          firstName: data.firstName || 'Unknown',
+          lastName: data.lastName || 'User',
+          email: data.email || 'No email',
+          phone: data.phone || 'No phone',
+          program: data.program || 'No program',
+          // Generate friendly Applicant ID
+          friendlyId: data.friendlyId || generateApplicantIdWithName(data.firstName || 'Unknown', data.lastName || 'User'),
+          // Convert Firestore Timestamps to strings
+          applicationDate: data.applicationDate?.toDate?.()?.toISOString() || data.applicationDate || new Date().toISOString(),
+          createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt || new Date().toISOString(),
+          updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt || new Date().toISOString(),
+          // Ensure status is valid
+          status: data.status || 'pending-review',
+          // Use centralized required documents
+          documentStatus: {
+            ...REQUIRED_DOCUMENTS_STATUS,
+            ...(data.documentStatus || {})
+          },
+          documents: {
+            ...REQUIRED_DOCUMENTS,
+            ...(data.documents || {})
+          },
+          // Profile information with fallbacks
+          profile: data.profile || {
+            location: data.location || 'No location',
+            bio: data.bio || 'No bio available',
+            experience: data.experience || 'No experience listed',
+            education: data.education || 'No education listed'
+          },
+          // Rejection reasons
+          rejectionReasons: data.rejectionReasons || []
+        }
+      }) as Applicant[]
+
+      console.log('Processed applicants:', applicantsData.length)
       setApplicants(applicantsData)
       calculateStats(applicantsData)
+      
+      if (isRefresh) {
+        sonnerToast.success('Applicants refreshed successfully')
+      }
     } catch (error) {
       console.error('Error loading applicants:', error)
       sonnerToast.error('Failed to load applicants')
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
+  }
+
+  const handleRefresh = () => {
+    loadApplicants(true)
   }
 
   const calculateStats = (applicantsData: Applicant[]) => {
@@ -198,8 +292,16 @@ export default function AdminApplicantsPage() {
       const applicant = applicants.find(a => a.id === applicantId)
       if (!applicant) return
 
+      const currentDocumentStatus = applicant.documentStatus || {
+        certifiedId: 'pending',
+        proofOfAddress: 'pending',
+        highestQualification: 'pending',
+        proofOfBanking: 'pending',
+        taxNumber: 'pending'
+      }
+
       const updatedDocumentStatus = {
-        ...applicant.documentStatus,
+        ...currentDocumentStatus,
         [documentType]: 'approved'
       }
 
@@ -208,7 +310,7 @@ export default function AdminApplicantsPage() {
         updatedAt: new Date().toISOString()
       })
 
-      sonnerToast.success(`${documentType.toUpperCase()} document approved`)
+      sonnerToast.success(`${getDocumentDisplayName(documentType)} approved`)
 
       loadApplicants()
     } catch (error) {
@@ -222,8 +324,16 @@ export default function AdminApplicantsPage() {
       const applicant = applicants.find(a => a.id === applicantId)
       if (!applicant) return
 
+      const currentDocumentStatus = applicant.documentStatus || {
+        certifiedId: 'pending',
+        proofOfAddress: 'pending',
+        highestQualification: 'pending',
+        proofOfBanking: 'pending',
+        taxNumber: 'pending'
+      }
+
       const updatedDocumentStatus = {
-        ...applicant.documentStatus,
+        ...currentDocumentStatus,
         [documentType]: 'rejected'
       }
 
@@ -232,7 +342,7 @@ export default function AdminApplicantsPage() {
         updatedAt: new Date().toISOString()
       })
 
-      sonnerToast.success(`${documentType.toUpperCase()} document rejected`)
+      sonnerToast.success(`${getDocumentDisplayName(documentType)} rejected`)
 
       loadApplicants()
     } catch (error) {
@@ -241,15 +351,47 @@ export default function AdminApplicantsPage() {
     }
   }
 
+  const promoteToLearner = async (applicantId: string) => {
+    try {
+      const applicant = applicants.find(a => a.id === applicantId)
+      if (!applicant) return
+
+      // Check if all documents are approved
+      const documentStatus = applicant.documentStatus || {}
+      const allDocumentsApproved = Object.values(documentStatus).every(status => status === 'approved')
+      
+      if (!allDocumentsApproved) {
+        sonnerToast.error('All documents must be approved before promoting to learner')
+        return
+      }
+
+      await updateDoc(doc(db, 'users', applicantId), {
+        role: 'learner',
+        status: 'approved',
+        promotedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      })
+
+      sonnerToast.success(`${applicant.firstName} ${applicant.lastName} promoted to learner`)
+
+      loadApplicants()
+    } catch (error) {
+      console.error('Error promoting to learner:', error)
+      sonnerToast.error('Failed to promote to learner')
+    }
+  }
+
   const filteredApplicants = applicants.filter(applicant => {
+    const programName = programMap[applicant.program] || applicant.program
+    
     const matchesSearch = !searchTerm || 
       applicant.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       applicant.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       applicant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      applicant.program.toLowerCase().includes(searchTerm.toLowerCase())
+      programName.toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesStatus = statusFilter === 'all' || applicant.status === statusFilter
-    const matchesProgram = programFilter === 'all' || applicant.program === programFilter
+    const matchesProgram = programFilter === 'all' || programName === programFilter
 
     return matchesSearch && matchesStatus && matchesProgram
   })
@@ -282,15 +424,68 @@ export default function AdminApplicantsPage() {
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
+  const getDocumentDisplayName = (docType: string) => {
+    const displayNames: Record<string, string> = {
+      certifiedId: 'Certified ID Document',
+      proofOfAddress: 'Proof of Address',
+      highestQualification: 'Highest Qualification Certificate',
+      proofOfBanking: 'Bank Confirmation Letter',
+      taxNumber: 'Tax Number'
+    }
+    return displayNames[docType] || docType
   }
 
-  const uniquePrograms = Array.from(new Set(applicants.map(a => a.program)))
+  const isAllDocumentsApproved = (documentStatus: any) => {
+    if (!documentStatus) return false
+    return Object.values(documentStatus).every(status => status === 'approved')
+  }
+
+  const getDocumentProgress = (documentStatus: any) => {
+    if (!documentStatus) return { approved: 0, total: 5, percentage: 0 }
+    const statuses = Object.values(documentStatus)
+    const approved = statuses.filter(status => status === 'approved').length
+    const total = statuses.length
+    const percentage = Math.round((approved / total) * 100)
+    return { approved, total, percentage }
+  }
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) {
+        return 'Invalid Date'
+      }
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      })
+    } catch (error) {
+      console.error('Error formatting date:', error)
+      return 'Invalid Date'
+    }
+  }
+
+  const formatDateTime = (dateString: string) => {
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) {
+        return 'Invalid Date'
+      }
+      return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    } catch (error) {
+      console.error('Error formatting date:', error)
+      return 'Invalid Date'
+    }
+  }
+
+  const uniquePrograms = Array.from(new Set(applicants.map(a => programMap[a.program] || a.program)))
 
   return (
     <AdminLayout userRole="admin">
@@ -300,11 +495,16 @@ export default function AdminApplicantsPage() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Application Review</h1>
             <p className="text-gray-600 mt-1">Review new applications, approve/reject documents, and promote applicants to learners</p>
+            {applicants.length > 0 && (
+              <p className="text-sm text-gray-500 mt-1">
+                Showing {filteredApplicants.length} of {applicants.length} applicants
+              </p>
+            )}
           </div>
           <div className="flex items-center space-x-4">
-            <Button variant="outline" onClick={loadApplicants} disabled={loading}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
+            <Button variant="outline" onClick={handleRefresh} disabled={refreshing || loading}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Refreshing...' : 'Refresh'}
             </Button>
             <Button variant="outline">
               <Download className="w-4 h-4 mr-2" />
@@ -435,11 +635,28 @@ export default function AdminApplicantsPage() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                 <p className="text-gray-600 mt-2">Loading applications...</p>
               </div>
+            ) : applicants.length === 0 ? (
+              <div className="text-center py-8">
+                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No applicants found</h3>
+                <p className="text-gray-600">No applicants have submitted applications yet.</p>
+                <Button onClick={handleRefresh} className="mt-4">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh
+                </Button>
+              </div>
             ) : filteredApplicants.length === 0 ? (
               <div className="text-center py-8">
                 <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No applications found</h3>
                 <p className="text-gray-600">No applications match your current filters.</p>
+                <Button onClick={() => {
+                  setSearchTerm('')
+                  setStatusFilter('all')
+                  setProgramFilter('all')
+                }} className="mt-4">
+                  Clear Filters
+                </Button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -461,7 +678,7 @@ export default function AdminApplicantsPage() {
                           </h3>
                           <p className="text-sm text-gray-600">{applicant.email}</p>
                           <div className="flex items-center space-x-2 mt-1">
-                            <Badge variant="outline">{applicant.program}</Badge>
+                            <Badge variant="outline">{programMap[applicant.program] || applicant.program}</Badge>
                             {getStatusBadge(applicant.status)}
                           </div>
                         </div>
@@ -501,34 +718,59 @@ export default function AdminApplicantsPage() {
                             </Button>
                           </>
                         )}
+                        {applicant.status === 'document-review' && (() => {
+                          const documentStatus = applicant.documentStatus || {}
+                          const allDocumentsApproved = Object.values(documentStatus).every(status => status === 'approved')
+                          return allDocumentsApproved && (
+                            <Button
+                              size="sm"
+                              onClick={() => promoteToLearner(applicant.id)}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <Users className="w-4 h-4 mr-1" />
+                              Promote to Learner
+                            </Button>
+                          )
+                        })()}
                       </div>
                     </div>
                     
                     {/* Document Status */}
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-                      {Object.entries(applicant.documents).map(([docType, required]) => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                      {Object.entries(applicant.documents || {}).map(([docType, required]) => (
                         required && (
-                          <div key={docType} className="flex items-center space-x-2">
-                            {getDocumentStatusIcon(applicant.documentStatus[docType as keyof typeof applicant.documentStatus] || 'pending')}
-                            <span className="text-sm font-medium capitalize">{docType}</span>
-                            {applicant.documentStatus[docType as keyof typeof applicant.documentStatus] === 'pending' && (
-                              <div className="flex space-x-1">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => approveDocument(applicant.id, docType)}
-                                >
-                                  <CheckCircle2 className="w-3 h-3 text-green-600" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => rejectDocument(applicant.id, docType)}
-                                >
-                                  <XCircle className="w-3 h-3 text-red-600" />
-                                </Button>
-                              </div>
-                            )}
+                          <div key={docType} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+                            <div className="flex items-center space-x-2">
+                              {getDocumentStatusIcon((applicant.documentStatus?.[docType as keyof typeof applicant.documentStatus]) || 'pending')}
+                              <span className="text-sm font-medium">{getDocumentDisplayName(docType)}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xs text-gray-500">
+                                {(applicant.documentStatus?.[docType as keyof typeof applicant.documentStatus]) || 'pending'}
+                              </span>
+                              {(applicant.documentStatus?.[docType as keyof typeof applicant.documentStatus]) === 'pending' && (
+                                <div className="flex space-x-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => approveDocument(applicant.id, docType)}
+                                    className="hover:bg-green-100"
+                                    title="Approve Document"
+                                  >
+                                    <CheckCircle2 className="w-3 h-3 text-green-600" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => rejectDocument(applicant.id, docType)}
+                                    className="hover:bg-red-100"
+                                    title="Reject Document"
+                                  >
+                                    <XCircle className="w-3 h-3 text-red-600" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )
                       ))}
@@ -539,6 +781,11 @@ export default function AdminApplicantsPage() {
                         <div className="flex items-center space-x-1">
                           <Calendar className="w-4 h-4" />
                           <span>Applied: {formatDate(applicant.applicationDate)}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <span className="text-xs font-mono text-blue-600">
+                            ID: {applicant.friendlyId || formatApplicantIdForDisplay(applicant.id)}
+                          </span>
                         </div>
                         {applicant.profile?.location && (
                           <div className="flex items-center space-x-1">
@@ -561,7 +808,7 @@ export default function AdminApplicantsPage() {
         {/* Application Details Modal */}
         {showDetailModal && selectedApplicant && (
           <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-            <DialogContent className="max-w-4xl">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Application Details - {selectedApplicant.firstName} {selectedApplicant.lastName}</DialogTitle>
               </DialogHeader>
@@ -570,27 +817,42 @@ export default function AdminApplicantsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <h3 className="font-semibold text-gray-900">Personal Information</h3>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <User className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm">Name: {selectedApplicant.firstName} {selectedApplicant.lastName}</span>
+                    <div className="space-y-3">
+                      <div className="flex items-start space-x-3">
+                        <User className="w-4 h-4 text-gray-500 mt-0.5" />
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Full Name</span>
+                          <p className="text-sm text-gray-900">{selectedApplicant.firstName} {selectedApplicant.lastName}</p>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Mail className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm">Email: {selectedApplicant.email}</span>
+                      <div className="flex items-start space-x-3">
+                        <Mail className="w-4 h-4 text-gray-500 mt-0.5" />
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Email Address</span>
+                          <p className="text-sm text-gray-900">{selectedApplicant.email}</p>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Phone className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm">Phone: {selectedApplicant.phone}</span>
+                      <div className="flex items-start space-x-3">
+                        <Phone className="w-4 h-4 text-gray-500 mt-0.5" />
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Phone Number</span>
+                          <p className="text-sm text-gray-900">{selectedApplicant.phone || 'Not provided'}</p>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Target className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm">Program: {selectedApplicant.program}</span>
+                      <div className="flex items-start space-x-3">
+                        <Target className="w-4 h-4 text-gray-500 mt-0.5" />
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Program Applied For</span>
+                          <p className="text-sm text-gray-900">{programMap[selectedApplicant.program] || selectedApplicant.program}</p>
+                        </div>
                       </div>
                       {selectedApplicant.profile?.location && (
-                        <div className="flex items-center space-x-2">
-                          <MapPin className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm">Location: {selectedApplicant.profile.location}</span>
+                        <div className="flex items-start space-x-3">
+                          <MapPin className="w-4 h-4 text-gray-500 mt-0.5" />
+                          <div>
+                            <span className="text-sm font-medium text-gray-700">Location</span>
+                            <p className="text-sm text-gray-900">{selectedApplicant.profile.location}</p>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -598,18 +860,26 @@ export default function AdminApplicantsPage() {
                   
                   <div className="space-y-4">
                     <h3 className="font-semibold text-gray-900">Application Status</h3>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Status:</span>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="text-sm font-medium text-gray-700">Current Status</span>
                         {getStatusBadge(selectedApplicant.status)}
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Applied:</span>
-                        <span className="text-sm">{formatDate(selectedApplicant.applicationDate)}</span>
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="text-sm font-medium text-gray-700">Application Date</span>
+                        <span className="text-sm text-gray-900">{formatDateTime(selectedApplicant.applicationDate)}</span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Last Updated:</span>
-                        <span className="text-sm">{formatDate(selectedApplicant.updatedAt)}</span>
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="text-sm font-medium text-gray-700">Last Updated</span>
+                        <span className="text-sm text-gray-900">{formatDateTime(selectedApplicant.updatedAt)}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="text-sm font-medium text-gray-700">Applicant ID</span>
+                        <span className="text-sm text-gray-900 font-mono">{selectedApplicant.friendlyId || formatApplicantIdForDisplay(selectedApplicant.id)}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="text-sm font-medium text-gray-700">Document ID</span>
+                        <span className="text-xs text-gray-500 font-mono">{selectedApplicant.id}</span>
                       </div>
                     </div>
                   </div>
@@ -618,29 +888,38 @@ export default function AdminApplicantsPage() {
                 {/* Documents */}
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-4">Document Status</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {Object.entries(selectedApplicant.documents).map(([docType, required]) => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Object.entries(selectedApplicant.documents || {}).map(([docType, required]) => (
                       required && (
-                        <div key={docType} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            {getDocumentStatusIcon(selectedApplicant.documentStatus[docType as keyof typeof selectedApplicant.documentStatus] || 'pending')}
-                            <span className="text-sm font-medium capitalize">{docType}</span>
+                        <div key={docType} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                          <div className="flex items-center space-x-3">
+                            {getDocumentStatusIcon((selectedApplicant.documentStatus?.[docType as keyof typeof selectedApplicant.documentStatus]) || 'pending')}
+                            <div>
+                              <span className="text-sm font-medium text-gray-900">{getDocumentDisplayName(docType)}</span>
+                              <p className="text-xs text-gray-500">
+                                Status: {(selectedApplicant.documentStatus?.[docType as keyof typeof selectedApplicant.documentStatus]) || 'pending'}
+                              </p>
+                            </div>
                           </div>
-                          {selectedApplicant.documentStatus[docType as keyof typeof selectedApplicant.documentStatus] === 'pending' && (
+                          {(selectedApplicant.documentStatus?.[docType as keyof typeof selectedApplicant.documentStatus]) === 'pending' && (
                             <div className="flex space-x-1">
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => approveDocument(selectedApplicant.id, docType)}
+                                className="hover:bg-green-100"
+                                title="Approve Document"
                               >
-                                <CheckCircle2 className="w-3 h-3 text-green-600" />
+                                <CheckCircle2 className="w-4 h-4 text-green-600" />
                               </Button>
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => rejectDocument(selectedApplicant.id, docType)}
+                                className="hover:bg-red-100"
+                                title="Reject Document"
                               >
-                                <XCircle className="w-3 h-3 text-red-600" />
+                                <XCircle className="w-4 h-4 text-red-600" />
                               </Button>
                             </div>
                           )}
@@ -648,29 +927,78 @@ export default function AdminApplicantsPage() {
                       )
                     ))}
                   </div>
+                  
+                  {/* Document Summary */}
+                  <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-medium text-blue-900">Document Summary</h4>
+                      {isAllDocumentsApproved(selectedApplicant.documentStatus) && (
+                        <Badge className="bg-green-100 text-green-800">
+                          Ready for Promotion
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 text-center mb-3">
+                      <div>
+                        <div className="text-2xl font-bold text-green-600">
+                          {Object.entries(selectedApplicant.documentStatus || {}).filter(([_, status]) => status === 'approved').length}
+                        </div>
+                        <div className="text-xs text-gray-600">Approved</div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-yellow-600">
+                          {Object.entries(selectedApplicant.documentStatus || {}).filter(([_, status]) => status === 'pending').length}
+                        </div>
+                        <div className="text-xs text-gray-600">Pending</div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-red-600">
+                          {Object.entries(selectedApplicant.documentStatus || {}).filter(([_, status]) => status === 'rejected').length}
+                        </div>
+                        <div className="text-xs text-gray-600">Rejected</div>
+                      </div>
+                    </div>
+                    {(() => {
+                      const progress = getDocumentProgress(selectedApplicant.documentStatus)
+                      return (
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                            style={{ width: `${progress.percentage}%` }}
+                          ></div>
+                        </div>
+                      )
+                    })()}
+                    <div className="text-xs text-gray-600 mt-2 text-center">
+                      {(() => {
+                        const progress = getDocumentProgress(selectedApplicant.documentStatus)
+                        return `${progress.approved} of ${progress.total} documents approved (${progress.percentage}%)`
+                      })()}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Profile Information */}
                 {selectedApplicant.profile && (
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-4">Profile Information</h3>
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {selectedApplicant.profile.bio && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-1">Bio</h4>
-                          <p className="text-sm text-gray-600">{selectedApplicant.profile.bio}</p>
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">Bio</h4>
+                          <p className="text-sm text-gray-600 leading-relaxed">{selectedApplicant.profile.bio}</p>
                         </div>
                       )}
                       {selectedApplicant.profile.experience && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-1">Experience</h4>
-                          <p className="text-sm text-gray-600">{selectedApplicant.profile.experience}</p>
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">Experience</h4>
+                          <p className="text-sm text-gray-600 leading-relaxed">{selectedApplicant.profile.experience}</p>
                         </div>
                       )}
                       {selectedApplicant.profile.education && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-700 mb-1">Education</h4>
-                          <p className="text-sm text-gray-600">{selectedApplicant.profile.education}</p>
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">Education</h4>
+                          <p className="text-sm text-gray-600 leading-relaxed">{selectedApplicant.profile.education}</p>
                         </div>
                       )}
                     </div>
@@ -716,6 +1044,19 @@ export default function AdminApplicantsPage() {
                       </Button>
                     </>
                   )}
+                  {selectedApplicant.status === 'document-review' && (() => {
+                    const documentStatus = selectedApplicant.documentStatus || {}
+                    const allDocumentsApproved = Object.values(documentStatus).every(status => status === 'approved')
+                    return allDocumentsApproved && (
+                      <Button
+                        onClick={() => promoteToLearner(selectedApplicant.id)}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <Users className="w-4 h-4 mr-2" />
+                        Promote to Learner
+                      </Button>
+                    )
+                  })()}
                 </div>
               </div>
             </DialogContent>
@@ -725,7 +1066,7 @@ export default function AdminApplicantsPage() {
         {/* Rejection Modal */}
         {showRejectionModal && selectedApplicant && (
           <Dialog open={showRejectionModal} onOpenChange={setShowRejectionModal}>
-            <DialogContent>
+            <DialogContent className="max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Reject Application</DialogTitle>
               </DialogHeader>

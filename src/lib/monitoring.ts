@@ -1,225 +1,408 @@
-/**
- * Production Monitoring and Error Tracking
- * Provides monitoring capabilities with optional Sentry integration
- */
+import { NextRequest, NextResponse } from 'next/server'
 
-interface ErrorContext {
-  userId?: string;
-  userRole?: string;
-  url?: string;
-  userAgent?: string;
-  timestamp?: string;
-  severity?: 'low' | 'medium' | 'high' | 'critical';
-  tags?: Record<string, string>;
+interface MetricData {
+  name: string
+  value: number
+  labels?: Record<string, string>
+  timestamp: number
 }
 
-interface PerformanceMetric {
-  name: string;
-  value: number;
-  unit: string;
-  tags?: Record<string, string>;
-  timestamp?: number;
+interface PerformanceMetrics {
+  requests: number
+  averageResponseTime: number
+  errorRate: number
+  memoryUsage: number
+  cpuUsage: number
+  activeConnections: number
 }
 
-class MonitoringService {
-  private static instance: MonitoringService;
-  private isProduction: boolean;
-  private sentryDsn: string | null;
+interface BusinessMetrics {
+  totalUsers: number
+  activeUsers: number
+  applicationsSubmitted: number
+  applicationsApproved: number
+  learnersActive: number
+  placementsActive: number
+  revenue: number
+}
 
-  private constructor() {
-    this.isProduction = process.env.NODE_ENV === 'production';
-    this.sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN || null;
-    
-    this.initializeSentry();
+class MetricsCollector {
+  private static instance: MetricsCollector
+  private metrics: Map<string, MetricData[]> = new Map()
+  private performanceMetrics: PerformanceMetrics = {
+    requests: 0,
+    averageResponseTime: 0,
+    errorRate: 0,
+    memoryUsage: 0,
+    cpuUsage: 0,
+    activeConnections: 0
+  }
+  private businessMetrics: BusinessMetrics = {
+    totalUsers: 0,
+    activeUsers: 0,
+    applicationsSubmitted: 0,
+    applicationsApproved: 0,
+    learnersActive: 0,
+    placementsActive: 0,
+    revenue: 0
   }
 
-  static getInstance(): MonitoringService {
-    if (!MonitoringService.instance) {
-      MonitoringService.instance = new MonitoringService();
+  static getInstance(): MetricsCollector {
+    if (!MetricsCollector.instance) {
+      MetricsCollector.instance = new MetricsCollector()
     }
-    return MonitoringService.instance;
+    return MetricsCollector.instance
   }
 
-  private initializeSentry() {
-    // Skip Sentry initialization for now - will be added when Sentry is installed
-    console.log('Monitoring service initialized (Sentry integration available when installed)');
+  recordMetric(name: string, value: number, labels?: Record<string, string>): void {
+    const metric: MetricData = {
+      name,
+      value,
+      labels,
+      timestamp: Date.now()
+    }
+
+    if (!this.metrics.has(name)) {
+      this.metrics.set(name, [])
+    }
+
+    const metricArray = this.metrics.get(name)!
+    metricArray.push(metric)
+
+    // Keep only last 1000 metrics per name
+    if (metricArray.length > 1000) {
+      metricArray.splice(0, metricArray.length - 1000)
+    }
   }
 
-  // Sentry integration methods (to be implemented when Sentry is installed)
-  private async initializeBrowserSentry() {
-    console.log('Browser Sentry initialization (install @sentry/nextjs to enable)');
+  recordPerformanceMetric(metric: keyof PerformanceMetrics, value: number): void {
+    this.performanceMetrics[metric] = value
   }
 
-  private async initializeServerSentry() {
-    console.log('Server Sentry initialization (install @sentry/nextjs to enable)');
+  recordBusinessMetric(metric: keyof BusinessMetrics, value: number): void {
+    this.businessMetrics[metric] = value
+  }
+
+  getMetrics(name: string): MetricData[] {
+    return this.metrics.get(name) || []
+  }
+
+  getPerformanceMetrics(): PerformanceMetrics {
+    return { ...this.performanceMetrics }
+  }
+
+  getBusinessMetrics(): BusinessMetrics {
+    return { ...this.businessMetrics }
+  }
+
+  getAllMetrics(): Map<string, MetricData[]> {
+    return new Map(this.metrics)
+  }
+
+  clearMetrics(): void {
+    this.metrics.clear()
+  }
+
+  exportMetrics(): string {
+    const allMetrics = Array.from(this.metrics.entries()).flatMap(([name, metrics]) =>
+      metrics.map(metric => ({
+        name: metric.name,
+        value: metric.value,
+        labels: metric.labels,
+        timestamp: metric.timestamp
+      }))
+    )
+
+    return JSON.stringify({
+      performance: this.performanceMetrics,
+      business: this.businessMetrics,
+      custom: allMetrics
+    }, null, 2)
+  }
   }
 
   // Error tracking
-  captureError(error: Error, context?: ErrorContext) {
-    const errorContext = {
-      timestamp: new Date().toISOString(),
-      url: typeof window !== 'undefined' ? window.location.href : 'server',
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'server',
-      ...context,
-    };
+class ErrorTracker {
+  private static instance: ErrorTracker
+  private errors: Array<{
+    message: string
+    stack?: string
+    timestamp: number
+    userId?: string
+    requestId?: string
+    severity: 'low' | 'medium' | 'high' | 'critical'
+    context?: Record<string, any>
+  }> = []
 
-    // Log to console in development
-    if (!this.isProduction) {
-      console.error('Error captured:', error, errorContext);
-      return;
+  static getInstance(): ErrorTracker {
+    if (!ErrorTracker.instance) {
+      ErrorTracker.instance = new ErrorTracker()
     }
-
-    // Send to Sentry in production
-    this.sendToSentry(error, errorContext);
+    return ErrorTracker.instance
   }
 
-  // Performance tracking
-  captureMetric(metric: PerformanceMetric) {
-    const metricData = {
-      timestamp: Date.now(),
-      ...metric,
-    };
-
-    // Log to console in development
-    if (!this.isProduction) {
-      console.log('Performance metric:', metricData);
-      return;
+  recordError(
+    error: Error,
+    context?: {
+      userId?: string
+      requestId?: string
+      severity?: 'low' | 'medium' | 'high' | 'critical'
+      additionalContext?: Record<string, any>
     }
-
-    // Send to monitoring service in production
-    this.sendMetric(metricData);
-  }
-
-  // User action tracking
-  captureUserAction(action: string, context?: Record<string, any>) {
-    const actionData = {
-      action,
-      timestamp: new Date().toISOString(),
-      url: typeof window !== 'undefined' ? window.location.href : 'server',
-      ...context,
-    };
-
-    // Log to console in development
-    if (!this.isProduction) {
-      console.log('User action:', actionData);
-      return;
-    }
-
-    // Send to analytics service in production
-    this.sendUserAction(actionData);
-  }
-
-  // API performance tracking
-  captureApiCall(endpoint: string, method: string, duration: number, status: number) {
-    this.captureMetric({
-      name: 'api_call_duration',
-      value: duration,
-      unit: 'milliseconds',
-      tags: {
-        endpoint,
-        method,
-        status: status.toString(),
-      },
-    });
-
-    // Track API errors
-    if (status >= 400) {
-      this.captureError(new Error(`API Error: ${method} ${endpoint} returned ${status}`), {
-        severity: status >= 500 ? 'high' : 'medium',
-        tags: {
-          endpoint,
-          method,
-          status: status.toString(),
-        },
-      });
-    }
-  }
-
-  private async sendToSentry(error: Error, context: ErrorContext) {
-    // Fallback: log to console with structured data
-    // When Sentry is installed, this will be replaced with actual Sentry integration
-    console.error('Error captured by monitoring service:', {
-      error: error.message,
+  ): void {
+    this.errors.push({
+      message: error.message,
       stack: error.stack,
-      context,
-      timestamp: new Date().toISOString()
-    });
+      timestamp: Date.now(),
+      userId: context?.userId,
+      requestId: context?.requestId,
+      severity: context?.severity || 'medium',
+      context: context?.additionalContext
+    })
+
+    // Keep only last 1000 errors
+    if (this.errors.length > 1000) {
+      this.errors.splice(0, this.errors.length - 1000)
+    }
+
+    // Log critical errors
+    if (context?.severity === 'critical') {
+      console.error('CRITICAL ERROR:', {
+        message: error.message,
+        stack: error.stack,
+        context
+      })
+    }
   }
 
-  private sendMetric(metric: PerformanceMetric) {
-    // In production, send to your metrics service (DataDog, New Relic, etc.)
-    // For now, we'll log to console
-    console.log('Metric:', metric);
+  getErrors(severity?: 'low' | 'medium' | 'high' | 'critical'): typeof this.errors {
+    if (severity) {
+      return this.errors.filter(error => error.severity === severity)
+    }
+    return [...this.errors]
   }
 
-  private sendUserAction(action: any) {
-    // In production, send to your analytics service (Google Analytics, Mixpanel, etc.)
-    // For now, we'll log to console
-    console.log('User action:', action);
+  getErrorCount(severity?: 'low' | 'medium' | 'high' | 'critical'): number {
+    if (severity) {
+      return this.errors.filter(error => error.severity === severity).length
+    }
+    return this.errors.length
   }
 
-  // Health check endpoint data
-  getHealthData() {
-    return {
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV,
-      version: process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0',
-      uptime: process.uptime(),
-      memory: process.memoryUsage(),
-    };
+  clearErrors(): void {
+    this.errors = []
   }
 }
 
-// Export singleton instance
-export const monitoring = MonitoringService.getInstance();
+// Performance monitoring
+class PerformanceMonitor {
+  private static instance: PerformanceMonitor
+  private requestTimes: number[] = []
+  private activeRequests: number = 0
+  private startTime: number = Date.now()
 
-// Helper functions for easy usage
-export const captureError = (error: Error, context?: ErrorContext) => {
-  monitoring.captureError(error, context);
-};
+  static getInstance(): PerformanceMonitor {
+    if (!PerformanceMonitor.instance) {
+      PerformanceMonitor.instance = new PerformanceMonitor()
+    }
+    return PerformanceMonitor.instance
+  }
 
-export const captureMetric = (metric: PerformanceMetric) => {
-  monitoring.captureMetric(metric);
-};
+  startRequest(): string {
+    this.activeRequests++
+    return Date.now().toString()
+  }
 
-export const captureUserAction = (action: string, context?: Record<string, any>) => {
-  monitoring.captureUserAction(action, context);
-};
+  endRequest(requestId: string): number {
+    this.activeRequests--
+    const duration = Date.now() - parseInt(requestId)
+    this.requestTimes.push(duration)
 
-export const captureApiCall = (endpoint: string, method: string, duration: number, status: number) => {
-  monitoring.captureApiCall(endpoint, method, duration, status);
-};
+    // Keep only last 1000 request times
+    if (this.requestTimes.length > 1000) {
+      this.requestTimes.splice(0, this.requestTimes.length - 1000)
+    }
 
-export const getHealthData = () => {
-  return monitoring.getHealthData();
-};
+    return duration
+  }
 
-// Performance monitoring hook for React components
-export const usePerformanceMonitoring = (componentName: string) => {
-  const startTime = Date.now();
+  getAverageResponseTime(): number {
+    if (this.requestTimes.length === 0) return 0
+    return this.requestTimes.reduce((sum, time) => sum + time, 0) / this.requestTimes.length
+  }
 
-  const trackRender = () => {
-    const renderTime = Date.now() - startTime;
-    captureMetric({
-      name: 'component_render_time',
-      value: renderTime,
-      unit: 'milliseconds',
-      tags: {
-        component: componentName,
-      },
-    });
-  };
+  getActiveRequests(): number {
+    return this.activeRequests
+  }
 
-  const trackError = (error: Error) => {
-    captureError(error, {
-      severity: 'medium',
-      tags: {
-        component: componentName,
-        type: 'react_error',
-      },
-    });
-  };
+  getUptime(): number {
+    return Date.now() - this.startTime
+  }
 
-  return { trackRender, trackError };
-};
+  getMemoryUsage(): number {
+    if (typeof process !== 'undefined' && process.memoryUsage) {
+      return process.memoryUsage().heapUsed / 1024 / 1024 // MB
+    }
+    return 0
+  }
+}
+
+// Health check system
+class HealthChecker {
+  private static instance: HealthChecker
+  private checks: Map<string, () => Promise<boolean>> = new Map()
+
+  static getInstance(): HealthChecker {
+    if (!HealthChecker.instance) {
+      HealthChecker.instance = new HealthChecker()
+    }
+    return HealthChecker.instance
+  }
+
+  addCheck(name: string, check: () => Promise<boolean>): void {
+    this.checks.set(name, check)
+  }
+
+  async runChecks(): Promise<{
+    status: 'healthy' | 'degraded' | 'unhealthy'
+    checks: Record<string, { status: 'pass' | 'fail'; message?: string }>
+    timestamp: number
+  }> {
+    const results: Record<string, { status: 'pass' | 'fail'; message?: string }> = {}
+    let failedChecks = 0
+
+    for (const [name, check] of this.checks.entries()) {
+      try {
+        const result = await check()
+        results[name] = {
+          status: result ? 'pass' : 'fail',
+          message: result ? undefined : 'Check failed'
+        }
+        if (!result) failedChecks++
+      } catch (error) {
+        results[name] = {
+          status: 'fail',
+          message: error instanceof Error ? error.message : 'Unknown error'
+        }
+        failedChecks++
+      }
+    }
+
+    let status: 'healthy' | 'degraded' | 'unhealthy'
+    if (failedChecks === 0) {
+      status = 'healthy'
+    } else if (failedChecks < this.checks.size / 2) {
+      status = 'degraded'
+    } else {
+      status = 'unhealthy'
+    }
+
+    return {
+      status,
+      checks: results,
+      timestamp: Date.now()
+    }
+  }
+}
+
+// Monitoring middleware
+export function withMonitoring<T extends any[]>(
+  handler: (request: NextRequest, ...args: T) => Promise<NextResponse>
+) {
+  return async function (request: NextRequest, ...args: T): Promise<NextResponse> {
+    const metrics = MetricsCollector.getInstance()
+    const performance = PerformanceMonitor.getInstance()
+    const errorTracker = ErrorTracker.getInstance()
+
+    const requestId = performance.startRequest()
+    const startTime = Date.now()
+
+    try {
+      const response = await handler(request, ...args)
+      const duration = performance.endRequest(requestId)
+
+      // Record metrics
+      metrics.recordMetric('http_requests_total', 1, {
+        method: request.method,
+        path: request.nextUrl.pathname,
+        status: response.status.toString()
+      })
+
+      metrics.recordMetric('http_request_duration_ms', duration, {
+        method: request.method,
+        path: request.nextUrl.pathname
+      })
+
+      metrics.recordPerformanceMetric('requests', metrics.getPerformanceMetrics().requests + 1)
+      metrics.recordPerformanceMetric('averageResponseTime', performance.getAverageResponseTime())
+      metrics.recordPerformanceMetric('activeConnections', performance.getActiveRequests())
+      metrics.recordPerformanceMetric('memoryUsage', performance.getMemoryUsage())
+
+      return response
+    } catch (error) {
+      const duration = performance.endRequest(requestId)
+      
+      // Record error
+      errorTracker.recordError(error as Error, {
+        requestId,
+        severity: 'high',
+        additionalContext: {
+          method: request.method,
+          path: request.nextUrl.pathname,
+          duration
+        }
+      })
+
+      // Record error metrics
+      metrics.recordMetric('http_errors_total', 1, {
+        method: request.method,
+        path: request.nextUrl.pathname,
+        error: error instanceof Error ? error.constructor.name : 'Unknown'
+      })
+
+      throw error
+    }
+  }
+}
+
+// Initialize health checks
+export function initializeHealthChecks(): void {
+  const healthChecker = HealthChecker.getInstance()
+
+  // Database health check
+  healthChecker.addCheck('database', async () => {
+    try {
+      // In a real implementation, you would check database connectivity
+      // For now, we'll simulate a check
+      return true
+    } catch {
+      return false
+    }
+  })
+
+  // Redis health check
+  healthChecker.addCheck('redis', async () => {
+    try {
+      // In a real implementation, you would check Redis connectivity
+      return true
+    } catch {
+      return false
+    }
+  })
+
+  // Memory health check
+  healthChecker.addCheck('memory', async () => {
+    const performance = PerformanceMonitor.getInstance()
+    const memoryUsage = performance.getMemoryUsage()
+    return memoryUsage < 1000 // Less than 1GB
+  })
+}
+
+// Export instances
+export const metricsCollector = MetricsCollector.getInstance()
+export const errorTracker = ErrorTracker.getInstance()
+export const performanceMonitor = PerformanceMonitor.getInstance()
+export const healthChecker = HealthChecker.getInstance()
+
+// Initialize monitoring
+initializeHealthChecks()

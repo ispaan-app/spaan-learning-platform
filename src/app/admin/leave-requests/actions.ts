@@ -2,6 +2,7 @@
 
 import { adminDb } from '@/lib/firebase-admin'
 import { revalidatePath } from 'next/cache'
+import { safeToDate } from '@/lib/date-utils'
 
 export interface LeaveRequest {
   id?: string
@@ -35,12 +36,15 @@ export async function getLeaveRequestsAction(): Promise<LeaveRequest[]> {
     const leaveRequestsRef = adminDb.collection('leaveRequests')
     const snapshot = await leaveRequestsRef.orderBy('submittedAt', 'desc').get()
     
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      submittedAt: doc.data().submittedAt.toDate(),
-      reviewedAt: doc.data().reviewedAt?.toDate()
-    })) as LeaveRequest[]
+    return snapshot.docs.map(doc => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        ...data,
+        submittedAt: safeToDate(data.submittedAt),
+        reviewedAt: data.reviewedAt ? safeToDate(data.reviewedAt) : undefined
+      }
+    }) as LeaveRequest[]
   } catch (error) {
     console.error('Error fetching leave requests:', error)
     return []

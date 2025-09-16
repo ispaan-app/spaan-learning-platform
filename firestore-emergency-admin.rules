@@ -1,0 +1,125 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // EMERGENCY RULES - HIGHLY PERMISSIVE FOR DEVELOPMENT
+    // These rules allow all authenticated users to read/write all documents
+    // WARNING: Only use in development environment
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role in ['admin', 'super-admin'] ||
+        request.auth.token.email in ['developer@ispaan.com', 'sifiso@thegaselagroup.co.za', 'skitzoc9@gmail.com']
+      );
+    }
+    
+    function isSuperAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'super-admin' ||
+        request.auth.token.email in ['developer@ispaan.com', 'sifiso@thegaselagroup.co.za', 'skitzoc9@gmail.com']
+      );
+    }
+    
+    // EMERGENCY RULE: Allow all authenticated users to read/write everything
+    match /{document=**} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Specific rules for better organization (these are more permissive than before)
+    match /users/{userId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    match /applications/{applicationId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    match /programs/{programId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    match /placements/{placementId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    match /attendance/{attendanceId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    match /leaveRequests/{leaveId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    match /stipendReports/{reportId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    match /issueReports/{issueId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    match /learnerProfiles/{profileId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    match /notifications/{notificationId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    match /settings/{settingId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    match /activities/{activityId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    match /documents/{documentId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    match /classSessions/{sessionId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    match /certificates/{certificateId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    match /learnerCourses/{courseId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // Super admin specific collections
+    match /auditLogs/{logId} {
+      allow read, write: if isSuperAdmin();
+    }
+    
+    match /audit-logs/{logId} {
+      allow read, write: if isSuperAdmin();
+    }
+    
+    match /performance/{perfId} {
+      allow read, write: if isSuperAdmin();
+    }
+    
+    match /securityLogs/{logId} {
+      allow read, write: if isSuperAdmin();
+    }
+    
+    match /active-sessions/{sessionId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    match /health/{healthId} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}
+

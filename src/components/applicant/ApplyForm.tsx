@@ -53,7 +53,8 @@ const applyFormSchema = z.object({
   program: z.string().min(1, 'Please select a program'),
   highestQualification: z.string().min(1, 'Please select your highest qualification'),
   fieldOfStudy: z.string().min(1, 'Field of study is required'),
-  yearsOfExperience: z.number().min(0, 'Years of experience cannot be negative').max(50, 'Years of experience seems too high'),
+  bio: z.string().min(20, 'Please provide a short bio (at least 20 characters)'),
+  yearsOfExperience: z.union([z.number().min(0, 'Years of experience cannot be negative').max(50, 'Years of experience seems too high'), z.nan()]).optional(),
 })
 
 type ApplyFormData = z.infer<typeof applyFormSchema>
@@ -85,11 +86,12 @@ export function ApplyForm({ programs: initialPrograms }: ApplyFormProps) {
       suburb: '',
       province: '',
       
-      // Qualifications & Experience
-      program: '',
-      highestQualification: '',
-      fieldOfStudy: '',
-      yearsOfExperience: 0,
+  // Qualifications & Experience
+  program: '',
+  highestQualification: '',
+  fieldOfStudy: '',
+  bio: '',
+  yearsOfExperience: undefined,
     },
   })
 
@@ -161,7 +163,7 @@ export function ApplyForm({ programs: initialPrograms }: ApplyFormProps) {
 
   const validateSection = (section: 'personal' | 'qualifications'): boolean => {
     const personalFields = ['firstName', 'lastName', 'email', 'phone', 'age', 'gender', 'idNumber', 'nationality', 'streetAddress', 'suburb', 'province']
-    const qualificationFields = ['program', 'highestQualification', 'fieldOfStudy', 'yearsOfExperience']
+  const qualificationFields = ['program', 'highestQualification', 'fieldOfStudy', 'bio', 'yearsOfExperience']
     
     const fieldsToValidate = section === 'personal' ? personalFields : qualificationFields
     let isValid = true
@@ -655,6 +657,28 @@ export function ApplyForm({ programs: initialPrograms }: ApplyFormProps) {
                     )}
                   />
 
+                  {/* Bio/About You */}
+                  <div className="space-y-4 md:space-y-6">
+                    <h3 className="text-base md:text-lg font-medium text-gray-900">About You</h3>
+                    <FormField
+                      control={form.control}
+                      name="bio"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Short Bio *</FormLabel>
+                          <FormControl>
+                            <textarea
+                              className="w-full min-h-[80px] border rounded-md p-2 text-base"
+                              placeholder="Tell us a bit about yourself, your interests, and why you are applying."
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                   {/* Educational Background */}
                   <div className="space-y-4 md:space-y-6">
                     <h3 className="text-base md:text-lg font-medium text-gray-900">Educational Background</h3>
@@ -703,23 +727,23 @@ export function ApplyForm({ programs: initialPrograms }: ApplyFormProps) {
                     </div>
                   </div>
 
-                  {/* Work Experience */}
+                  {/* Work Experience (Optional) */}
                   <div className="space-y-4 md:space-y-6">
-                    <h3 className="text-base md:text-lg font-medium text-gray-900">Work Experience</h3>
+                    <h3 className="text-base md:text-lg font-medium text-gray-900">Work Experience <span className="text-gray-500 font-normal">(optional)</span></h3>
                     <FormField
                       control={form.control}
                       name="yearsOfExperience"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Years of Experience *</FormLabel>
+                          <FormLabel>Years of Experience</FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
                               min="0" 
                               max="50"
-                              placeholder="Enter years of relevant work experience" 
+                              placeholder="Enter years of relevant work experience (leave blank if none)" 
                               {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
                             />
                           </FormControl>
                           <FormMessage />

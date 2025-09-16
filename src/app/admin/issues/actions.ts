@@ -2,6 +2,7 @@
 
 import { adminDb } from '@/lib/firebase-admin'
 import { revalidatePath } from 'next/cache'
+import { safeToDate } from '@/lib/date-utils'
 
 export interface IssueReport {
   id?: string
@@ -41,13 +42,16 @@ export async function getIssuesAction(): Promise<IssueReport[]> {
     const issuesRef = adminDb.collection('issueReports')
     const snapshot = await issuesRef.orderBy('submittedAt', 'desc').get()
     
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      submittedAt: doc.data().submittedAt.toDate(),
-      updatedAt: doc.data().updatedAt.toDate(),
-      resolvedAt: doc.data().resolvedAt?.toDate()
-    })) as IssueReport[]
+    return snapshot.docs.map(doc => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        ...data,
+        submittedAt: safeToDate(data.submittedAt),
+        updatedAt: safeToDate(data.updatedAt),
+        resolvedAt: data.resolvedAt ? safeToDate(data.resolvedAt) : undefined
+      }
+    }) as IssueReport[]
   } catch (error) {
     console.error('Error fetching issues:', error)
     return []

@@ -47,7 +47,7 @@ export function AppearanceForm() {
       if (response.ok) {
         const data = await response.json()
         setCurrentImage(data.url)
-        setSuccess('Hero image updated successfully!')
+        setSuccess('Hero image updated successfully! The landing page will reflect this change immediately.')
       } else {
         setError('Failed to upload image. Please try again.')
       }
@@ -132,7 +132,7 @@ export function AppearanceForm() {
 
       if (response.ok) {
         setCurrentImage(generatedImage)
-        setSuccess('AI-generated image set as hero image!')
+        setSuccess('AI-generated image set as hero image! The landing page will reflect this change immediately.')
       } else {
         setError('Failed to set hero image. Please try again.')
       }
