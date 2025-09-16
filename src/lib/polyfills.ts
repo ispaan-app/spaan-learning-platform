@@ -105,6 +105,12 @@ if (typeof window === 'undefined') {
   // Add HTMLElement polyfill
   // @ts-ignore
   global.HTMLElement = class HTMLElement {
+    style: any;
+    className: string;
+    id: string;
+    innerHTML: string;
+    textContent: string;
+    
     constructor() {
       this.style = {};
       this.className = '';

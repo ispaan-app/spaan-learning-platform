@@ -12,8 +12,8 @@ const nextConfig = {
   // Performance optimizations
   experimental: {
     missingSuspenseWithCSRBailout: false,
-    optimizeCss: true,
-    scrollRestoration: true,
+    // optimizeCss: true, // Temporarily disabled
+    // scrollRestoration: true, // Temporarily disabled
   },
   
   // Compiler optimizations
@@ -80,9 +80,9 @@ const nextConfig = {
     config.plugins = config.plugins || [];
     config.plugins.push(
       new (require('webpack')).DefinePlugin({
-        'typeof self': JSON.stringify('undefined'),
-        'self': 'undefined',
-        'global.self': 'undefined',
+        'typeof self': isServer ? JSON.stringify('undefined') : 'typeof self',
+        'self': isServer ? 'undefined' : 'self',
+        'global.self': isServer ? 'undefined' : 'global.self',
         'typeof window': isServer ? JSON.stringify('undefined') : 'window',
         'typeof document': isServer ? JSON.stringify('undefined') : 'document',
       })
@@ -104,16 +104,12 @@ const nextConfig = {
       sideEffects: false,
     };
     
-    // Fix SSR issues
+    // Fix SSR issues - Remove styled-jsx alias as it's causing module not found error
     config.resolve.alias = {
       ...config.resolve.alias,
-      'styled-jsx': require.resolve('styled-jsx/dist/index.js'),
     };
     
-    // Handle styled-jsx for SSR
-    if (isServer) {
-      config.externals = [...(config.externals || []), 'styled-jsx/server']
-    }
+    // Handle styled-jsx for SSR - removed problematic externals
     
     // Use ignore-loader for test files in production builds
     config.module.rules.push({
