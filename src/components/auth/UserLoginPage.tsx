@@ -62,7 +62,7 @@ export function UserLoginPage() {
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-xs text-gray-500">
-            Secure login powered by iSpaan App
+            Secure login system
           </p>
         </div>
       </div>

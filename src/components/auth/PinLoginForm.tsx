@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { LoadingButton } from '@/components/ui/loading'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Logo } from '@/components/ui/logo'
 import { SuccessPopup } from '@/components/ui/success-popup'
 
 export function PinLoginForm() {
@@ -100,9 +99,6 @@ export function PinLoginForm() {
         <div className="max-w-md w-full space-y-8">
         <Card>
           <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <Logo size="lg" showText={true} />
-            </div>
             <CardTitle className="text-2xl font-bold text-gray-900">
               User Login
             </CardTitle>

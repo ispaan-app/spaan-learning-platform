@@ -13,7 +13,6 @@ import { loginWithPin } from '@/app/actions/authActions'
 import { useAuth } from '@/hooks/useAuth'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
 import { SuccessPopup } from '@/components/ui/success-popup'
-import { Logo } from '@/components/ui/logo'
 
 const loginSchema = z.object({
   idNumber: z.string()
@@ -96,9 +95,6 @@ export function UserLoginForm() {
 
   return (
     <>
-      <div className="text-center mb-6">
-        <Logo size="md" showText={true} />
-      </div>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {error && (
           <Alert variant="destructive">
