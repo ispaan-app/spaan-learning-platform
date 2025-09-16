@@ -127,9 +127,105 @@ export function HomePageContent({
             </div>
           </div>
           
-          {/* Right Content - Character Showcase */}
+          {/* Right Content - App Showcase */}
           <div className="relative">
-            <CharacterShowcase />
+            {/* Floating App Screens */}
+            <div className="relative z-10">
+              {/* Main Phone Screen */}
+              <div className="relative mx-auto w-80 h-[600px] bg-gradient-to-br from-gray-900 to-gray-800 rounded-[3rem] p-2 shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-500">
+                <div className="w-full h-full bg-white rounded-[2.5rem] overflow-hidden relative">
+                  {/* Phone Header */}
+                  <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                          <span className="text-white font-bold text-sm">iS</span>
+                        </div>
+                        <span className="font-bold text-lg">iSpaan</span>
+                      </div>
+                      <div className="w-6 h-6 bg-white/20 rounded-full"></div>
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">Welcome back, Sarah!</h3>
+                    <p className="text-blue-100">Ready to continue your learning journey?</p>
+                  </div>
+                  
+                  {/* Phone Content */}
+                  <div className="p-6 space-y-4">
+                    <div className="bg-gradient-to-r from-green-100 to-emerald-100 p-4 rounded-2xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-semibold text-green-800">Today's Progress</span>
+                        <span className="text-2xl font-bold text-green-600">85%</span>
+                      </div>
+                      <div className="w-full bg-green-200 rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{width: '85%'}}></div>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-blue-50 p-4 rounded-2xl text-center">
+                        <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <Target className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="text-2xl font-bold text-blue-600">12</div>
+                        <div className="text-sm text-blue-800">Goals</div>
+                      </div>
+                      
+                      <div className="bg-purple-50 p-4 rounded-2xl text-center">
+                        <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                          <Award className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="text-2xl font-bold text-purple-600">8</div>
+                        <div className="text-sm text-purple-800">Achievements</div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-gradient-to-r from-orange-100 to-red-100 p-4 rounded-2xl">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
+                          <MessageCircle className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-orange-800">AI Mentor</div>
+                          <div className="text-sm text-orange-600">New career advice available</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Floating Elements */}
+              <div className="absolute -top-4 -right-4 w-20 h-20 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full blur-xl animate-pulse"></div>
+              <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full blur-xl animate-pulse delay-500"></div>
+              
+              {/* Secondary Phone Screen */}
+              <div className="absolute -top-8 -right-8 w-32 h-56 bg-gradient-to-br from-gray-800 to-gray-700 rounded-2xl p-1 shadow-xl transform -rotate-12 hover:rotate-0 transition-transform duration-500">
+                <div className="w-full h-full bg-white rounded-xl overflow-hidden">
+                  <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-3 text-white text-center">
+                    <div className="text-xs font-bold">Learning Path</div>
+                  </div>
+                  <div className="p-3 space-y-2">
+                    <div className="h-2 bg-gray-200 rounded-full"></div>
+                    <div className="h-2 bg-gray-200 rounded-full"></div>
+                    <div className="h-2 bg-green-400 rounded-full w-3/4"></div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Tablet Screen */}
+              <div className="absolute -bottom-8 -left-8 w-48 h-32 bg-gradient-to-br from-gray-800 to-gray-700 rounded-xl p-1 shadow-xl transform rotate-6 hover:rotate-0 transition-transform duration-500">
+                <div className="w-full h-full bg-white rounded-lg overflow-hidden">
+                  <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-2 text-white text-center">
+                    <div className="text-xs font-bold">Dashboard</div>
+                  </div>
+                  <div className="p-2 grid grid-cols-3 gap-1">
+                    <div className="h-4 bg-purple-200 rounded"></div>
+                    <div className="h-4 bg-purple-200 rounded"></div>
+                    <div className="h-4 bg-purple-200 rounded"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -296,6 +392,51 @@ export function HomePageContent({
           </div>
           
           <RealtimeStats />
+        </div>
+      </section>
+
+      {/* Character Showcase Section */}
+      <section className="py-20 bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 relative overflow-hidden">
+        {/* Animated Background */}
+        <div className="absolute inset-0">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-pink-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-purple-400/20 to-blue-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-pink-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-100 to-purple-100 rounded-full mb-8 border border-white/20 shadow-lg">
+              <Sparkles className="w-5 h-5 text-pink-600 mr-2 animate-pulse" />
+              <span className="text-pink-700 font-semibold">Meet Our Characters</span>
+            </div>
+            
+            <h2 className="text-5xl font-bold mb-6 leading-tight">
+              <span className="block text-gray-900">Bring Your</span>
+              <span className="block bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 bg-clip-text text-transparent animate-gradient-x">
+                Personality to Life
+              </span>
+            </h2>
+            
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-8">
+              Create your unique cartoon avatar and make your learning journey more personal and engaging. 
+              Choose from different character types or customize your own!
+            </p>
+            
+            <Link 
+              href="/character-builder"
+              className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-full font-bold text-lg hover:from-pink-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
+            >
+              <Sparkles className="w-5 h-5 mr-3" />
+              Create Your Character
+              <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+          
+          {/* Character Showcase */}
+          <div className="flex justify-center">
+            <CharacterShowcase />
+          </div>
         </div>
       </section>
 
