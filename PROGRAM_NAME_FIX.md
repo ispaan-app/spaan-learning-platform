@@ -142,3 +142,5 @@ The admin applicants page now displays meaningful program names like:
 
 This makes it much easier for administrators to understand and manage applications! 🎉
 
+
+

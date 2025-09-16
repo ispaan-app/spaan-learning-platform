@@ -98,6 +98,7 @@ export interface StepConfig {
   dueDate?: Date
   priority?: 'low' | 'medium' | 'high' | 'urgent'
   form?: FormConfig
+  template?: string
   conditions?: Record<string, any>
 }
 

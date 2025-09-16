@@ -124,7 +124,9 @@ class ErrorHandler {
       message: message || ERROR_MESSAGES[ERROR_CODES[code]],
       details,
       timestamp: Date.now(),
-      stack: new Error().stack
+      stack: new Error().stack,
+      severity,
+      category
     }
 
     this.logError(error, severity, category)
@@ -153,7 +155,9 @@ class ErrorHandler {
         },
         timestamp: Date.now(),
         userId: context?.userId,
-        requestId: context?.requestId
+        requestId: context?.requestId,
+        severity: ErrorSeverity.HIGH,
+        category: ErrorCategory.UNKNOWN
       }
     } else if (typeof error === 'object' && error !== null && 'code' in error) {
       appError = error as AppError
@@ -167,11 +171,13 @@ class ErrorHandler {
         },
         timestamp: Date.now(),
         userId: context?.userId,
-        requestId: context?.requestId
+        requestId: context?.requestId,
+        severity: ErrorSeverity.HIGH,
+        category: ErrorCategory.UNKNOWN
       }
     }
 
-    this.logError(appError, ErrorSeverity.HIGH, ErrorCategory.SYSTEM)
+    this.logError(appError, ErrorSeverity.HIGH, ErrorCategory.UNKNOWN)
     return appError
   }
 
@@ -352,7 +358,11 @@ function DefaultErrorFallback({ error }: { error: Error }) {
         </div>
         <div className="mt-4">
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.location.reload()
+              }
+            }}
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
           >
             Reload Page

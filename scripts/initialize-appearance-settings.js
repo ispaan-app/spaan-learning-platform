@@ -97,3 +97,5 @@ initializeAppearanceSettings()
     process.exit(1);
   });
 
+
+

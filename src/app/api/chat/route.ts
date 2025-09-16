@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { runChatFlow } from '@/ai/flows/chat'
+// Mock chat implementation - AI flows temporarily disabled
 
 export async function POST(request: NextRequest) {
   try {

@@ -1,5 +1,27 @@
 // Centralized type definitions to eliminate duplication and improve maintainability
 
+// Import error types
+export enum ErrorSeverity {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  CRITICAL = 'critical'
+}
+
+export enum ErrorCategory {
+  AUTHENTICATION = 'authentication',
+  AUTHORIZATION = 'authorization',
+  VALIDATION = 'validation',
+  DATABASE = 'database',
+  NETWORK = 'network',
+  EXTERNAL_API = 'external_api',
+  EXTERNAL_SERVICE = 'external_service',
+  SYSTEM = 'system',
+  BUSINESS_LOGIC = 'business_logic',
+  FILE_UPLOAD = 'file_upload',
+  UNKNOWN = 'unknown'
+}
+
 // Base types
 export interface BaseEntity {
   id: string
@@ -65,7 +87,7 @@ export interface DashboardPreferences {
 
 // Enums
 export type UserRole = 'applicant' | 'learner' | 'admin' | 'super-admin'
-export type UserStatus = 'pending' | 'active' | 'inactive' | 'suspended'
+export type UserStatus = 'pending' | 'active' | 'inactive' | 'suspended' | 'completed' | 'enrolled' | 'on_leave' | 'dropped_out'
 
 export interface Education {
   institution: string
@@ -515,6 +537,8 @@ export interface AppError {
   timestamp: number
   userId?: string
   requestId?: string
+  severity: ErrorSeverity
+  category: ErrorCategory
 }
 
 // Search types

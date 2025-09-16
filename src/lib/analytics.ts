@@ -238,8 +238,12 @@ class AnalyticsService {
   }
 
   private getOrCreateSession(): string {
-    const sessionId = sessionStorage.getItem('analytics_session_id') || this.generateId()
-    sessionStorage.setItem('analytics_session_id', sessionId)
+    const sessionId = typeof window !== 'undefined' 
+      ? (sessionStorage.getItem('analytics_session_id') || this.generateId())
+      : this.generateId()
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('analytics_session_id', sessionId)
+    }
     
     if (!this.sessions.has(sessionId)) {
       this.sessions.set(sessionId, { startTime: Date.now(), events: 0 })
@@ -255,7 +259,7 @@ class AnalyticsService {
     const realIp = request.headers.get('x-real-ip')
     const cfConnectingIp = request.headers.get('cf-connecting-ip')
     
-    return forwarded?.split(',')[0] || realIp || cfConnectingIp
+    return forwarded?.split(',')[0] || realIp || cfConnectingIp || undefined
   }
 
   private updateUserMetrics(event: AnalyticsEvent): void {

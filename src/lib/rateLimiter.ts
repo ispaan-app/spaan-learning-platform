@@ -41,7 +41,7 @@ class RateLimiter {
 
   private cleanup(): void {
     const now = Date.now()
-    for (const [key, data] of this.requests.entries()) {
+    for (const [key, data] of Array.from(this.requests.entries())) {
       if (now > data.resetTime) {
         this.requests.delete(key)
       }
@@ -349,3 +349,6 @@ export function getClientIdentifier(request: NextRequest): string {
 }
 
 export { RateLimiter, RedisRateLimiter }
+
+// Export singleton instance
+export const rateLimiter = RateLimiter.getInstance()

@@ -121,7 +121,7 @@ class MemoryCache {
     let oldestKey = ''
     let oldestTime = Date.now()
 
-    for (const [key, item] of this.cache.entries()) {
+    for (const [key, item] of Array.from(this.cache.entries())) {
       if (item.lastAccessed < oldestTime) {
         oldestTime = item.lastAccessed
         oldestKey = key
@@ -137,7 +137,7 @@ class MemoryCache {
     let oldestKey = ''
     let oldestTime = Date.now()
 
-    for (const [key, item] of this.cache.entries()) {
+    for (const [key, item] of Array.from(this.cache.entries())) {
       if (item.timestamp < oldestTime) {
         oldestTime = item.timestamp
         oldestKey = key
@@ -151,7 +151,7 @@ class MemoryCache {
 
   private evictTTL(): void {
     const now = Date.now()
-    for (const [key, item] of this.cache.entries()) {
+    for (const [key, item] of Array.from(this.cache.entries())) {
       if (now - item.timestamp > item.ttl * 1000) {
         this.cache.delete(key)
       }
@@ -162,7 +162,7 @@ class MemoryCache {
     const now = Date.now()
     const expiredKeys: string[] = []
 
-    for (const [key, item] of this.cache.entries()) {
+    for (const [key, item] of Array.from(this.cache.entries())) {
       if (now - item.timestamp > item.ttl * 1000) {
         expiredKeys.push(key)
       }

@@ -602,7 +602,7 @@ class AuditLogger {
     const now = new Date()
     const logsToDelete: string[] = []
 
-    for (const [id, log] of this.logs.entries()) {
+    for (const [id, log] of Array.from(this.logs.entries())) {
       const ageInDays = (now.getTime() - log.timestamp.getTime()) / (1000 * 60 * 60 * 24)
       
       if (ageInDays > log.retention.retentionPeriod && log.retention.autoDelete) {

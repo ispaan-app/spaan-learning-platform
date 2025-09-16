@@ -61,13 +61,52 @@ const nextConfig = {
         net: false,
         tls: false,
       };
-      
-      // Use ignore-loader for test files in production builds
-      config.module.rules.push({
-        test: /\.(test|spec)\.(js|jsx|ts|tsx)$/,
-        use: 'ignore-loader',
-      });
+    } else {
+      // Server-side fallbacks
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
     }
+    
+    // Add global fallbacks for both client and server
+    config.resolve.alias = {
+      ...config.resolve.alias,
+    };
+    
+    // Define globals for server-side rendering
+    config.plugins = config.plugins || [];
+    config.plugins.push(
+      new (require('webpack')).DefinePlugin({
+        'typeof self': JSON.stringify('undefined'),
+        'self': 'undefined',
+        'global.self': 'undefined',
+      })
+    );
+    
+    // Add node polyfills
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      'crypto': false,
+      'stream': false,
+      'util': false,
+      'buffer': false,
+      'process': false,
+    };
+    
+    // Fix constructor issues
+    config.optimization = {
+      ...config.optimization,
+      sideEffects: false,
+    };
+    
+    // Use ignore-loader for test files in production builds
+    config.module.rules.push({
+      test: /\.(test|spec)\.(js|jsx|ts|tsx)$/,
+      use: 'ignore-loader',
+    });
     
     // Production optimizations
     if (!dev) {

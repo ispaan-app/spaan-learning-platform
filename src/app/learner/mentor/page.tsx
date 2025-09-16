@@ -64,17 +64,40 @@ export default function AIMentorPage() {
     setInputMessage('')
     setIsLoading(true)
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      // Call the AI service
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: inputMessage,
+          context: 'career-mentor'
+        })
+      })
+
+      const data = await response.json()
+      
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        content: generateAIResponse(inputMessage),
+        content: data.response || "I apologize, but I'm having trouble processing your request right now. Please try again.",
         sender: 'ai',
         timestamp: new Date()
       }
       setMessages(prev => [...prev, aiResponse])
+    } catch (error) {
+      console.error('Error calling AI service:', error)
+      const errorResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "I apologize, but I'm experiencing technical difficulties. Please try again later.",
+        sender: 'ai',
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, errorResponse])
+    } finally {
       setIsLoading(false)
-    }, 1500)
+    }
   }
 
   const generateAIResponse = (userInput: string): string => {
@@ -249,6 +272,8 @@ export default function AIMentorPage() {
     </AdminLayout>
   )
 }
+
+
 
 
 

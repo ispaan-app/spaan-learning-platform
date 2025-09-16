@@ -1,6 +1,6 @@
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { AiChatbot } from '@/components/ai-chatbot'
-import { SuperAdminDashboard } from '@/components/super-admin/SuperAdminDashboard'
+import SuperAdminDashboard from '@/components/super-admin/SuperAdminDashboard'
 
 export default function SuperAdminDashboardPage() {
   return (

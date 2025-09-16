@@ -67,7 +67,7 @@ class AuthManager {
       const rateLimitResult = await rateLimiter.checkLimit(
         clientIP,
         '/api/auth/login',
-        { requests: 5, window: 15 * 60 * 1000 }
+        { maxRequests: 5, windowMs: 15 * 60 * 1000 }
       )
 
       if (!rateLimitResult.allowed) {
@@ -176,7 +176,7 @@ class AuthManager {
       const rateLimitResult = await rateLimiter.checkLimit(
         clientIP,
         '/api/auth/pin-login',
-        { requests: 10, window: 15 * 60 * 1000 }
+        { maxRequests: 10, windowMs: 15 * 60 * 1000 }
       )
 
       if (!rateLimitResult.allowed) {

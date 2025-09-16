@@ -261,3 +261,5 @@ The admin applicants page is now fully functional with:
 
 The admin applicants page is now fully functional and ready for production use! 🎉
 
+
+

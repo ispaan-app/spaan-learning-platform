@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -20,6 +20,9 @@ import {
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { AdminLayout } from '@/components/admin/AdminLayout'
+import { useAuth } from '@/hooks/useAuth'
+import { db } from '@/lib/firebase'
+import { collection, query, where, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, getDocs } from 'firebase/firestore'
 
 interface Document {
   id: string
@@ -35,56 +38,45 @@ interface Document {
 }
 
 export default function DocumentsPage() {
-  const [documents, setDocuments] = useState<Document[]>([
-    {
-      id: '1',
-      name: 'CV_Sarah_Johnson_2024.pdf',
-      type: 'cv',
-      status: 'approved',
-      uploadedDate: '2024-01-15',
-      reviewedDate: '2024-01-16',
-      size: '2.3 MB',
-      url: '#',
-      reviewer: 'Dr. Sarah Johnson'
-    },
-    {
-      id: '2',
-      name: 'ID_Document_2024.pdf',
-      type: 'id',
-      status: 'approved',
-      uploadedDate: '2024-01-10',
-      reviewedDate: '2024-01-11',
-      size: '1.8 MB',
-      url: '#',
-      reviewer: 'Dr. Sarah Johnson'
-    },
-    {
-      id: '3',
-      name: 'Placement_Contract_TechSolutions.pdf',
-      type: 'contract',
-      status: 'pending',
-      uploadedDate: '2024-01-20',
-      size: '3.1 MB',
-      url: '#'
-    },
-    {
-      id: '4',
-      name: 'Certificate_Web_Development.pdf',
-      type: 'certificate',
-      status: 'rejected',
-      uploadedDate: '2024-01-18',
-      reviewedDate: '2024-01-19',
-      size: '1.2 MB',
-      url: '#',
-      reviewer: 'Dr. Sarah Johnson',
-      comments: 'Document quality is too low. Please rescan with higher resolution.'
-    }
-  ])
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const { user } = useAuth()
 
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const router = useRouter()
+
+  // Fetch documents from Firebase
+  useEffect(() => {
+    if (!user?.uid) return
+
+    const unsubscribe = onSnapshot(
+      query(
+        collection(db, 'documents'),
+        where('userId', '==', user.uid),
+        orderBy('uploadedDate', 'desc')
+      ),
+      (snapshot) => {
+        const docs = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          uploadedDate: doc.data().uploadedDate?.toDate?.()?.toISOString() || new Date().toISOString(),
+          reviewedDate: doc.data().reviewedDate?.toDate?.()?.toISOString() || undefined
+        })) as Document[]
+        setDocuments(docs)
+        setLoading(false)
+      },
+      (error) => {
+        console.error('Error fetching documents:', error)
+        setError('Failed to load documents')
+        setLoading(false)
+      }
+    )
+
+    return () => unsubscribe()
+  }, [user?.uid])
 
   const documentTypes = [
     { value: 'cv', label: 'CV/Resume', required: true, description: 'Your current curriculum vitae' },
@@ -129,26 +121,34 @@ export default function DocumentsPage() {
   }
 
   const handleUpload = async () => {
-    if (!selectedFile) return
+    if (!selectedFile || !user?.uid) return
 
     setUploading(true)
     
-    // Simulate upload
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    const newDocument: Document = {
-      id: Date.now().toString(),
-      name: selectedFile.name,
-      type: 'other', // In a real app, this would be selected by the user
-      status: 'uploaded',
-      uploadedDate: new Date().toISOString().split('T')[0],
-      size: `${(selectedFile.size / 1024 / 1024).toFixed(1)} MB`
+    try {
+      // Create document record in Firebase
+      const docData = {
+        userId: user.uid,
+        name: selectedFile.name,
+        type: 'other', // In a real app, this would be selected by the user
+        status: 'uploaded',
+        uploadedDate: new Date(),
+        size: `${(selectedFile.size / 1024 / 1024).toFixed(1)} MB`,
+        url: '', // In a real app, this would be the uploaded file URL
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+      
+      await addDoc(collection(db, 'documents'), docData)
+      
+      setSelectedFile(null)
+      setShowUploadModal(false)
+    } catch (error) {
+      console.error('Error uploading document:', error)
+      setError('Failed to upload document')
+    } finally {
+      setUploading(false)
     }
-    
-    setDocuments(prev => [newDocument, ...prev])
-    setSelectedFile(null)
-    setShowUploadModal(false)
-    setUploading(false)
   }
 
   const getDocumentIcon = (type: string) => {
@@ -199,6 +199,30 @@ export default function DocumentsPage() {
             Upload Document
           </Button>
         </div>
+
+        {/* Loading State */}
+        {loading && (
+          <Card>
+            <CardContent className="flex items-center justify-center py-8">
+              <div className="flex items-center space-x-2">
+                <RefreshCw className="h-5 w-5 animate-spin" />
+                <span>Loading documents...</span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <Card>
+            <CardContent className="flex items-center justify-center py-8">
+              <div className="flex items-center space-x-2 text-red-600">
+                <AlertCircle className="h-5 w-5" />
+                <span>{error}</span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Document Completion Status */}
         <Card>

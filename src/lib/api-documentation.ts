@@ -512,8 +512,8 @@ export class APIDefinitions {
             }
           }
         },
-        401: { $ref: '#/components/responses/Unauthorized' },
-        400: { $ref: '#/components/responses/BadRequest' }
+         401: { description: 'Unauthorized' },
+         400: { description: 'Bad Request' }
       }
     })
 
@@ -556,7 +556,7 @@ export class APIDefinitions {
             }
           }
         },
-        400: { $ref: '#/components/responses/BadRequest' },
+         400: { description: 'Bad Request' },
         409: {
           description: 'User already exists',
           content: {
@@ -576,10 +576,10 @@ export class APIDefinitions {
       description: 'Retrieve a list of users with pagination and filtering',
       tags: ['Users'],
       parameters: [
-        { $ref: '#/components/parameters/Page' },
-        { $ref: '#/components/parameters/Limit' },
-        { $ref: '#/components/parameters/Sort' },
-        { $ref: '#/components/parameters/Search' },
+        { name: 'page', in: 'query', required: false, schema: { type: 'integer', minimum: 1 } },
+        { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 100 } },
+        { name: 'sort', in: 'query', required: false, schema: { type: 'string' } },
+        { name: 'search', in: 'query', required: false, schema: { type: 'string' } },
         {
           name: 'role',
           in: 'query',
@@ -617,8 +617,8 @@ export class APIDefinitions {
             }
           }
         },
-        401: { $ref: '#/components/responses/Unauthorized' },
-        403: { $ref: '#/components/responses/Forbidden' }
+         401: { description: 'Unauthorized' },
+         403: { description: 'Forbidden' }
       },
       security: [{ bearerAuth: [] }]
     })
@@ -653,8 +653,8 @@ export class APIDefinitions {
             }
           }
         },
-        404: { $ref: '#/components/responses/NotFound' },
-        401: { $ref: '#/components/responses/Unauthorized' }
+         404: { description: 'Not Found' },
+        401: { description: 'Unauthorized' }
       },
       security: [{ bearerAuth: [] }]
     })
@@ -699,8 +699,8 @@ export class APIDefinitions {
             }
           }
         },
-        400: { $ref: '#/components/responses/BadRequest' },
-        401: { $ref: '#/components/responses/Unauthorized' }
+         400: { description: 'Bad Request' },
+        401: { description: 'Unauthorized' }
       },
       security: [{ bearerAuth: [] }]
     })

@@ -245,6 +245,12 @@ class PerformanceMonitor {
     }
     return 0
   }
+
+  recordApiCall(endpoint: string, method: string, duration: number, statusCode: number): void {
+    // This method is used by the captureApiCall function
+    // The actual recording is handled by the metricsCollector
+    console.log(`API Call: ${method} ${endpoint} - ${duration}ms - ${statusCode}`)
+  }
 }
 
 // Health check system
@@ -271,7 +277,7 @@ class HealthChecker {
     const results: Record<string, { status: 'pass' | 'fail'; message?: string }> = {}
     let failedChecks = 0
 
-    for (const [name, check] of this.checks.entries()) {
+    for (const [name, check] of Array.from(this.checks.entries())) {
       try {
         const result = await check()
         results[name] = {
@@ -302,6 +308,14 @@ class HealthChecker {
       checks: results,
       timestamp: Date.now()
     }
+  }
+
+  async checkHealth(): Promise<{
+    status: 'healthy' | 'degraded' | 'unhealthy'
+    checks: Record<string, { status: 'pass' | 'fail'; message?: string }>
+    timestamp: number
+  }> {
+    return this.runChecks()
   }
 }
 
@@ -403,6 +417,19 @@ export const metricsCollector = MetricsCollector.getInstance()
 export const errorTracker = ErrorTracker.getInstance()
 export const performanceMonitor = PerformanceMonitor.getInstance()
 export const healthChecker = HealthChecker.getInstance()
+
+// Export utility functions
+export async function getHealthData() {
+  return await healthChecker.checkHealth()
+}
+
+export function captureMetric(name: string, value: number, tags?: Record<string, string>) {
+  metricsCollector.recordMetric(name, value, tags)
+}
+
+export function captureApiCall(endpoint: string, method: string, duration: number, statusCode: number) {
+  performanceMonitor.recordApiCall(endpoint, method, duration, statusCode)
+}
 
 // Initialize monitoring
 initializeHealthChecks()

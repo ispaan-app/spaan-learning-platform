@@ -27,42 +27,27 @@ export async function resolveStipendReportAction(reportId: string) {
 
 export async function getStipendReportsAction(status?: 'pending' | 'resolved') {
   try {
-    // This would normally fetch from Firestore
-    // For now, returning mock data
-    const mockReports = [
-      {
-        id: '1',
-        learnerId: 'learner1',
-        learnerName: 'John Doe',
-        placementId: 'placement1',
-        companyName: 'Tech Corp',
-        month: 'January',
-        year: 2024,
-        status: 'pending',
-        submittedAt: new Date('2024-01-15'),
-        notes: 'Learner reported missing stipend payment'
-      },
-      {
-        id: '2',
-        learnerId: 'learner2',
-        learnerName: 'Jane Smith',
-        placementId: 'placement2',
-        companyName: 'Innovation Ltd',
-        month: 'December',
-        year: 2023,
-        status: 'resolved',
-        submittedAt: new Date('2023-12-20'),
-        resolvedAt: new Date('2023-12-22'),
-        resolvedBy: 'admin@example.com',
-        notes: 'Payment processed successfully'
-      }
-    ]
-
+    const { db } = await import('@/lib/firebase')
+    const { collection, query, where, orderBy, getDocs } = await import('firebase/firestore')
+    
+    let q = query(
+      collection(db, 'stipendReports'),
+      orderBy('submittedAt', 'desc')
+    )
+    
     if (status) {
-      return mockReports.filter(report => report.status === status)
+      q = query(q, where('status', '==', status))
     }
-
-    return mockReports
+    
+    const snapshot = await getDocs(q)
+    const reports = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      submittedAt: doc.data().submittedAt?.toDate?.() || new Date(),
+      resolvedAt: doc.data().resolvedAt?.toDate?.() || null
+    }))
+    
+    return reports
   } catch (error) {
     console.error('Error fetching stipend reports:', error)
     return []

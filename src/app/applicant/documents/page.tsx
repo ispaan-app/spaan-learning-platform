@@ -31,7 +31,7 @@ export default function DocumentsPage() {
   const [uploadSuccess, setUploadSuccess] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const documentType = searchParams.get('type') || 'certifiedId'
+  const documentType = searchParams?.get('type') || 'certifiedId'
 
   useEffect(() => {
     // Get user from localStorage (in a real app, use proper session management)

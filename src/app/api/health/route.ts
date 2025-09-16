@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     const startTime = Date.now()
     
     // Basic health check
-    const healthData = getHealthData()
+    const healthData = await getHealthData()
     
     // Test database connection - simplified for production
     let databaseStatus = 'healthy'

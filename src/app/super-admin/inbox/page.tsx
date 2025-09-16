@@ -1,7 +1,7 @@
 'use client'
 
 import { AdminLayout } from '@/components/admin/AdminLayout'
-import { Inbox } from '@/components/notifications/Inbox'
+import Inbox from '@/components/notifications/Inbox'
 import { useAuth } from '@/hooks/useAuth'
 
 export default function SuperAdminInboxPage() {

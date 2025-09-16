@@ -93,6 +93,11 @@ export class InputSanitizer {
       .replace(/[;\\]/g, '') // Remove semicolons and backslashes
   }
 
+  // Alias for sanitizeText for backward compatibility
+  sanitizeString(input: string): string {
+    return this.sanitizeText(input)
+  }
+
   // Sanitize file name
   sanitizeFileName(input: string): string {
     if (!input || typeof input !== 'string') {

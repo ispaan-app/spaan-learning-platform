@@ -1,5 +1,6 @@
-import { logUserCreated, logUserStatusUpdated } from './auditLogActions'
 'use server'
+
+import { logUserCreated, logUserStatusUpdated } from './auditLogActions'
 
 import { adminDb, adminAuth } from '@/lib/firebase-admin'
 import { z } from 'zod'

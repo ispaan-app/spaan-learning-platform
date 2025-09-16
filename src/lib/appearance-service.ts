@@ -4,7 +4,7 @@
  */
 
 import { db } from '@/lib/firebase'
-import { doc, getDoc, onSnapshot } from 'firebase/firestore'
+import { doc, getDoc, onSnapshot, setDoc } from 'firebase/firestore'
 
 export interface AppearanceSettings {
   heroImageUrl: string
@@ -96,7 +96,7 @@ export class AppearanceService {
   ): Promise<boolean> {
     try {
       const appearanceRef = doc(db, 'settings', 'appearance')
-      await appearanceRef.set({
+      await setDoc(appearanceRef, {
         ...updates,
         lastUpdated: new Date(),
         updatedBy

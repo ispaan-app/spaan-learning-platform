@@ -15,7 +15,7 @@ export default function DocumentUploadPage() {
   const { user } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const documentType = searchParams.get('type') || 'cv'
+  const documentType = searchParams?.get('type') || 'cv'
   
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)

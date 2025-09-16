@@ -1,6 +1,7 @@
 ﻿import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import '@/lib/polyfills'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ConnectionStatus } from '@/components/ui/connection-status'

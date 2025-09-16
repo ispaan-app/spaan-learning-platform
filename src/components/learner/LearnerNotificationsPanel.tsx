@@ -42,12 +42,12 @@ export const LearnerNotificationsPanel: React.FC<LearnerNotificationsPanelProps>
               <span className={n.read ? 'line-through text-gray-400' : ''}>{n.message}</span>
               <span className="ml-2 text-xs text-gray-400">{new Date(n.date).toLocaleString()}</span>
               {onMarkAsRead && !n.read && (
-                <Button size="xs" variant="ghost" className="ml-2 text-blue-500" aria-label="Mark as read" onClick={() => onMarkAsRead(n.id)}>
+                <Button size="sm" variant="ghost" className="ml-2 text-blue-500" aria-label="Mark as read" onClick={() => onMarkAsRead(n.id)}>
                   Mark as read
                 </Button>
               )}
               {onDelete && (
-                <Button size="xs" variant="ghost" className="ml-1 text-red-500" aria-label="Delete notification" onClick={() => onDelete(n.id)}>
+                <Button size="sm" variant="ghost" className="ml-1 text-red-500" aria-label="Delete notification" onClick={() => onDelete(n.id)}>
                   <X className="h-3 w-3" />
                 </Button>
               )}

@@ -18,12 +18,28 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 
+interface Message {
+  id: string
+  senderName: string
+  subject: string
+  content: string
+  timestamp: Date
+  isRead: boolean
+  isStarred: boolean
+}
+
+interface AdminUser {
+  id: string
+  name: string
+  email: string
+}
+
 export default function AdminInbox() {
   const { user } = useAuth()
   const [showCompose, setShowCompose] = useState(false)
-  const [messages, setMessages] = useState([])
-  const [adminUsers, setAdminUsers] = useState([])
-  const [selectedMessage, setSelectedMessage] = useState(null)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null)
   const [stats, setStats] = useState({
     totalMessages: 0,
     unreadMessages: 0,

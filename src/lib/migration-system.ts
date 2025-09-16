@@ -500,5 +500,5 @@ export class MigrationRunner {
 }
 
 // Export utilities
-export { MigrationManager, MigrationRunner }
+export { MigrationManager }
 export type { MigrationResult, DataTransformation, MigrationConfig }

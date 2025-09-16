@@ -1,8 +1,9 @@
 'use server'
 
 import { adminDb } from '@/lib/firebase-admin'
-import { verifyPinFlow } from '@/ai/flows/securePinFlow'
-import { findUserByIdNumberFlow } from '@/ai/flows/findUserByIdNumber'
+// Mock AI flows - temporarily disabled
+// import { verifyPinFlow } from '@/ai/flows/securePinFlow'
+// import { findUserByIdNumberFlow } from '@/ai/flows/findUserByIdNumber'
 import { getAuth } from 'firebase-admin/auth'
 
 export async function loginWithPin(idNumber: string, pin: string) {

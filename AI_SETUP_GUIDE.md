@@ -223,3 +223,5 @@ If you encounter issues:
 
 **Need help?** Check the logs, verify your configuration, and ensure your Google AI API key is valid and active.
 
+
+

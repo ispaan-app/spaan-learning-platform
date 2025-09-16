@@ -18,13 +18,11 @@ export async function POST(request: NextRequest) {
     // Process and store metrics
     const processedMetrics = metrics.map((metric: any) => {
       // Capture each metric
-      captureMetric({
-        name: metric.name,
-        value: metric.value,
-        unit: metric.unit || 'count',
-        tags: metric.tags || {},
-        timestamp: metric.timestamp || Date.now()
-      })
+      captureMetric(
+        metric.name,
+        metric.value,
+        metric.tags || {}
+      )
       
       return {
         ...metric,

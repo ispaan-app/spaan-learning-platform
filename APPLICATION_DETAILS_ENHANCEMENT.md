@@ -176,3 +176,5 @@ The Application Details admin modal now provides a comprehensive, real-time view
 
 The admin can now view detailed, up-to-date information about each applicant directly from the database! 🎉
 
+
+
