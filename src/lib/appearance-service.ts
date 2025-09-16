@@ -19,7 +19,7 @@ export interface AppearanceSettings {
 
 const DEFAULT_APPEARANCE: AppearanceSettings = {
   heroImageUrl: '/images/default-hero.jpg',
-  platformName: 'iSpaan App',
+  platformName: 'iSpaan',
   primaryColor: '#4F46E5',
   secondaryColor: '#7C3AED',
   lastUpdated: new Date(),

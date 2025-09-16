@@ -196,7 +196,7 @@ class EmailService {
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #4F46E5;">Congratulations, ${userName}!</h1>
-          <p>Your application to the iSpaan App has been approved!</p>
+          <p>Your application to iSpaan has been approved!</p>
           <p>You are now officially a learner and can access all platform features.</p>
           <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3>Next Steps:</h3>
@@ -211,7 +211,7 @@ class EmailService {
           <p>Best regards,<br>The iSpaan Team</p>
         </div>
       `,
-      text: `Congratulations, ${userName}! Your application to the iSpaan App has been approved. You are now officially a learner and can access all platform features.`
+      text: `Congratulations, ${userName}! Your application to iSpaan has been approved. You are now officially a learner and can access all platform features.`
     }
   }
 
@@ -222,14 +222,14 @@ class EmailService {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #4F46E5;">Application Update</h1>
           <p>Dear ${userName},</p>
-          <p>Thank you for your interest in the iSpaan App. After careful review, we regret to inform you that your application was not approved at this time.</p>
+          <p>Thank you for your interest in iSpaan. After careful review, we regret to inform you that your application was not approved at this time.</p>
           ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
           <p>We encourage you to reapply in the future when you meet the requirements.</p>
           <p>If you have any questions, please contact our support team.</p>
           <p>Best regards,<br>The iSpaan Team</p>
         </div>
       `,
-      text: `Dear ${userName}, Thank you for your interest in the iSpaan App. After careful review, we regret to inform you that your application was not approved at this time. ${reason ? `Reason: ${reason}` : ''}`
+      text: `Dear ${userName}, Thank you for your interest in iSpaan. After careful review, we regret to inform you that your application was not approved at this time. ${reason ? `Reason: ${reason}` : ''}`
     }
   }
 

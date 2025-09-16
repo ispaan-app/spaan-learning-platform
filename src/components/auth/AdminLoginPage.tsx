@@ -88,7 +88,7 @@ export function AdminLoginPage() {
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-xs text-gray-500">
-            Secure administrative access • iSpaan App
+            Secure administrative access • iSpaan
           </p>
         </div>
       </div>

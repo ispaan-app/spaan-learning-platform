@@ -38,7 +38,7 @@ async function initializeAppearanceSettings() {
     // Default appearance settings
     const defaultSettings = {
       heroImageUrl: '/images/default-hero.jpg',
-      platformName: 'iSpaan App',
+      platformName: 'iSpaan',
       primaryColor: '#4F46E5',
       secondaryColor: '#7C3AED',
       lastUpdated: new Date(),
