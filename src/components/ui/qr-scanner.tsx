@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import { Camera, CameraOff, AlertCircle } from 'lucide-react'
 import { Button } from './button'
 
 interface QRScannerProps {
-  onScan: (data: string) => void
+  onScan?: (data: string) => void
   onError?: (error: string) => void
   className?: string
 }
@@ -19,7 +19,7 @@ export function QRScanner({ onScan, onError, className }: QRScannerProps) {
   const [error, setError] = useState<string | null>(null)
   const [hasPermission, setHasPermission] = useState<boolean | null>(null)
 
-  const startScanning = async () => {
+  const startScanning = useCallback(async () => {
     try {
       setError(null)
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -39,17 +39,17 @@ export function QRScanner({ onScan, onError, className }: QRScannerProps) {
       setError('Unable to access camera. Please check permissions.')
       onError?.('Camera access denied')
     }
-  }
+  }, [onError])
 
-  const stopScanning = () => {
+  const stopScanning = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop())
       streamRef.current = null
     }
     setIsScanning(false)
-  }
+  }, [])
 
-  const scanQRCode = () => {
+  const scanQRCode = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return
 
     const video = videoRef.current
@@ -71,13 +71,13 @@ export function QRScanner({ onScan, onError, className }: QRScannerProps) {
       // This is a placeholder - replace with actual QR code detection
       const qrData = detectQRCode(imageData)
       if (qrData) {
-        onScan(qrData)
+        onScan?.(qrData)
         stopScanning()
       }
     } catch (err) {
       console.error('QR code detection error:', err)
     }
-  }
+  }, [onScan, stopScanning])
 
   // Placeholder QR code detection function
   const detectQRCode = (imageData: ImageData): string | null => {
