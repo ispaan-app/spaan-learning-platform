@@ -1,10 +1,11 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { Toaster as Sonner } from 'sonner'
 
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
-const Toaster = ({ ...props }: ToasterProps) => {
+const ToasterComponent = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       className="toaster group"
@@ -23,6 +24,12 @@ const Toaster = ({ ...props }: ToasterProps) => {
     />
   )
 }
+
+// Dynamic import to prevent SSR issues
+const Toaster = dynamic(() => Promise.resolve(ToasterComponent), {
+  ssr: false,
+  loading: () => null,
+})
 
 export { Toaster }
 

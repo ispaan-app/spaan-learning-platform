@@ -83,6 +83,8 @@ const nextConfig = {
         'typeof self': JSON.stringify('undefined'),
         'self': 'undefined',
         'global.self': 'undefined',
+        'typeof window': isServer ? JSON.stringify('undefined') : 'window',
+        'typeof document': isServer ? JSON.stringify('undefined') : 'document',
       })
     );
     
@@ -101,6 +103,17 @@ const nextConfig = {
       ...config.optimization,
       sideEffects: false,
     };
+    
+    // Fix SSR issues
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'styled-jsx': require.resolve('styled-jsx/dist/index.js'),
+    };
+    
+    // Handle styled-jsx for SSR
+    if (isServer) {
+      config.externals = [...(config.externals || []), 'styled-jsx/server']
+    }
     
     // Use ignore-loader for test files in production builds
     config.module.rules.push({
