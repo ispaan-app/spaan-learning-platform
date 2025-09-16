@@ -15,7 +15,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'iSpaan - AI-Powered App',
+  title: 'iSpaan',
   description: 'A comprehensive learning platform with AI-powered features for students, applicants, and administrators.',
   manifest: '/manifest.json',
   icons: {
