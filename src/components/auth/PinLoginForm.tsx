@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { LoadingButton } from '@/components/ui/loading'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { SuccessPopup } from '@/components/ui/success-popup'
+import { EnhancedSuccessPopup } from '@/components/ui/enhanced-success-popup'
 
 export function PinLoginForm() {
   const [formData, setFormData] = useState({
@@ -172,16 +172,19 @@ export function PinLoginForm() {
         </div>
       </div>
 
-  {/* Success Popup with custom redirect message */}
+  {/* Enhanced Success Popup with modern UI/UX */}
   {loginResult && (
-    <SuccessPopup
+    <EnhancedSuccessPopup
       isVisible={showSuccessPopup}
       onClose={() => setShowSuccessPopup(false)}
-      title="Login Successful!"
-      message="Welcome back! You have successfully logged in to your account."
+      title="Welcome Back!"
+      message="You have successfully logged in to your account. Your personalized dashboard is ready!"
       redirectTo={loginResult.redirectTo}
       userRole={loginResult.userRole}
-      redirectMessage="You are being securely redirected to your dashboard..."
+      redirectMessage="Preparing your personalized dashboard..."
+      redirectDelay={2500}
+      stayLabel="Stay Here"
+      goLabel="Go to Dashboard"
     />
   )}
     </>

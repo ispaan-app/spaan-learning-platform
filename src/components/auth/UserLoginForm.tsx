@@ -12,7 +12,7 @@ import { LoadingButton } from '@/components/ui/loading'
 import { loginWithPin } from '@/app/actions/authActions'
 import { useAuth } from '@/hooks/useAuth'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
-import { SuccessPopup } from '@/components/ui/success-popup'
+import { EnhancedSuccessPopup } from '@/components/ui/enhanced-success-popup'
 
 const loginSchema = z.object({
   idNumber: z.string()
@@ -170,16 +170,19 @@ export function UserLoginForm() {
         </div>
       </form>
 
-  {/* Success Popup with custom redirect message */}
+  {/* Enhanced Success Popup with modern UI/UX */}
   {loginResult && (
-    <SuccessPopup
+    <EnhancedSuccessPopup
       isVisible={showSuccessPopup}
       onClose={() => setShowSuccessPopup(false)}
-      title="Login Successful!"
-      message="Welcome back! You have successfully logged in to your account."
+      title="Welcome Back!"
+      message="You have successfully logged in to your account. Your personalized dashboard is ready!"
       redirectTo={loginResult.redirectTo}
       userRole={loginResult.userRole}
-      redirectMessage="You are being securely redirected to your dashboard..."
+      redirectMessage="Preparing your personalized dashboard..."
+      redirectDelay={2500}
+      stayLabel="Stay Here"
+      goLabel="Go to Dashboard"
     />
   )}
     </>
