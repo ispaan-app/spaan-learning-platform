@@ -1,7 +1,7 @@
 'use client'
 
 import { AdminLayout } from '@/components/admin/AdminLayout'
-import Inbox from '@/components/notifications/Inbox'
+import SuperAdminInbox from '@/components/super-admin/SuperAdminInbox'
 import { useAuth } from '@/hooks/useAuth'
 
 export default function SuperAdminInboxPage() {
@@ -13,7 +13,7 @@ export default function SuperAdminInboxPage() {
 
   return (
     <AdminLayout userRole="super-admin">
-      <Inbox />
+      <SuperAdminInbox />
     </AdminLayout>
   )
 }

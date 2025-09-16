@@ -27,6 +27,7 @@
     "emergency:firestore": "node scripts/emergency-firestore-fix.js",
     "enable:ai": "node scripts/enable-ai-features.js",
     "optimize:config": "node scripts/optimize-configuration.js",
+    "init:super-admin-messages": "node scripts/init-super-admin-messages.js",
     "analyze:bundle": "ANALYZE=true npm run build",
     "setup:firebase": "npm run setup:env && npm run validate:rules && npm run fix:permissions",
     "setup:complete": "npm run setup:env && npm run enable:ai && npm run validate:rules && npm run fix:permissions",
