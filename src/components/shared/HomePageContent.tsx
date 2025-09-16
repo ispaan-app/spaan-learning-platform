@@ -3,6 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { ArrowRight, Users, Shield, Brain, CheckCircle, Star } from 'lucide-react'
+import { RealtimeStats } from './RealtimeStats'
 
 interface HomePageContentProps {
   heroImageUrl: string
@@ -198,24 +199,7 @@ export function HomePageContent({
             </p>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="text-5xl font-bold text-white mb-2">10K+</div>
-              <div className="text-blue-100 text-lg">Active Learners</div>
-            </div>
-            <div className="text-center">
-              <div className="text-5xl font-bold text-white mb-2">95%</div>
-              <div className="text-blue-100 text-lg">Success Rate</div>
-            </div>
-            <div className="text-center">
-              <div className="text-5xl font-bold text-white mb-2">24/7</div>
-              <div className="text-blue-100 text-lg">AI Support</div>
-            </div>
-            <div className="text-center">
-              <div className="text-5xl font-bold text-white mb-2">50+</div>
-              <div className="text-blue-100 text-lg">Programs</div>
-            </div>
-          </div>
+          <RealtimeStats />
         </div>
       </section>
 
