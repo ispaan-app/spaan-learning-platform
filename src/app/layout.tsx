@@ -1,4 +1,4 @@
-﻿import type { Metadata, Viewport } from 'next'
+﻿import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 // import '@/lib/polyfills' // Temporarily disabled for build
@@ -30,12 +30,6 @@ export const metadata: Metadata = {
   },
 }
 
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  themeColor: '#4F46E5',
-}
 
 export default function RootLayout({
   children,
