@@ -30,16 +30,16 @@ interface CharacterConfig {
 const CHARACTER_PRESETS = {
   learner: {
     avatarStyle: 'Circle' as const,
-    topType: 'ShortHairShortCurly',
+    topType: 'ShortHairDreads01',
     accessoriesType: 'PrescriptionGlasses',
-    hairColor: 'BrownDark',
+    hairColor: 'Black',
     facialHairType: 'Blank',
     clotheType: 'Hoodie',
-    clotheColor: 'PastelBlue',
+    clotheColor: 'Blue01',
     eyeType: 'Happy',
     eyebrowType: 'Default',
     mouthType: 'Smile',
-    skinColor: 'Light'
+    skinColor: 'DarkBrown'
   },
   admin: {
     avatarStyle: 'Circle' as const,
@@ -52,33 +52,33 @@ const CHARACTER_PRESETS = {
     eyeType: 'Default',
     eyebrowType: 'Default',
     mouthType: 'Default',
-    skinColor: 'Light'
+    skinColor: 'Black'
   },
   mentor: {
     avatarStyle: 'Circle' as const,
-    topType: 'LongHairStraight',
+    topType: 'LongHairFro',
     accessoriesType: 'Blank',
-    hairColor: 'Auburn',
+    hairColor: 'Black',
     facialHairType: 'Blank',
     clotheType: 'BlazerShirt',
     clotheColor: 'PastelGreen',
     eyeType: 'Happy',
     eyebrowType: 'Default',
     mouthType: 'Smile',
-    skinColor: 'Light'
+    skinColor: 'DarkBrown'
   },
   superAdmin: {
     avatarStyle: 'Circle' as const,
     topType: 'ShortHairShortCurly',
     accessoriesType: 'Blank',
-    hairColor: 'Brown',
+    hairColor: 'Black',
     facialHairType: 'BeardMedium',
     clotheType: 'BlazerShirt',
     clotheColor: 'Red',
     eyeType: 'Default',
     eyebrowType: 'Default',
     mouthType: 'Default',
-    skinColor: 'Light'
+    skinColor: 'Black'
   }
 }
 
@@ -295,10 +295,10 @@ export function CartoonCharacter({
           {currentPreset === 'superAdmin' ? 'Super Admin' : currentPreset} Character
         </h3>
         <p className="text-sm text-gray-600 max-w-xs">
-          {currentPreset === 'learner' && 'A curious learner ready to explore new skills and opportunities.'}
-          {currentPreset === 'admin' && 'A professional administrator managing the learning platform.'}
-          {currentPreset === 'mentor' && 'An experienced mentor guiding students on their learning journey.'}
-          {currentPreset === 'superAdmin' && 'A powerful super administrator overseeing the entire platform.'}
+          {currentPreset === 'learner' && 'A young South African ready to build skills and create opportunities in their community.'}
+          {currentPreset === 'admin' && 'A dedicated administrator supporting learners across South African townships.'}
+          {currentPreset === 'mentor' && 'An experienced mentor empowering young South Africans on their career journey.'}
+          {currentPreset === 'superAdmin' && 'A visionary leader transforming education across South African communities.'}
         </p>
       </div>
     </div>
@@ -360,3 +360,5 @@ export function CharacterShowcase() {
     </div>
   )
 }
+
+
