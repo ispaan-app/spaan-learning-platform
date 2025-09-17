@@ -107,7 +107,7 @@ export function HomePageContent({
                       </div>
                       <div className="w-6 h-6 bg-white/20 rounded-full"></div>
                     </div>
-                    <h3 className="text-xl font-bold mb-2">Welcome back, Sarah!</h3>
+                    <h3 className="text-xl font-bold mb-2">Welcome back, Sipho!</h3>
                     <p className="text-blue-100">Ready to continue your learning journey?</p>
                   </div>
                   
