@@ -25,6 +25,7 @@ import { LearnerActivityFeed } from '@/components/admin/LearnerActivityFeed'
 import { DropoutRiskAnalyzer } from '@/components/admin/DropoutRiskAnalyzer'
 // Test panel removed for production
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { EnhancedAdminDashboardContent } from './enhanced-page'
 import { WelcomeCard } from '@/components/ui/welcome-card'
 import { StatsSkeleton, ChartSkeleton, ListSkeleton } from '@/components/ui/skeleton'
 import React, { Suspense, useState, useEffect } from 'react'
@@ -211,7 +212,7 @@ export default function AdminDashboardPage() {
   return (
     <AdminLayout userRole="admin">
       <FirestoreErrorHandler>
-        <AdminDashboardContent />
+        <EnhancedAdminDashboardContent />
       </FirestoreErrorHandler>
     </AdminLayout>
   )
