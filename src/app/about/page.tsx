@@ -78,21 +78,21 @@ export default function AboutPage() {
         {/* Mission Section */}
         <section className="mb-16">
           <div className="relative group">
-            <div className="relative rounded-3xl shadow-2xl p-10" style={{ backgroundColor: '#F5F0E1' }}>
-              <div className="flex items-center mb-8">
+            <div className="relative rounded-2xl shadow-xl p-8 border" style={{ backgroundColor: '#F5F0E1', borderColor: 'rgba(30, 61, 89, 0.1)' }}>
+              <div className="flex items-center mb-6">
                 <div className="relative">
-                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center mr-6 shadow-lg transform group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#1E3D59' }}>
-                    <Target className="w-8 h-8 text-white" />
+                  <div className="w-14 h-14 rounded-xl flex items-center justify-center mr-4 shadow-lg transform group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#1E3D59' }}>
+                    <Target className="w-7 h-7 text-white" />
                   </div>
-                  <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFC13B' }}>
+                  <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFC13B' }}>
                     <Star className="w-3 h-3 text-white" />
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-4xl font-bold" style={{ color: '#1E3D59' }}>
+                  <h2 className="text-3xl font-bold" style={{ color: '#1E3D59' }}>
                     Our Mission
                   </h2>
-                  <div className="w-20 h-1 rounded-full mt-2" style={{ backgroundColor: '#FF6E40' }}></div>
+                  <div className="w-16 h-1 rounded-full mt-1" style={{ backgroundColor: '#FF6E40' }}></div>
                 </div>
               </div>
               
@@ -126,21 +126,21 @@ export default function AboutPage() {
         {/* Vision Section */}
         <section className="mb-16">
           <div className="relative group">
-            <div className="relative rounded-3xl shadow-2xl p-10" style={{ backgroundColor: '#F5F0E1' }}>
-              <div className="flex items-center mb-8">
+            <div className="relative rounded-2xl shadow-xl p-8 border" style={{ backgroundColor: '#F5F0E1', borderColor: 'rgba(30, 61, 89, 0.1)' }}>
+              <div className="flex items-center mb-6">
                 <div className="relative">
-                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center mr-6 shadow-lg transform group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#FF6E40' }}>
-                    <Award className="w-8 h-8 text-white" />
+                  <div className="w-14 h-14 rounded-xl flex items-center justify-center mr-4 shadow-lg transform group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#FF6E40' }}>
+                    <Award className="w-7 h-7 text-white" />
                   </div>
-                  <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFC13B' }}>
+                  <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFC13B' }}>
                     <Sparkles className="w-3 h-3 text-white" />
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-4xl font-bold" style={{ color: '#1E3D59' }}>
+                  <h2 className="text-3xl font-bold" style={{ color: '#1E3D59' }}>
                     Our Vision
                   </h2>
-                  <div className="w-20 h-1 rounded-full mt-2" style={{ backgroundColor: '#FFC13B' }}></div>
+                  <div className="w-16 h-1 rounded-full mt-1" style={{ backgroundColor: '#FFC13B' }}></div>
                 </div>
               </div>
               
@@ -161,14 +161,17 @@ export default function AboutPage() {
 
         {/* Values Section */}
         <section className="mb-16">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center px-6 py-3 rounded-full mb-6 shadow-lg" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}>
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center px-6 py-3 rounded-full mb-4 shadow-lg" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}>
               <Heart className="w-5 h-5 mr-2" style={{ color: '#FF6E40' }} />
               <span className="font-semibold" style={{ color: '#1E3D59' }}>Our Core Values</span>
             </div>
-            <h2 className="text-4xl font-bold" style={{ color: '#1E3D59' }}>
+            <h2 className="text-3xl font-bold mb-2" style={{ color: '#1E3D59' }}>
               What Drives Us
             </h2>
+            <p className="text-lg max-w-2xl mx-auto" style={{ color: '#1E3D59', opacity: 0.7 }}>
+              The principles that guide everything we do
+            </p>
           </div>
           
           <div className="grid md:grid-cols-2 gap-8">
@@ -207,16 +210,16 @@ export default function AboutPage() {
               }
             ].map((value, index) => (
               <div key={index} className="group relative">
-                <div className="relative rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105" style={{ backgroundColor: '#F5F0E1' }}>
-                  <div className="flex items-center mb-6">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center mr-4 shadow-lg transform group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: value.title === 'Excellence' ? '#FFC13B' : value.title === 'Innovation' ? '#1E3D59' : value.title === 'Accessibility' ? '#FF6E40' : '#FF6E40' }}>
-                      <value.icon className="w-6 h-6 text-white" />
+                <div className="relative rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 border" style={{ backgroundColor: '#F5F0E1', borderColor: 'rgba(30, 61, 89, 0.1)' }}>
+                  <div className="flex items-center mb-4">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center mr-3 shadow-md transform group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: value.title === 'Excellence' ? '#FFC13B' : value.title === 'Innovation' ? '#1E3D59' : value.title === 'Accessibility' ? '#FF6E40' : '#FF6E40' }}>
+                      <value.icon className="w-5 h-5 text-white" />
                     </div>
-                    <h3 className="text-2xl font-bold" style={{ color: '#1E3D59' }}>
+                    <h3 className="text-xl font-bold" style={{ color: '#1E3D59' }}>
                       {value.title}
                     </h3>
                   </div>
-                  <p className="leading-relaxed" style={{ color: '#1E3D59', opacity: 0.8 }}>
+                  <p className="leading-relaxed text-sm" style={{ color: '#1E3D59', opacity: 0.8 }}>
                     {value.description}
                   </p>
                 </div>
@@ -227,17 +230,16 @@ export default function AboutPage() {
 
         {/* Team Section */}
         <section className="mb-16">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center px-6 py-3 rounded-full mb-6 shadow-lg" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}>
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center px-6 py-3 rounded-full mb-4 shadow-lg" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}>
               <Users className="w-5 h-5 mr-2" style={{ color: '#FF6E40' }} />
               <span className="font-semibold" style={{ color: '#1E3D59' }}>Meet Our Team</span>
             </div>
-            <h2 className="text-4xl font-bold" style={{ color: '#1E3D59' }}>
+            <h2 className="text-3xl font-bold mb-2" style={{ color: '#1E3D59' }}>
               The People Behind iSpaan
             </h2>
-            <p className="text-xl max-w-3xl mx-auto mt-6" style={{ color: '#1E3D59', opacity: 0.8 }}>
-              iSpaan is built by a passionate team of educators, technologists, and industry experts 
-              who are committed to revolutionizing how students learn and prepare for their careers.
+            <p className="text-lg max-w-2xl mx-auto" style={{ color: '#1E3D59', opacity: 0.7 }}>
+              Passionate educators, technologists, and industry experts committed to revolutionizing education
             </p>
           </div>
           
@@ -263,15 +265,15 @@ export default function AboutPage() {
               }
             ].map((team, index) => (
               <div key={index} className="group relative">
-                <div className="relative rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105" style={{ backgroundColor: '#F5F0E1' }}>
+                <div className="relative rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105 border" style={{ backgroundColor: '#F5F0E1', borderColor: 'rgba(30, 61, 89, 0.1)' }}>
                   <div className="text-center">
-                    <div className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center shadow-xl transform group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: team.color }}>
-                      <team.icon className="w-12 h-12 text-white" />
+                    <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: team.color }}>
+                      <team.icon className="w-8 h-8 text-white" />
                     </div>
-                    <h3 className="text-2xl font-bold mb-4" style={{ color: '#1E3D59' }}>
+                    <h3 className="text-lg font-bold mb-3" style={{ color: '#1E3D59' }}>
                       {team.title}
                     </h3>
-                    <p className="leading-relaxed" style={{ color: '#1E3D59', opacity: 0.8 }}>
+                    <p className="leading-relaxed text-sm" style={{ color: '#1E3D59', opacity: 0.8 }}>
                       {team.description}
                     </p>
                   </div>
@@ -284,38 +286,38 @@ export default function AboutPage() {
         {/* Contact Section */}
         <section className="mb-16">
           <div className="relative group">
-            <div className="relative rounded-3xl p-12 text-center overflow-hidden" style={{ backgroundColor: '#1E3D59' }}>
+            <div className="relative rounded-2xl p-10 text-center overflow-hidden" style={{ backgroundColor: '#1E3D59' }}>
               <div className="relative z-10">
-                <div className="inline-flex items-center px-6 py-3 rounded-full mb-8" style={{ backgroundColor: 'rgba(255, 110, 64, 0.2)' }}>
+                <div className="inline-flex items-center px-6 py-3 rounded-full mb-6" style={{ backgroundColor: 'rgba(255, 110, 64, 0.2)' }}>
                   <Sparkles className="w-5 h-5 text-white mr-2" />
                   <span className="text-white font-semibold">Ready to Get Started?</span>
                 </div>
                 
-                <h2 className="text-5xl font-bold mb-6 text-white">
+                <h2 className="text-4xl font-bold mb-4 text-white">
                   Get in Touch
                 </h2>
                 
-                <p className="text-2xl mb-12 max-w-3xl mx-auto leading-relaxed" style={{ color: '#F5F0E1' }}>
+                <p className="text-xl mb-8 max-w-2xl mx-auto leading-relaxed" style={{ color: '#F5F0E1' }}>
                   Have questions about <span className="font-bold text-white">iSpaan</span>? We'd love to hear from you!
                 </p>
                 
-                <div className="flex flex-col sm:flex-row gap-6 justify-center">
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link 
                     href="/contact"
-                    className="group relative inline-flex items-center px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
+                    className="group relative inline-flex items-center px-8 py-3 rounded-full font-semibold text-base transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
                     style={{ backgroundColor: '#FF6E40', color: 'white' }}
                   >
                     <span className="relative z-10">Contact Us</span>
-                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                   </Link>
                   
                   <Link 
                     href="/apply"
-                    className="group relative inline-flex items-center px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
+                    className="group relative inline-flex items-center px-8 py-3 rounded-full font-semibold text-base transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
                     style={{ backgroundColor: '#FFC13B', color: 'white' }}
                   >
                     <span className="relative z-10">Start Learning</span>
-                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </div>
               </div>
