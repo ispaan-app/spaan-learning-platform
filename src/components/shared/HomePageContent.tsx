@@ -390,28 +390,28 @@ export function HomePageContent({
         <div className="relative max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-100 to-purple-100 rounded-full mb-8 border border-white/20 shadow-lg">
-              <Sparkles className="w-5 h-5 text-pink-600 mr-2 animate-pulse" />
-              <span className="text-pink-700 font-semibold">Meet Our Characters</span>
+              <Users className="w-5 h-5 text-pink-600 mr-2 animate-pulse" />
+              <span className="text-pink-700 font-semibold">Meet Our Community</span>
             </div>
             
             <h2 className="text-5xl font-bold mb-6 leading-tight">
-              <span className="block text-gray-900">Bring Your</span>
+              <span className="block text-gray-900">Join South African</span>
               <span className="block bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 bg-clip-text text-transparent animate-gradient-x">
-                Personality to Life
+                Learners & Mentors
               </span>
             </h2>
             
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-8">
-              Create your unique cartoon avatar and make your learning journey more personal and engaging. 
-              Choose from different character types or customize your own!
+              Connect with fellow South African learners, mentors, and administrators who are transforming their communities through work-integrated learning. 
+              See how our platform empowers people just like you!
             </p>
             
             <Link 
-              href="/character-builder"
+              href="/apply"
               className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-full font-bold text-lg hover:from-pink-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
             >
-              <Sparkles className="w-5 h-5 mr-3" />
-              Create Your Character
+              <Users className="w-5 h-5 mr-3" />
+              Join Our Community
               <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
