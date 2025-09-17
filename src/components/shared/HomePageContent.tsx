@@ -74,7 +74,7 @@ export function HomePageContent({
               providing personalized career guidance and practical skills for today's job market.
             </p>
             
-            <div className="flex justify-center">
+            <div className="flex justify-start">
               <Link 
                 href="/apply"
                 className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
@@ -266,6 +266,24 @@ export function HomePageContent({
         </div>
       </section>
 
+      {/* Technology Stack Section */}
+      <section className="py-20 bg-gradient-to-br from-gray-900 to-blue-900 text-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center">
+            <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full mb-6 border border-white/20 shadow-lg">
+              <Zap className="w-5 h-5 text-blue-600 mr-2 animate-pulse" />
+              <span className="text-blue-700 font-semibold">Powered by Modern Technology</span>
+            </div>
+            <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-4">
+              Built with Cutting-Edge Technology
+            </h2>
+            <p className="text-xl text-gray-300 max-w-4xl mx-auto">
+              Our platform is built on modern, scalable technology stack ensuring reliability, security, and performance
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* How It Works Section */}
       <section className="py-20 bg-gradient-to-br from-gray-50 to-blue-50">
         <div className="max-w-7xl mx-auto px-6">
@@ -297,7 +315,7 @@ export function HomePageContent({
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Apply & Get Matched</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Submit your application and let our AI match you with the perfect learning opportunity based on your skills and interests.
+                  Submit your application and let our AI match you with the perfect learning opportunity based on your skills and interests for South African students.
                 </p>
               </div>
             </div>
@@ -316,7 +334,7 @@ export function HomePageContent({
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Start Learning</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Begin your work-integrated learning experience with secure check-ins, progress tracking, and real-time feedback.
+                  Begin your work-integrated learning experience with secure check-ins, progress tracking, and real-time feedback from mentors.
                 </p>
               </div>
             </div>
@@ -335,7 +353,7 @@ export function HomePageContent({
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Get AI Guidance</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Receive personalized career advice and mentorship from our AI-powered system to maximize your learning outcomes.
+                  Receive personalized career advice and mentorship from our AI-powered system to maximize your learning outcomes and career success.
                 </p>
               </div>
             </div>
@@ -398,24 +416,6 @@ export function HomePageContent({
           {/* Character Showcase */}
           <div className="flex justify-center">
             <CharacterShowcase />
-          </div>
-        </div>
-      </section>
-
-      {/* Technology Stack Section */}
-      <section className="py-20 bg-gradient-to-br from-gray-900 to-blue-900 text-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center">
-            <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full mb-6 border border-white/20 shadow-lg">
-              <Zap className="w-5 h-5 text-blue-600 mr-2 animate-pulse" />
-              <span className="text-blue-700 font-semibold">Powered by Modern Technology</span>
-            </div>
-            <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-4">
-              Built with Cutting-Edge Technology
-            </h2>
-            <p className="text-xl text-gray-300 max-w-4xl mx-auto">
-              Our platform is built on modern, scalable technology stack ensuring reliability, security, and performance
-            </p>
           </div>
         </div>
       </section>
