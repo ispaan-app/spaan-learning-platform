@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { AdminSidebar } from './AdminSidebar'
+import { EnhancedAdminSidebar } from './EnhancedAdminSidebar'
 import { ConnectionStatus } from '@/components/ui/connection-status'
 import { Header } from '@/components/ui/header'
 import { Button } from '@/components/ui/button'
@@ -73,7 +73,7 @@ export function AdminLayout({ children, userRole }: AdminLayoutProps) {
           : 'relative'
         }
       `}>
-        <AdminSidebar 
+        <EnhancedAdminSidebar 
           userRole={userRole}
           isCollapsed={!sidebarOpen}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
