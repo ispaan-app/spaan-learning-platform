@@ -225,18 +225,18 @@ export function EnhancedAdminDashboardContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-6">
+      <div className="min-h-screen p-6" style={{ backgroundColor: '#F5F0E1' }}>
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            <div className="h-8 rounded w-1/3" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}></div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>
+                <div key={i} className="h-32 rounded-xl" style={{ backgroundColor: '#F5F0E1' }}></div>
               ))}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 h-96 bg-gray-200 rounded-xl"></div>
-              <div className="h-96 bg-gray-200 rounded-xl"></div>
+              <div className="lg:col-span-2 h-96 rounded-xl" style={{ backgroundColor: '#F5F0E1' }}></div>
+              <div className="h-96 rounded-xl" style={{ backgroundColor: '#F5F0E1' }}></div>
             </div>
           </div>
         </div>
@@ -246,11 +246,6 @@ export function EnhancedAdminDashboardContent() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F5F0E1' }}>
-      {/* Subtle Background Pattern */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-30">
-        <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl" style={{ backgroundColor: '#FF6E40' }}></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full blur-3xl" style={{ backgroundColor: '#FFC13B' }}></div>
-      </div>
 
       <div className="relative max-w-7xl mx-auto p-6 space-y-8">
         {/* Clean Header */}
