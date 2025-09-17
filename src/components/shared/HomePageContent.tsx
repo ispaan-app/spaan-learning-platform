@@ -362,7 +362,7 @@ export function HomePageContent({
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-white mb-4">Platform Statistics</h2>
             <p className="text-xl text-blue-100 max-w-3xl mx-auto">
-              Join thousands of learners who have transformed their careers with iSpaan
+              Join thousands of learners who have transformed their careers with <span className="font-bold">iSpaan</span>
             </p>
           </div>
           
@@ -516,7 +516,7 @@ export function HomePageContent({
           <div className="border-t border-gray-800 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <p className="text-gray-400 mb-4 md:mb-0">
-                &copy; 2025 iSpaan Tech Solutions. All rights reserved.
+                &copy; 2025 <span className="font-bold">iSpaan</span> Tech Solutions. All rights reserved.
               </p>
               <div className="flex items-center space-x-6 text-sm text-gray-400">
                 <span>Made with ❤️ for learners worldwide</span>
