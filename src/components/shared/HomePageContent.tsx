@@ -36,7 +36,7 @@ export function HomePageContent({
               <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300">
                 <span className="text-white font-bold text-xl">iS</span>
               </div>
-              <span className="text-3xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{platformName}</span>
+              <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{platformName}</span>
             </div>
             <div className="flex items-center space-x-6">
               <Link 
@@ -103,7 +103,7 @@ export function HomePageContent({
                         <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
                           <span className="text-white font-bold text-sm">iS</span>
                         </div>
-                        <span className="font-black text-lg">iSpaan</span>
+                        <span className="font-bold text-lg">iSpaan</span>
                       </div>
                       <div className="w-6 h-6 bg-white/20 rounded-full"></div>
                     </div>
@@ -349,7 +349,7 @@ export function HomePageContent({
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-white mb-4">Platform Statistics</h2>
             <p className="text-xl text-blue-100 max-w-3xl mx-auto">
-              Join thousands of learners who have transformed their careers with <span className="font-black">iSpaan</span>
+              Join thousands of learners who have transformed their careers with <span className="font-bold">iSpaan</span>
             </p>
           </div>
           
@@ -435,7 +435,7 @@ export function HomePageContent({
                 <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
                   <span className="text-white font-bold text-xl">iS</span>
                 </div>
-                <span className="text-3xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{platformName}</span>
+                <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{platformName}</span>
               </div>
               <p className="text-gray-400 text-lg leading-relaxed mb-6 max-w-md">
                 Empowering learners through innovative work-integrated learning experiences. 
@@ -503,7 +503,7 @@ export function HomePageContent({
           <div className="border-t border-gray-800 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <p className="text-gray-400 mb-4 md:mb-0">
-                &copy; 2025 <span className="font-black">iSpaan</span> Tech Solutions. All rights reserved.
+                &copy; 2025 <span className="font-bold">iSpaan</span> Tech Solutions. All rights reserved.
               </p>
               <div className="flex items-center space-x-6 text-sm text-gray-400">
                 <span>Made with ❤️ for learners worldwide</span>
