@@ -9,19 +9,19 @@ export default function AboutPage() {
     <div className="min-h-screen" style={{ backgroundColor: '#F5F0E1' }}>
 
       {/* Header */}
-      <header className="relative shadow-lg border-b" style={{ backgroundColor: '#F5F0E1', borderColor: 'rgba(30, 61, 89, 0.2)' }}>
+      <header className="relative shadow-lg border-b" style={{ backgroundColor: '#1E3D59', borderColor: 'rgba(245, 240, 225, 0.2)' }}>
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300" style={{ backgroundColor: '#FF6E40' }}>
                 <span className="text-white font-bold text-xl">iS</span>
               </div>
-              <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">iSpaan</span>
+              <span className="text-3xl font-bold text-white">iSpaan</span>
             </div>
             <Link 
               href="/"
               className="group inline-flex items-center px-6 py-3 text-white rounded-full font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
-              style={{ backgroundColor: '#1E3D59' }}
+              style={{ backgroundColor: '#FF6E40' }}
             >
               <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
               Back to Home
@@ -59,16 +59,16 @@ export default function AboutPage() {
             </p>
             
             <div className="flex flex-wrap justify-center gap-4 text-sm">
-              <div className="flex items-center px-4 py-2 rounded-full shadow-lg" style={{ backgroundColor: '#F5F0E1' }}>
+              <div className="flex items-center px-4 py-2 rounded-full shadow-lg" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}>
                 <Zap className="w-4 h-4 mr-2" style={{ color: '#FFC13B' }} />
                 <span style={{ color: '#1E3D59' }}>AI-Powered Learning</span>
               </div>
-              <div className="flex items-center px-4 py-2 rounded-full shadow-lg" style={{ backgroundColor: '#F5F0E1' }}>
+              <div className="flex items-center px-4 py-2 rounded-full shadow-lg" style={{ backgroundColor: 'rgba(255, 110, 64, 0.1)' }}>
                 <Users className="w-4 h-4 mr-2" style={{ color: '#FF6E40' }} />
                 <span style={{ color: '#1E3D59' }}>South African Focus</span>
               </div>
-              <div className="flex items-center px-4 py-2 rounded-full shadow-lg" style={{ backgroundColor: '#F5F0E1' }}>
-                <Shield className="w-4 h-4 mr-2" style={{ color: '#1E3D59' }} />
+              <div className="flex items-center px-4 py-2 rounded-full shadow-lg" style={{ backgroundColor: 'rgba(255, 192, 59, 0.1)' }}>
+                <Shield className="w-4 h-4 mr-2" style={{ color: '#FFC13B' }} />
                 <span style={{ color: '#1E3D59' }}>Secure Platform</span>
               </div>
             </div>
@@ -89,27 +89,27 @@ export default function AboutPage() {
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  <h2 className="text-4xl font-bold" style={{ color: '#1E3D59' }}>
                     Our Mission
                   </h2>
-                  <div className="w-20 h-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mt-2"></div>
+                  <div className="w-20 h-1 rounded-full mt-2" style={{ backgroundColor: '#FF6E40' }}></div>
                 </div>
               </div>
               
               <div className="relative">
                 <p className="text-xl leading-relaxed mb-6" style={{ color: '#1E3D59' }}>
-                  At <span className="font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">iSpaan</span>, we believe that education should be 
+                  At <span className="font-bold" style={{ color: '#FF6E40' }}>iSpaan</span>, we believe that education should be 
                   <span className="relative inline-block mx-2">
                     <span className="font-semibold" style={{ color: '#FF6E40' }}>practical</span>
-                    <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"></div>
+                    <div className="absolute -bottom-1 left-0 w-full h-0.5 rounded-full" style={{ backgroundColor: '#FF6E40' }}></div>
                   </span>, 
                   <span className="relative inline-block mx-2">
                     <span className="font-semibold" style={{ color: '#FFC13B' }}>accessible</span>
-                    <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full"></div>
+                    <div className="absolute -bottom-1 left-0 w-full h-0.5 rounded-full" style={{ backgroundColor: '#FFC13B' }}></div>
                   </span>, and 
                   <span className="relative inline-block mx-2">
                     <span className="font-semibold" style={{ color: '#FF6E40' }}>transformative</span>
-                    <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-pink-600 to-red-600 rounded-full"></div>
+                    <div className="absolute -bottom-1 left-0 w-full h-0.5 rounded-full" style={{ backgroundColor: '#FF6E40' }}></div>
                   </span>.
                 </p>
                 
@@ -137,10 +137,10 @@ export default function AboutPage() {
                   </div>
                 </div>
                 <div>
-                  <h2 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  <h2 className="text-4xl font-bold" style={{ color: '#1E3D59' }}>
                     Our Vision
                   </h2>
-                  <div className="w-20 h-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full mt-2"></div>
+                  <div className="w-20 h-1 rounded-full mt-2" style={{ backgroundColor: '#FFC13B' }}></div>
                 </div>
               </div>
               
@@ -148,8 +148,8 @@ export default function AboutPage() {
                 <p className="text-xl leading-relaxed" style={{ color: '#1E3D59' }}>
                   To become the 
                   <span className="relative inline-block mx-2">
-                    <span className="font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">leading platform</span>
-                    <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full"></div>
+                    <span className="font-bold" style={{ color: '#FFC13B' }}>leading platform</span>
+                    <div className="absolute -bottom-1 left-0 w-full h-0.5 rounded-full" style={{ backgroundColor: '#FFC13B' }}></div>
                   </span>
                   for work-integrated learning in South Africa, where every student has access to meaningful industry experiences, 
                   AI-powered career guidance, and the tools they need to build successful, fulfilling careers in their chosen fields.
