@@ -156,7 +156,8 @@ export function UserLoginForm() {
         <LoadingButton
           type="submit"
           loading={isLoading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+          className="w-full text-white"
+          style={{ backgroundColor: '#FF6E40' }}
         >
           <LogIn className="w-4 h-4 mr-2" />
           Sign In

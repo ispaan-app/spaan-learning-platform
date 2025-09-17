@@ -9,31 +9,25 @@ import { Logo } from '@/components/ui/logo'
 
 export function LoginSelectionPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Animated Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-cyan-400/10 to-blue-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
-      </div>
+    <div className="min-h-screen" style={{ backgroundColor: '#F5F0E1' }}>
 
       <div className="relative min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-6xl">
           {/* Header */}
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full mb-8 border border-white/20 shadow-lg">
-              <Sparkles className="w-5 h-5 text-blue-600 mr-2 animate-pulse" />
-              <span className="text-blue-700 font-semibold">Welcome Back</span>
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center px-6 py-3 rounded-full mb-6 shadow-lg" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}>
+              <Sparkles className="w-5 h-5 mr-2" style={{ color: '#FF6E40' }} />
+              <span className="font-semibold" style={{ color: '#1E3D59' }}>Welcome Back</span>
             </div>
             
-            <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-tight">
-              <span className="block text-gray-900">Welcome to</span>
-              <span className="block bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient-x">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+              <span className="block" style={{ color: '#1E3D59' }}>Welcome to</span>
+              <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 iSpaan
               </span>
             </h1>
             
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: '#1E3D59', opacity: 0.7 }}>
               Choose your login method to access your personalized learning experience
             </p>
           </div>
@@ -42,57 +36,51 @@ export function LoginSelectionPage() {
           <div className="grid lg:grid-cols-2 gap-12">
             {/* User Login */}
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-              
-              <div className="relative bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-10 border border-white/20">
-                <div className="text-center mb-8">
-                  <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-                    <User className="w-10 h-10 text-white" />
+              <div className="relative rounded-2xl shadow-xl p-8 border" style={{ backgroundColor: '#F5F0E1', borderColor: 'rgba(30, 61, 89, 0.1)' }}>
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg transform group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#1E3D59' }}>
+                    <User className="w-8 h-8 text-white" />
                   </div>
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+                  <h2 className="text-2xl font-bold mb-2" style={{ color: '#1E3D59' }}>
                     User Login
                   </h2>
-                  <p className="text-gray-600 text-lg">For learners and applicants</p>
+                  <p className="text-lg" style={{ color: '#1E3D59', opacity: 0.7 }}>For learners and applicants</p>
                 </div>
                 
-                <div className="space-y-6 mb-8">
+                <div className="space-y-4 mb-6">
                   {[
                     {
                       icon: Shield,
-                      text: "ID Number + PIN authentication",
-                      color: "blue"
+                      text: "ID Number + PIN authentication"
                     },
                     {
                       icon: Target,
-                      text: "Access to learner dashboard",
-                      color: "blue"
+                      text: "Access to learner dashboard"
                     },
                     {
                       icon: CheckCircle,
-                      text: "Application status tracking",
-                      color: "blue"
+                      text: "Application status tracking"
                     },
                     {
                       icon: Brain,
-                      text: "AI-powered career guidance",
-                      color: "blue"
+                      text: "AI-powered career guidance"
                     }
                   ].map((feature, index) => (
-                    <div key={index} className="flex items-center space-x-4 group/item">
-                      <div className={`w-10 h-10 bg-gradient-to-r from-${feature.color}-500 to-${feature.color}-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover/item:scale-110 transition-transform duration-300`}>
-                        <feature.icon className="w-5 h-5 text-white" />
+                    <div key={index} className="flex items-center space-x-3 group/item">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md group-hover/item:scale-110 transition-transform duration-300" style={{ backgroundColor: '#FF6E40' }}>
+                        <feature.icon className="w-4 h-4 text-white" />
                       </div>
-                      <span className="text-gray-700 font-medium group-hover/item:text-blue-600 transition-colors">
+                      <span className="text-sm font-medium group-hover/item:opacity-80 transition-opacity" style={{ color: '#1E3D59' }}>
                         {feature.text}
                       </span>
                     </div>
                   ))}
                 </div>
                 
-                <Button asChild className="w-full group/btn inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl">
+                <Button asChild className="w-full group/btn inline-flex items-center justify-center px-6 py-3 text-white rounded-xl font-semibold text-base transition-all duration-300 transform hover:scale-105 hover:shadow-xl" style={{ backgroundColor: '#FF6E40' }}>
                   <Link href="/login/user" className="flex items-center justify-center">
                     Sign In as User
-                    <ArrowRight className="w-5 h-5 ml-3 group-hover/btn:translate-x-1 transition-transform" />
+                    <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
                   </Link>
                 </Button>
               </div>
@@ -100,57 +88,51 @@ export function LoginSelectionPage() {
 
             {/* Admin Login */}
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-              
-              <div className="relative bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-10 border border-white/20">
-                <div className="text-center mb-8">
-                  <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-                    <Shield className="w-10 h-10 text-white" />
+              <div className="relative rounded-2xl shadow-xl p-8 border" style={{ backgroundColor: '#F5F0E1', borderColor: 'rgba(30, 61, 89, 0.1)' }}>
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg transform group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#FF6E40' }}>
+                    <Shield className="w-8 h-8 text-white" />
                   </div>
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+                  <h2 className="text-2xl font-bold mb-2" style={{ color: '#1E3D59' }}>
                     Admin Login
                   </h2>
-                  <p className="text-gray-600 text-lg">For administrators and super admins</p>
+                  <p className="text-lg" style={{ color: '#1E3D59', opacity: 0.7 }}>For administrators and super admins</p>
                 </div>
                 
-                <div className="space-y-6 mb-8">
+                <div className="space-y-4 mb-6">
                   {[
                     {
                       icon: Globe,
-                      text: "Email + Password authentication",
-                      color: "purple"
+                      text: "Email + Password authentication"
                     },
                     {
                       icon: Users,
-                      text: "Role-based access control",
-                      color: "purple"
+                      text: "Role-based access control"
                     },
                     {
                       icon: Zap,
-                      text: "Platform management tools",
-                      color: "purple"
+                      text: "Platform management tools"
                     },
                     {
                       icon: Award,
-                      text: "Advanced analytics dashboard",
-                      color: "purple"
+                      text: "Advanced analytics dashboard"
                     }
                   ].map((feature, index) => (
-                    <div key={index} className="flex items-center space-x-4 group/item">
-                      <div className={`w-10 h-10 bg-gradient-to-r from-${feature.color}-500 to-${feature.color}-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover/item:scale-110 transition-transform duration-300`}>
-                        <feature.icon className="w-5 h-5 text-white" />
+                    <div key={index} className="flex items-center space-x-3 group/item">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md group-hover/item:scale-110 transition-transform duration-300" style={{ backgroundColor: '#FFC13B' }}>
+                        <feature.icon className="w-4 h-4 text-white" />
                       </div>
-                      <span className="text-gray-700 font-medium group-hover/item:text-purple-600 transition-colors">
+                      <span className="text-sm font-medium group-hover/item:opacity-80 transition-opacity" style={{ color: '#1E3D59' }}>
                         {feature.text}
                       </span>
                     </div>
                   ))}
                 </div>
                 
-                <Button asChild className="w-full group/btn inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-bold text-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl">
+                <Button asChild className="w-full group/btn inline-flex items-center justify-center px-6 py-3 text-white rounded-xl font-semibold text-base transition-all duration-300 transform hover:scale-105 hover:shadow-xl" style={{ backgroundColor: '#FFC13B' }}>
                   <Link href="/login/admin" className="flex items-center justify-center">
                     Sign In as Admin
-                    <ArrowRight className="w-5 h-5 ml-3 group-hover/btn:translate-x-1 transition-transform" />
+                    <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
                   </Link>
                 </Button>
               </div>
@@ -158,21 +140,19 @@ export function LoginSelectionPage() {
           </div>
 
           {/* Additional Options */}
-          <div className="text-center mt-16">
+          <div className="text-center mt-12">
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-green-600 to-emerald-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-              
-              <div className="relative bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20">
+              <div className="relative rounded-2xl shadow-xl p-8 border" style={{ backgroundColor: '#F5F0E1', borderColor: 'rgba(30, 61, 89, 0.1)' }}>
                 <div className="text-center mb-6">
-                  <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <div className="w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg" style={{ backgroundColor: '#1E3D59' }}>
                     <Star className="w-8 h-8 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">New to iSpaan?</h3>
-                  <p className="text-gray-600">Join thousands of learners transforming their careers</p>
+                  <h3 className="text-2xl font-bold mb-2" style={{ color: '#1E3D59' }}>New to iSpaan?</h3>
+                  <p style={{ color: '#1E3D59', opacity: 0.7 }}>Join thousands of learners transforming their careers</p>
                 </div>
                 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button asChild className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-full font-bold text-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl">
+                  <Button asChild className="group inline-flex items-center px-8 py-4 text-white rounded-xl font-semibold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl" style={{ backgroundColor: '#FF6E40' }}>
                     <Link href="/apply" className="flex items-center">
                       Start Your Application
                       <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
@@ -184,22 +164,22 @@ export function LoginSelectionPage() {
           </div>
 
           {/* Footer */}
-          <div className="text-center mt-16">
-            <div className="flex items-center justify-center space-x-8 text-sm text-gray-500">
+          <div className="text-center mt-12">
+            <div className="flex items-center justify-center space-x-8 text-sm" style={{ color: '#1E3D59', opacity: 0.7 }}>
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <div className="w-3 h-3 rounded-full animate-pulse" style={{ backgroundColor: '#FF6E40' }}></div>
                 <span className="font-semibold">Secure</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse delay-300"></div>
+                <div className="w-3 h-3 rounded-full animate-pulse delay-300" style={{ backgroundColor: '#FFC13B' }}></div>
                 <span className="font-semibold">Reliable</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse delay-500"></div>
+                <div className="w-3 h-3 rounded-full animate-pulse delay-500" style={{ backgroundColor: '#1E3D59' }}></div>
                 <span className="font-semibold">Professional</span>
               </div>
             </div>
-            <p className="text-gray-400 text-sm mt-4">
+            <p className="text-sm mt-4" style={{ color: '#1E3D59', opacity: 0.5 }}>
               Professional Learning Platform
             </p>
           </div>

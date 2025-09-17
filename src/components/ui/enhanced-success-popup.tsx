@@ -149,12 +149,8 @@ export function EnhancedSuccessPopup({
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      {/* Animated Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-cyan-400/10 to-blue-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
-      </div>
+      {/* Clean Background */}
+      <div className="absolute inset-0" style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}></div>
 
       <div
         ref={popupRef as any}
@@ -166,9 +162,9 @@ export function EnhancedSuccessPopup({
         tabIndex={0}
         aria-label="Success Dialog"
       >
-        <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
-          {/* Header with Gradient */}
-          <div className={`bg-gradient-to-r ${getRoleGradient(userRole)} p-8 text-center relative overflow-hidden`}>
+        <div className="rounded-2xl shadow-2xl border overflow-hidden" style={{ backgroundColor: '#F5F0E1', borderColor: 'rgba(30, 61, 89, 0.1)' }}>
+          {/* Header */}
+          <div className="p-8 text-center relative overflow-hidden" style={{ backgroundColor: '#1E3D59' }}>
             {/* Floating Elements */}
             {showCelebration && (
               <>
@@ -182,20 +178,20 @@ export function EnhancedSuccessPopup({
             
             {/* Success Icon with Animation */}
             <div className="relative mb-6">
-              <div className="w-20 h-20 mx-auto bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center shadow-xl transform hover:scale-110 transition-transform duration-300">
+              <div className="w-20 h-20 mx-auto rounded-full flex items-center justify-center shadow-xl transform hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#FF6E40' }}>
                 <CheckCircle className="h-10 w-10 text-white animate-pulse" />
               </div>
               {showCelebration && (
-                <div className="absolute inset-0 w-20 h-20 mx-auto bg-white/10 rounded-full animate-ping"></div>
+                <div className="absolute inset-0 w-20 h-20 mx-auto rounded-full animate-ping" style={{ backgroundColor: 'rgba(255, 110, 64, 0.3)' }}></div>
               )}
             </div>
 
-            {/* Title with Sparkle Effect */}
+            {/* Title */}
             <div className="relative">
               <h2 id="success-popup-title" className="text-3xl font-bold text-white mb-3 flex items-center justify-center">
-                <Sparkles className="w-8 h-8 mr-3 animate-spin" />
+                <Sparkles className="w-8 h-8 mr-3" style={{ color: '#FFC13B' }} />
                 {title}
-                <Sparkles className="w-8 h-8 ml-3 animate-spin" />
+                <Sparkles className="w-8 h-8 ml-3" style={{ color: '#FFC13B' }} />
               </h2>
               <p id="success-popup-message" className="text-white/90 text-lg leading-relaxed">
                 {message}
@@ -208,7 +204,7 @@ export function EnhancedSuccessPopup({
             {/* User Role Badge */}
             {userRole && (
               <div className="flex justify-center mb-6">
-                <div className={`inline-flex items-center px-6 py-3 bg-gradient-to-r ${getRoleGradient(userRole)} text-white rounded-full font-semibold shadow-lg`}>
+                <div className="inline-flex items-center px-6 py-3 text-white rounded-full font-semibold shadow-lg" style={{ backgroundColor: '#FF6E40' }}>
                   {getRoleIcon(userRole)}
                   <span className="ml-2">{getRoleDisplayName(userRole)}</span>
                 </div>
@@ -217,12 +213,12 @@ export function EnhancedSuccessPopup({
 
             {/* Redirect Status */}
             <div className="text-center space-y-4 mb-8">
-              <div className="flex items-center justify-center space-x-3 text-gray-600">
-                <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+              <div className="flex items-center justify-center space-x-3" style={{ color: '#1E3D59', opacity: 0.8 }}>
+                <Loader2 className="h-5 w-5 animate-spin" style={{ color: '#FF6E40' }} />
                 <span className="font-medium">{redirectMessage || 'Preparing your dashboard...'}</span>
               </div>
 
-              <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
+              <div className="flex items-center justify-center space-x-2 text-sm" style={{ color: '#1E3D59', opacity: 0.6 }}>
                 <ArrowRight className="h-4 w-4" />
                 <span>You'll be redirected to your personalized workspace</span>
               </div>
@@ -230,14 +226,17 @@ export function EnhancedSuccessPopup({
 
             {/* Enhanced Progress Bar */}
             <div className="mb-8">
-              <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+              <div className="flex items-center justify-between text-sm mb-2" style={{ color: '#1E3D59', opacity: 0.8 }}>
                 <span>Loading your dashboard</span>
                 <span>{Math.round(progress)}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div className="w-full rounded-full h-3 overflow-hidden" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}>
                 <div
-                  className={`bg-gradient-to-r ${getRoleGradient(userRole)} h-3 rounded-full transition-all duration-300 ease-out relative`}
-                  style={{ width: `${progress}%` }}
+                  className="h-3 rounded-full transition-all duration-300 ease-out relative"
+                  style={{ 
+                    width: `${progress}%`,
+                    backgroundColor: '#FF6E40'
+                  }}
                   aria-valuenow={progress}
                   aria-valuemin={0}
                   aria-valuemax={100}
@@ -252,7 +251,12 @@ export function EnhancedSuccessPopup({
             <div className="flex space-x-4">
               <button
                 onClick={onClose}
-                className="flex-1 px-6 py-3 text-sm font-semibold text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+                className="flex-1 px-6 py-3 text-sm font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+                style={{ 
+                  color: '#1E3D59', 
+                  backgroundColor: 'rgba(30, 61, 89, 0.1)',
+                  border: '1px solid rgba(30, 61, 89, 0.2)'
+                }}
                 aria-label={stayLabel}
               >
                 {stayLabel}
@@ -263,7 +267,8 @@ export function EnhancedSuccessPopup({
                   window.location.href = redirectTo
                 }}
                 disabled={isRedirecting}
-                className={`flex-1 px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r ${getRoleGradient(userRole)} rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2`}
+                className="flex-1 px-6 py-3 text-sm font-semibold text-white rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                style={{ backgroundColor: '#FF6E40' }}
                 aria-label={goLabel}
               >
                 {isRedirecting ? (
@@ -282,7 +287,7 @@ export function EnhancedSuccessPopup({
 
             {/* Security Note */}
             <div className="mt-6 text-center">
-              <div className="inline-flex items-center px-4 py-2 bg-green-50 text-green-700 rounded-lg text-xs font-medium">
+              <div className="inline-flex items-center px-4 py-2 rounded-lg text-xs font-medium" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)', color: '#1E3D59' }}>
                 <Shield className="w-4 h-4 mr-2" />
                 Secure connection established
               </div>
