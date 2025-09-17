@@ -58,19 +58,20 @@ export function HomePageContent({
           <div className="space-y-8">
             <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full mb-8 border border-white/20 shadow-lg">
               <Sparkles className="w-5 h-5 text-blue-600 mr-2 animate-pulse" />
-              <span className="text-blue-700 font-semibold">Revolutionary Monitoring Platform</span>
+              <span className="text-blue-700 font-semibold">AI-Powered Career Development Platform</span>
             </div>
             
             <h1 className="text-5xl md:text-7xl font-bold leading-tight">
-              <span className="block text-gray-900">Transform Your</span>
+              <span className="block text-gray-900">Revolutionary</span>
               <span className="block bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient-x">
-                Learning Journey
+                Work-Integrated Learning
               </span>
             </h1>
             
-            <p className="text-xl text-gray-600 leading-relaxed max-w-2xl">
-              Experience the future of education with our AI-powered work-integrated learning platform. 
-              Join thousands of students building successful careers with personalized guidance and real-world experience.
+            <p className="text-xl text-gray-600 leading-relaxed max-w-3xl">
+              Bridge the gap between academic education and real-world industry experience. 
+              Our AI-powered platform connects students with meaningful work placements, 
+              providing personalized career guidance and practical skills for today's job market.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
@@ -221,10 +222,10 @@ export function HomePageContent({
               <span className="text-green-700 font-semibold">Powerful Features</span>
             </div>
             <h2 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-4">
-              Everything You Need to Succeed
+              Complete Work-Integrated Learning Platform
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Discover the features that make iSpaan the leading platform for work-integrated learning
+            <p className="text-xl text-gray-600 max-w-4xl mx-auto">
+              Everything you need to bridge academic education with real-world industry experience through AI-powered career guidance and practical work placements
             </p>
           </div>
           
@@ -236,9 +237,9 @@ export function HomePageContent({
                 <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
                   <Smartphone className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Mobile Learning</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Real-Time Attendance</h3>
                 <p className="text-gray-600 leading-relaxed mb-6">
-                  Learn anywhere, anytime with our mobile-optimized platform. Access your courses, track progress, and connect with mentors on the go.
+                  GPS-based check-in/out system with QR code scanning for accurate work hour tracking and placement monitoring. Built with Next.js 14 and Firebase.
                 </p>
                 <div className="flex items-center text-blue-600 font-semibold">
                   <span>Learn More</span>
@@ -254,9 +255,9 @@ export function HomePageContent({
                 <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
                   <Brain className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">AI-Powered Guidance</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Career Mentor</h3>
                 <p className="text-gray-600 leading-relaxed mb-6">
-                  Get personalized career advice and learning recommendations powered by advanced AI technology tailored to your goals.
+                  Personalized career guidance and learning recommendations powered by Google Genkit and Gemini 1.5 Flash AI technology for intelligent career development.
                 </p>
                 <div className="flex items-center text-purple-600 font-semibold">
                   <span>Learn More</span>
@@ -272,9 +273,9 @@ export function HomePageContent({
                 <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
                   <Globe className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Global Network</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Industry Placements</h3>
                 <p className="text-gray-600 leading-relaxed mb-6">
-                  Connect with learners and industry professionals worldwide. Build your network and discover opportunities across the globe.
+                  Connect with industry partners for meaningful work-integrated learning experiences. Get matched with real work opportunities that build practical skills.
                 </p>
                 <div className="flex items-center text-green-600 font-semibold">
                   <span>Learn More</span>
@@ -418,6 +419,94 @@ export function HomePageContent({
           {/* Character Showcase */}
           <div className="flex justify-center">
             <CharacterShowcase />
+          </div>
+        </div>
+      </section>
+
+      {/* Technology Stack Section */}
+      <section className="py-20 bg-gradient-to-br from-gray-900 to-blue-900 text-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full mb-6 border border-white/20 shadow-lg">
+              <Zap className="w-5 h-5 text-blue-600 mr-2 animate-pulse" />
+              <span className="text-blue-700 font-semibold">Powered by Modern Technology</span>
+            </div>
+            <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-4">
+              Built with Cutting-Edge Technology
+            </h2>
+            <p className="text-xl text-gray-300 max-w-4xl mx-auto">
+              Our platform is built on modern, scalable technology stack ensuring reliability, security, and performance
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Frontend */}
+            <div className="group relative">
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+              <div className="relative bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                  <Smartphone className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4">Frontend</h3>
+                <ul className="space-y-2 text-gray-300">
+                  <li>• Next.js 14 with React</li>
+                  <li>• TypeScript</li>
+                  <li>• Tailwind CSS</li>
+                  <li>• Responsive Design</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Backend */}
+            <div className="group relative">
+              <div className="absolute -inset-1 bg-gradient-to-r from-green-600 to-emerald-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+              <div className="relative bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
+                <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                  <Shield className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4">Backend</h3>
+                <ul className="space-y-2 text-gray-300">
+                  <li>• Firebase Firestore</li>
+                  <li>• Firebase Authentication</li>
+                  <li>• Firebase Hosting</li>
+                  <li>• Real-time Database</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* AI Integration */}
+            <div className="group relative">
+              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+              <div className="relative bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
+                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                  <Brain className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4">AI & Analytics</h3>
+                <ul className="space-y-2 text-gray-300">
+                  <li>• Google Genkit</li>
+                  <li>• Gemini 1.5 Flash</li>
+                  <li>• Real-time Analytics</li>
+                  <li>• Predictive Insights</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Security */}
+            <div className="group relative">
+              <div className="absolute -inset-1 bg-gradient-to-r from-orange-600 to-red-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+              <div className="relative bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
+                <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                  <Target className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4">Security</h3>
+                <ul className="space-y-2 text-gray-300">
+                  <li>• Enterprise Security</li>
+                  <li>• Data Encryption</li>
+                  <li>• Audit Logging</li>
+                  <li>• GDPR Compliance</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </section>
