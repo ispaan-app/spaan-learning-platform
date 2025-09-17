@@ -22,9 +22,8 @@ import {
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { getPlacementByIdAction, Placement } from '../actions'
+import { getPlacementByIdAction, Placement, enrollLearnerAction } from '../actions'
 import { candidateMatcherFlow } from '@/lib/ai/candidate-matcher'
-import { enrollLearnerAction } from './actions'
 import { toast } from '@/lib/toast'
 
 interface Candidate {

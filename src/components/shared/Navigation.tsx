@@ -4,7 +4,6 @@ import React from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
-import { AvatarHeader } from '@/components/shared/AvatarHeader'
 
 export function Navigation() {
   const { user, logout } = useAuth()
@@ -24,7 +23,14 @@ export function Navigation() {
           
           <div className="flex items-center space-x-4">
             {user ? (
-              <AvatarHeader />
+              <>
+                <span className="text-sm text-gray-600">
+                  Welcome, {user.displayName || user.email}
+                </span>
+                <Button variant="outline" onClick={logout}>
+                  Sign Out
+                </Button>
+              </>
             ) : (
               <>
                 <Link href="/login">

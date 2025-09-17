@@ -152,3 +152,145 @@ export async function getProgramsAction() {
     return []
   }
 }
+
+export interface Learner {
+  id: string
+  userId: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  program: string
+  skills: string[]
+  interests: string[]
+  workExperience: {
+    company: string
+    position: string
+    startDate: string
+    endDate?: string
+    description: string
+  }[]
+  education: {
+    institution: string
+    qualification: string
+    startDate: string
+    endDate?: string
+    status: 'completed' | 'in-progress' | 'cancelled'
+  }[]
+  currentPlacement?: {
+    id: string
+    companyName: string
+    position: string
+    startDate: string
+    endDate?: string
+    status: 'active' | 'completed' | 'terminated'
+  }
+  createdAt: Date
+  updatedAt: Date
+}
+
+export async function getUnassignedLearnersByProgramAction(programId: string): Promise<Learner[]> {
+  try {
+    const learnersRef = adminDb.collection('learnerProfiles')
+    const snapshot = await learnersRef
+      .where('program', '==', programId)
+      .where('currentPlacement', '==', null)
+      .get()
+    
+    return snapshot.docs.map(doc => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: safeToDate(data.createdAt),
+        updatedAt: safeToDate(data.updatedAt)
+      }
+    }) as Learner[]
+  } catch (error) {
+    console.error('Error fetching unassigned learners:', error)
+    return []
+  }
+}
+
+export async function getAllLearnersByProgramAction(programId: string): Promise<Learner[]> {
+  try {
+    const learnersRef = adminDb.collection('learnerProfiles')
+    const snapshot = await learnersRef
+      .where('program', '==', programId)
+      .get()
+    
+    return snapshot.docs.map(doc => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: safeToDate(data.createdAt),
+        updatedAt: safeToDate(data.updatedAt)
+      }
+    }) as Learner[]
+  } catch (error) {
+    console.error('Error fetching learners:', error)
+    return []
+  }
+}
+
+export async function enrollLearnerAction(placementId: string, learnerId: string) {
+  try {
+    // Get learner profile
+    const learnerRef = adminDb.collection('learnerProfiles').doc(learnerId)
+    const learnerDoc = await learnerRef.get()
+    
+    if (!learnerDoc.exists) {
+      return { success: false, error: 'Learner not found' }
+    }
+    
+    const learnerData = learnerDoc.data()!
+    
+    // Get placement details
+    const placementRef = adminDb.collection('placements').doc(placementId)
+    const placementDoc = await placementRef.get()
+    
+    if (!placementDoc.exists) {
+      return { success: false, error: 'Placement not found' }
+    }
+    
+    const placementData = placementDoc.data()!
+    
+    // Check if placement has capacity
+    if (placementData.assignedLearners >= placementData.capacity) {
+      return { success: false, error: 'Placement is at full capacity' }
+    }
+    
+    // Update learner profile with current placement
+    await learnerRef.update({
+      currentPlacement: {
+        id: placementId,
+        companyName: placementData.companyName,
+        position: 'Work-Integrated Learning Student',
+        startDate: new Date().toISOString().split('T')[0],
+        status: 'active',
+        supervisor: {
+          name: placementData.contactPerson,
+          email: placementData.contactEmail,
+          phone: placementData.contactPhone
+        }
+      },
+      updatedAt: new Date()
+    })
+    
+    // Update placement assigned learners count
+    await placementRef.update({
+      assignedLearners: placementData.assignedLearners + 1,
+      status: placementData.assignedLearners + 1 >= placementData.capacity ? 'full' : 'active',
+      updatedAt: new Date()
+    })
+    
+    revalidatePath('/admin/placements')
+    revalidatePath(`/admin/placements/${placementId}`)
+    
+    return { success: true }
+  } catch (error) {
+    console.error('Error enrolling learner:', error)
+    return { success: false, error: 'Failed to enroll learner' }
+  }
+}
