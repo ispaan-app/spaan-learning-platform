@@ -125,7 +125,10 @@ export default function PlacementDetailsPage({ params }: { params: { id: string 
     return (
       <AdminLayout userRole="admin">
         <div className="flex items-center justify-center min-h-96">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderColor: '#FF6E40' }}></div>
+            <p className="text-lg font-medium" style={{ color: '#1E3D59' }}>Loading placement details...</p>
+          </div>
         </div>
       </AdminLayout>
     )
@@ -135,10 +138,21 @@ export default function PlacementDetailsPage({ params }: { params: { id: string 
     return (
       <AdminLayout userRole="admin">
         <div className="flex items-center justify-center min-h-96">
-          <Alert className="max-w-md">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>{error || 'Placement not found'}</AlertDescription>
-          </Alert>
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}>
+              <AlertTriangle className="h-8 w-8" style={{ color: '#FF6E40' }} />
+            </div>
+            <h3 className="text-xl font-bold" style={{ color: '#1E3D59' }}>Placement Not Found</h3>
+            <p style={{ color: '#1E3D59', opacity: 0.7 }}>{error || 'The requested placement could not be found'}</p>
+            <Button
+              onClick={() => router.back()}
+              className="transition-all duration-300 transform hover:scale-105"
+              style={{ backgroundColor: '#FF6E40' }}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Go Back
+            </Button>
+          </div>
         </div>
       </AdminLayout>
     )
@@ -150,257 +164,332 @@ export default function PlacementDetailsPage({ params }: { params: { id: string 
 
   return (
     <AdminLayout userRole="admin">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              onClick={() => router.back()}
-              variant="outline"
-              size="sm"
-              className="flex items-center space-x-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back</span>
-            </Button>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{placement.companyName}</h1>
-              <p className="text-gray-600">{placement.suburb}, {placement.province}</p>
-            </div>
-          </div>
-          <Badge className={`${placement.status === 'active' ? 'bg-green-100 text-green-800' : 
-                            placement.status === 'inactive' ? 'bg-gray-100 text-gray-800' : 
-                            'bg-blue-100 text-blue-800'}`}>
-            {placement.status}
-          </Badge>
-        </div>
-
-        {/* Placement Details */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Info */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Building2 className="h-5 w-5" />
-                  <span>Placement Information</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="font-semibold text-sm text-gray-600">Company Name</h4>
-                    <p className="text-lg">{placement.companyName}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-sm text-gray-600">Program</h4>
-                    <p className="text-lg">{placement.programId}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-sm text-gray-600">Address</h4>
-                    <p className="text-lg">{placement.address}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-sm text-gray-600">Location</h4>
-                    <p className="text-lg">{placement.suburb}, {placement.province}</p>
-                  </div>
-                </div>
-
-                {placement.description && (
-                  <div>
-                    <h4 className="font-semibold text-sm text-gray-600">Description</h4>
-                    <p className="text-gray-700">{placement.description}</p>
-                  </div>
-                )}
-
-                <div className="flex items-center space-x-2">
-                  <MapPin className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">
-                    Coordinates: {placement.latitude.toFixed(6)}, {placement.longitude.toFixed(6)}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Contact Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Users className="h-5 w-5" />
-                  <span>Contact Information</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <Users className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium">{placement.contactPerson}</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Mail className="h-4 w-4 text-gray-500" />
-                  <span>{placement.contactEmail}</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Phone className="h-4 w-4 text-gray-500" />
-                  <span>{placement.contactPhone}</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Capacity Progress */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Users className="h-5 w-5" />
-                  <span>Capacity</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Assigned Learners</span>
-                    <span className="font-medium">
-                      {placement.assignedLearners} / {placement.capacity}
-                    </span>
-                  </div>
-                  <Progress value={progressPercentage} className="h-3" />
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>0</span>
-                    <span>{placement.capacity}</span>
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-blue-600">
-                    {placement.capacity - placement.assignedLearners}
-                  </p>
-                  <p className="text-sm text-gray-600">Spots Available</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* QR Code Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Calendar className="h-5 w-5" />
-                  <span>QR Code</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center space-y-2">
-                  <div className="p-4 bg-gray-100 rounded-lg">
-                    <p className="text-sm font-mono text-gray-600 break-all">
-                      {placement.qrCodeData}
-                    </p>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Use this code to generate the physical QR code for check-ins
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* AI Candidate Matching */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Sparkles className="h-5 w-5" />
-              <span>AI Candidate Matcher</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">
-                  Find the best learners for this placement using AI-powered matching
-                </p>
-              </div>
+      <div className="space-y-8">
+        {/* Enhanced Header */}
+        <div className="relative">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-4">
               <Button
-                onClick={handleFindCandidates}
-                disabled={isMatching || placement.assignedLearners >= placement.capacity}
-                className="flex items-center space-x-2"
+                onClick={() => router.back()}
+                variant="outline"
+                size="sm"
+                className="flex items-center space-x-2 transition-all duration-300 transform hover:scale-105"
+                style={{ 
+                  borderColor: 'rgba(30, 61, 89, 0.2)',
+                  color: '#1E3D59'
+                }}
               >
-                {isMatching ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4" />
-                )}
-                <span>Find Top Candidates</span>
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back</span>
               </Button>
+              <div>
+                <h1 className="text-4xl font-bold" style={{ color: '#1E3D59' }}>{placement.companyName}</h1>
+                <p className="text-lg" style={{ color: '#1E3D59', opacity: 0.7 }}>{placement.suburb}, {placement.province}</p>
+              </div>
             </div>
+            <div className="px-4 py-2 rounded-full text-sm font-semibold" style={{ 
+              backgroundColor: placement.status === 'active' ? 'rgba(255, 110, 64, 0.1)' : 
+                             placement.status === 'inactive' ? 'rgba(30, 61, 89, 0.1)' : 
+                             'rgba(255, 192, 59, 0.1)',
+              color: placement.status === 'active' ? '#FF6E40' : 
+                     placement.status === 'inactive' ? '#1E3D59' : 
+                     '#FFC13B'
+            }}>
+              {placement.status}
+            </div>
+          </div>
+        </div>
 
-            {placement.assignedLearners >= placement.capacity && (
-              <Alert className="border-blue-200 bg-blue-50">
-                <CheckCircle className="h-4 w-4" />
-                <AlertDescription>
-                  This placement is at full capacity. No more learners can be assigned.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {candidates.length > 0 && (
-              <div className="space-y-4">
-                <h4 className="font-semibold text-lg">Recommended Candidates</h4>
-                {candidates.map((candidate) => (
-                  <div
-                    key={candidate.id}
-                    className="p-4 border rounded-lg hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center space-x-4">
-                          <div>
-                            <h5 className="font-semibold text-lg">{candidate.name}</h5>
-                            <p className="text-sm text-gray-600">{candidate.email}</p>
-                            <p className="text-sm text-gray-500">{candidate.program}</p>
-                          </div>
-                          <Badge className="bg-green-100 text-green-800">
-                            {candidate.matchScore}% Match
-                          </Badge>
-                        </div>
-
-                        <div className="space-y-1">
-                          <p className="text-sm text-gray-700">
-                            <strong>Justification:</strong> {candidate.justification}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            <strong>Skills:</strong> {candidate.skills.join(', ')}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            <strong>Experience:</strong> {candidate.experience}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            <strong>Availability:</strong> {candidate.availability}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="ml-4">
-                        <Button
-                          onClick={() => handleEnrollLearner(candidate.id)}
-                          disabled={isEnrolling === candidate.id || placement.assignedLearners >= placement.capacity}
-                          className="flex items-center space-x-2"
-                        >
-                          {isEnrolling === candidate.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <UserPlus className="h-4 w-4" />
-                          )}
-                          <span>Enroll Learner</span>
-                        </Button>
-                      </div>
+        {/* Enhanced Placement Details */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Info */}
+          <div className="lg:col-span-2 space-y-8">
+            <div className="relative">
+              <div className="rounded-2xl border shadow-lg" style={{ backgroundColor: '#F5F0E1', borderColor: 'rgba(30, 61, 89, 0.1)' }}>
+                <div className="p-6 border-b" style={{ borderColor: 'rgba(30, 61, 89, 0.1)' }}>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#1E3D59' }}>
+                      <Building2 className="h-5 w-5 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold" style={{ color: '#1E3D59' }}>
+                      Placement Information
+                    </h2>
+                  </div>
+                </div>
+                <div className="p-6 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-semibold text-sm mb-2" style={{ color: '#1E3D59', opacity: 0.7 }}>Company Name</h4>
+                      <p className="text-lg font-medium" style={{ color: '#1E3D59' }}>{placement.companyName}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-sm mb-2" style={{ color: '#1E3D59', opacity: 0.7 }}>Program</h4>
+                      <p className="text-lg font-medium" style={{ color: '#1E3D59' }}>{placement.programId}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-sm mb-2" style={{ color: '#1E3D59', opacity: 0.7 }}>Address</h4>
+                      <p className="text-lg font-medium" style={{ color: '#1E3D59' }}>{placement.address}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-sm mb-2" style={{ color: '#1E3D59', opacity: 0.7 }}>Location</h4>
+                      <p className="text-lg font-medium" style={{ color: '#1E3D59' }}>{placement.suburb}, {placement.province}</p>
                     </div>
                   </div>
-                ))}
+
+                  {placement.description && (
+                    <div>
+                      <h4 className="font-semibold text-sm mb-2" style={{ color: '#1E3D59', opacity: 0.7 }}>Description</h4>
+                      <p style={{ color: '#1E3D59', opacity: 0.8 }}>{placement.description}</p>
+                    </div>
+                  )}
+
+                  <div className="flex items-center space-x-2 p-3 rounded-xl" style={{ backgroundColor: 'rgba(30, 61, 89, 0.05)' }}>
+                    <MapPin className="h-4 w-4" style={{ color: '#FF6E40' }} />
+                    <span className="text-sm" style={{ color: '#1E3D59', opacity: 0.7 }}>
+                      Coordinates: {placement.latitude.toFixed(6)}, {placement.longitude.toFixed(6)}
+                    </span>
+                  </div>
+                </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+
+            {/* Enhanced Contact Information */}
+            <div className="relative">
+              <div className="rounded-2xl border shadow-lg" style={{ backgroundColor: '#F5F0E1', borderColor: 'rgba(30, 61, 89, 0.1)' }}>
+                <div className="p-6 border-b" style={{ borderColor: 'rgba(30, 61, 89, 0.1)' }}>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#FF6E40' }}>
+                      <Users className="h-5 w-5 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold" style={{ color: '#1E3D59' }}>
+                      Contact Information
+                    </h2>
+                  </div>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div className="flex items-center space-x-4 p-3 rounded-xl" style={{ backgroundColor: 'rgba(30, 61, 89, 0.05)' }}>
+                    <Users className="h-5 w-5" style={{ color: '#FF6E40' }} />
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: '#1E3D59', opacity: 0.7 }}>Contact Person</p>
+                      <p className="font-semibold" style={{ color: '#1E3D59' }}>{placement.contactPerson}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4 p-3 rounded-xl" style={{ backgroundColor: 'rgba(30, 61, 89, 0.05)' }}>
+                    <Mail className="h-5 w-5" style={{ color: '#FFC13B' }} />
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: '#1E3D59', opacity: 0.7 }}>Email</p>
+                      <p className="font-semibold" style={{ color: '#1E3D59' }}>{placement.contactEmail}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4 p-3 rounded-xl" style={{ backgroundColor: 'rgba(30, 61, 89, 0.05)' }}>
+                    <Phone className="h-5 w-5" style={{ color: '#1E3D59' }} />
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: '#1E3D59', opacity: 0.7 }}>Phone</p>
+                      <p className="font-semibold" style={{ color: '#1E3D59' }}>{placement.contactPhone}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Enhanced Sidebar */}
+          <div className="space-y-8">
+            {/* Capacity Progress */}
+            <div className="relative">
+              <div className="rounded-2xl border shadow-lg" style={{ backgroundColor: '#F5F0E1', borderColor: 'rgba(30, 61, 89, 0.1)' }}>
+                <div className="p-6 border-b" style={{ borderColor: 'rgba(30, 61, 89, 0.1)' }}>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#FFC13B' }}>
+                      <Users className="h-5 w-5 text-white" />
+                    </div>
+                    <h2 className="text-xl font-bold" style={{ color: '#1E3D59' }}>
+                      Capacity
+                    </h2>
+                  </div>
+                </div>
+                <div className="p-6 space-y-6">
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span style={{ color: '#1E3D59', opacity: 0.7 }}>Assigned Learners</span>
+                      <span className="font-semibold" style={{ color: '#1E3D59' }}>
+                        {placement.assignedLearners} / {placement.capacity}
+                      </span>
+                    </div>
+                    <div className="w-full rounded-full h-4 overflow-hidden" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}>
+                      <div
+                        className="h-4 rounded-full transition-all duration-500"
+                        style={{ 
+                          width: `${progressPercentage}%`,
+                          backgroundColor: progressPercentage > 80 ? '#FF6E40' : '#FFC13B'
+                        }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs" style={{ color: '#1E3D59', opacity: 0.5 }}>
+                      <span>0</span>
+                      <span>{placement.capacity}</span>
+                    </div>
+                  </div>
+
+                  <div className="text-center p-4 rounded-xl" style={{ backgroundColor: 'rgba(30, 61, 89, 0.05)' }}>
+                    <p className="text-3xl font-bold" style={{ color: '#FF6E40' }}>
+                      {placement.capacity - placement.assignedLearners}
+                    </p>
+                    <p className="text-sm font-medium" style={{ color: '#1E3D59', opacity: 0.7 }}>Spots Available</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Enhanced QR Code Info */}
+            <div className="relative">
+              <div className="rounded-2xl border shadow-lg" style={{ backgroundColor: '#F5F0E1', borderColor: 'rgba(30, 61, 89, 0.1)' }}>
+                <div className="p-6 border-b" style={{ borderColor: 'rgba(30, 61, 89, 0.1)' }}>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#1E3D59' }}>
+                      <Calendar className="h-5 w-5 text-white" />
+                    </div>
+                    <h2 className="text-xl font-bold" style={{ color: '#1E3D59' }}>
+                      QR Code
+                    </h2>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <div className="text-center space-y-4">
+                    <div className="p-4 rounded-xl" style={{ backgroundColor: 'rgba(30, 61, 89, 0.05)' }}>
+                      <p className="text-sm font-mono break-all" style={{ color: '#1E3D59', opacity: 0.8 }}>
+                        {placement.qrCodeData}
+                      </p>
+                    </div>
+                    <p className="text-xs" style={{ color: '#1E3D59', opacity: 0.6 }}>
+                      Use this code to generate the physical QR code for check-ins
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Enhanced AI Candidate Matching */}
+        <div className="relative">
+          <div className="rounded-2xl border shadow-lg" style={{ backgroundColor: '#F5F0E1', borderColor: 'rgba(30, 61, 89, 0.1)' }}>
+            <div className="p-6 border-b" style={{ borderColor: 'rgba(30, 61, 89, 0.1)' }}>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#FF6E40' }}>
+                  <Sparkles className="h-5 w-5 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold" style={{ color: '#1E3D59' }}>
+                  AI Candidate Matcher
+                </h2>
+              </div>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-lg" style={{ color: '#1E3D59', opacity: 0.7 }}>
+                    Find the best learners for this placement using AI-powered matching
+                  </p>
+                </div>
+                <Button
+                  onClick={handleFindCandidates}
+                  disabled={isMatching || placement.assignedLearners >= placement.capacity}
+                  className="flex items-center space-x-2 transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+                  style={{ backgroundColor: '#FF6E40' }}
+                >
+                  {isMatching ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                  <span>Find Top Candidates</span>
+                </Button>
+              </div>
+
+              {placement.assignedLearners >= placement.capacity && (
+                <div className="p-4 rounded-xl border" style={{ 
+                  backgroundColor: 'rgba(255, 192, 59, 0.1)', 
+                  borderColor: 'rgba(255, 192, 59, 0.3)' 
+                }}>
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle className="h-5 w-5" style={{ color: '#FFC13B' }} />
+                    <p className="font-medium" style={{ color: '#1E3D59' }}>
+                      This placement is at full capacity. No more learners can be assigned.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {candidates.length > 0 && (
+                <div className="space-y-6">
+                  <h4 className="text-xl font-bold" style={{ color: '#1E3D59' }}>Recommended Candidates</h4>
+                  {candidates.map((candidate) => (
+                    <div
+                      key={candidate.id}
+                      className="group relative p-6 rounded-2xl border shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
+                      style={{ backgroundColor: 'white', borderColor: 'rgba(30, 61, 89, 0.1)' }}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 space-y-4">
+                          <div className="flex items-center space-x-4">
+                            <div>
+                              <h5 className="text-xl font-bold" style={{ color: '#1E3D59' }}>{candidate.name}</h5>
+                              <p className="text-sm" style={{ color: '#1E3D59', opacity: 0.7 }}>{candidate.email}</p>
+                              <p className="text-sm" style={{ color: '#1E3D59', opacity: 0.6 }}>{candidate.program}</p>
+                            </div>
+                            <div className="px-3 py-1 rounded-full text-sm font-semibold" style={{ 
+                              backgroundColor: 'rgba(255, 110, 64, 0.1)',
+                              color: '#FF6E40'
+                            }}>
+                              {candidate.matchScore}% Match
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div className="p-3 rounded-xl" style={{ backgroundColor: 'rgba(30, 61, 89, 0.05)' }}>
+                              <p className="text-sm font-medium mb-1" style={{ color: '#1E3D59', opacity: 0.7 }}>Justification</p>
+                              <p className="text-sm" style={{ color: '#1E3D59', opacity: 0.8 }}>{candidate.justification}</p>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <div className="p-3 rounded-xl" style={{ backgroundColor: 'rgba(255, 110, 64, 0.05)' }}>
+                                <p className="text-xs font-medium mb-1" style={{ color: '#1E3D59', opacity: 0.7 }}>Skills</p>
+                                <p className="text-sm" style={{ color: '#1E3D59', opacity: 0.8 }}>{candidate.skills.join(', ')}</p>
+                              </div>
+                              <div className="p-3 rounded-xl" style={{ backgroundColor: 'rgba(255, 192, 59, 0.05)' }}>
+                                <p className="text-xs font-medium mb-1" style={{ color: '#1E3D59', opacity: 0.7 }}>Experience</p>
+                                <p className="text-sm" style={{ color: '#1E3D59', opacity: 0.8 }}>{candidate.experience}</p>
+                              </div>
+                              <div className="p-3 rounded-xl" style={{ backgroundColor: 'rgba(30, 61, 89, 0.05)' }}>
+                                <p className="text-xs font-medium mb-1" style={{ color: '#1E3D59', opacity: 0.7 }}>Availability</p>
+                                <p className="text-sm" style={{ color: '#1E3D59', opacity: 0.8 }}>{candidate.availability}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="ml-6">
+                          <Button
+                            onClick={() => handleEnrollLearner(candidate.id)}
+                            disabled={isEnrolling === candidate.id || placement.assignedLearners >= placement.capacity}
+                            className="flex items-center space-x-2 transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+                            style={{ backgroundColor: '#FFC13B' }}
+                          >
+                            {isEnrolling === candidate.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <UserPlus className="h-4 w-4" />
+                            )}
+                            <span>Enroll Learner</span>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </AdminLayout>
   )
