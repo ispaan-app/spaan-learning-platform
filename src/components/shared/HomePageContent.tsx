@@ -70,7 +70,7 @@ export function HomePageContent({
             
             <p className="text-xl text-gray-600 leading-relaxed max-w-3xl">
               Bridge the gap between academic education and real-world industry experience. 
-              Our AI-powered platform connects students with meaningful work placements, 
+              Our AI-powered platform connects South African students with meaningful work placements, 
               providing personalized career guidance and practical skills for today's job market.
             </p>
             
@@ -225,7 +225,7 @@ export function HomePageContent({
               Complete Work-Integrated Learning Platform
             </h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto">
-              Everything you need to bridge academic education with real-world industry experience through AI-powered career guidance and practical work placements
+              Everything South African students need to bridge academic education with real-world industry experience through AI-powered career guidance and practical work placements
             </p>
           </div>
           
@@ -403,7 +403,7 @@ export function HomePageContent({
             
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-8">
               Connect with fellow South African learners, mentors, and administrators who are transforming their communities through work-integrated learning. 
-              See how our platform empowers people just like you!
+              See how our platform empowers South Africans across the nation!
             </p>
             
             <Link 

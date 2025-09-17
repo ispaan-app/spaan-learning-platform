@@ -58,7 +58,7 @@ export default function AboutPage() {
             </h1>
             
             <p className="text-2xl text-gray-700 max-w-4xl mx-auto leading-relaxed mb-12">
-              Empowering learners through 
+              Empowering South African learners through 
               <span className="relative inline-block mx-2">
                 <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-semibold">
                   innovative
@@ -74,8 +74,8 @@ export default function AboutPage() {
                 AI-Powered Learning
               </div>
               <div className="flex items-center px-4 py-2 bg-white/50 rounded-full backdrop-blur-sm">
-                <Globe className="w-4 h-4 text-green-500 mr-2" />
-                Global Reach
+                <Users className="w-4 h-4 text-green-500 mr-2" />
+                South African Focus
               </div>
               <div className="flex items-center px-4 py-2 bg-white/50 rounded-full backdrop-blur-sm">
                 <Shield className="w-4 h-4 text-blue-500 mr-2" />
@@ -128,8 +128,8 @@ export default function AboutPage() {
                 
                 <p className="text-lg text-gray-600 leading-relaxed">
                   Our mission is to bridge the gap between academic learning and real-world application by 
-                  providing work-integrated learning experiences that prepare students for successful careers 
-                  in today's dynamic job market.
+                  providing work-integrated learning experiences that prepare South African students for successful careers 
+                  in today's dynamic job market, with a special focus on empowering township communities.
                 </p>
               </div>
             </div>
@@ -167,7 +167,7 @@ export default function AboutPage() {
                     <span className="font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">leading platform</span>
                     <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full"></div>
                   </span>
-                  for work-integrated learning, where every student has access to meaningful industry experiences, 
+                  for work-integrated learning in South Africa, where every student has access to meaningful industry experiences, 
                   AI-powered career guidance, and the tools they need to build successful, fulfilling careers in their chosen fields.
                 </p>
               </div>
@@ -207,15 +207,15 @@ export default function AboutPage() {
               },
               {
                 title: "Accessibility",
-                description: "We believe quality education should be accessible to all, regardless of background or circumstances.",
-                icon: Globe,
+                description: "We believe quality education should be accessible to all South Africans, especially those in township communities, regardless of background or circumstances.",
+                icon: Users,
                 gradient: "from-green-500 to-emerald-500",
                 bgGradient: "from-green-100 to-emerald-100",
                 textGradient: "from-green-600 to-emerald-600"
               },
               {
                 title: "Community",
-                description: "We foster a supportive learning community where students, educators, and industry professionals collaborate and grow together.",
+                description: "We foster a supportive learning community where South African students, educators, and industry professionals collaborate and grow together, building stronger communities across the nation.",
                 icon: Users,
                 gradient: "from-purple-500 to-pink-500",
                 bgGradient: "from-purple-100 to-pink-100",
