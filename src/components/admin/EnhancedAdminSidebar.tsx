@@ -272,15 +272,11 @@ export function EnhancedAdminSidebar({ userRole, isCollapsed = false, onToggle }
       <div className="relative z-10 flex items-center justify-between p-6 border-b" style={{ borderColor: 'rgba(245, 240, 225, 0.2)' }}>
         {!collapsed && (
           <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-xl shadow-lg" style={{ backgroundColor: '#FF6E40' }}>
-              <LogoDark 
-                size="sm" 
-                showText={false}
-                iconClassName="text-white"
-              />
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300">
+              <span className="text-white font-bold text-xl">iS</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold" style={{ color: '#F5F0E1' }}>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                 iSpaan
               </h1>
               <p className="text-xs" style={{ color: '#F5F0E1', opacity: 0.7 }}>Admin Panel</p>
@@ -289,12 +285,8 @@ export function EnhancedAdminSidebar({ userRole, isCollapsed = false, onToggle }
         )}
         {collapsed && (
           <div className="flex justify-center w-full">
-            <div className="p-3 rounded-xl shadow-lg" style={{ backgroundColor: '#FF6E40' }}>
-              <LogoDark 
-                size="sm" 
-                showText={false}
-                iconClassName="text-white"
-              />
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300">
+              <span className="text-white font-bold text-xl">iS</span>
             </div>
           </div>
         )}
