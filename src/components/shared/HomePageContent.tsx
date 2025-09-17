@@ -466,8 +466,8 @@ export function HomePageContent({
                   href="/login"
                   className="group inline-flex items-center px-6 py-3 border-2 border-gray-600 text-gray-300 rounded-full font-semibold hover:border-blue-600 hover:text-blue-400 transition-all duration-300 transform hover:scale-105"
                 >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download App
+                  <Play className="w-4 h-4 mr-2" />
+                  Access Platform
                 </Link>
               </div>
             </div>
