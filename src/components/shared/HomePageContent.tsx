@@ -239,7 +239,7 @@ export function HomePageContent({
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Real-Time Attendance</h3>
                 <p className="text-gray-600 leading-relaxed mb-6">
-                  GPS-based check-in/out system with QR code scanning for accurate work hour tracking and placement monitoring. Built with Next.js 14 and Firebase.
+                  GPS-based check-in/out system with QR code scanning for accurate work hour tracking and placement monitoring.
                 </p>
                 <div className="flex items-center text-blue-600 font-semibold">
                   <span>Learn More</span>
@@ -257,7 +257,7 @@ export function HomePageContent({
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Career Mentor</h3>
                 <p className="text-gray-600 leading-relaxed mb-6">
-                  Personalized career guidance and learning recommendations powered by Google Genkit and Gemini 1.5 Flash AI technology for intelligent career development.
+                  Personalized career guidance and learning recommendations powered by advanced AI technology for intelligent career development.
                 </p>
                 <div className="flex items-center text-purple-600 font-semibold">
                   <span>Learn More</span>
