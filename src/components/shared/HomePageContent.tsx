@@ -63,7 +63,7 @@ export function HomePageContent({
             </div>
             
             <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-              <span className="block" style={{ color: '#1E3D59' }}>Revolutionary</span>
+              <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Revolutionary</span>
               <span className="block" style={{ color: '#FF6E40' }}>
                 Work-Integrated Learning
               </span>
