@@ -351,9 +351,9 @@ export function HomePageContent({
                     <Brain className="w-8 h-8 text-white" />
                   </div>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Get AI Guidance</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Advanced Analytics Dashboard</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Receive personalized career advice and mentorship from our AI-powered system to maximize your learning outcomes and career success.
+                  Track your progress with comprehensive analytics, performance insights, and detailed reports to monitor your learning journey and career development.
                 </p>
               </div>
             </div>
