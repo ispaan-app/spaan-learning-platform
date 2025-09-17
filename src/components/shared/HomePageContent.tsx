@@ -315,7 +315,7 @@ export function HomePageContent({
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Apply & Get Matched</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Submit your application and let our AI match you with the perfect learning opportunity based on your skills and interests for South African students.
+                  Submit your application and let our AI match you with the perfect learning opportunity based on your skills and interests.
                 </p>
               </div>
             </div>
@@ -334,7 +334,7 @@ export function HomePageContent({
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Start Learning</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Begin your work-integrated learning experience with secure check-ins, progress tracking, and real-time feedback from mentors.
+                  Begin your work-integrated learning experience with secure check-ins, progress tracking, and real-time feedback.
                 </p>
               </div>
             </div>
@@ -353,7 +353,7 @@ export function HomePageContent({
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Advanced Analytics Dashboard</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  Track your progress with comprehensive analytics, performance insights, and detailed reports to monitor your learning journey and career development.
+                  Track your progress with comprehensive analytics, performance insights, and detailed reports to monitor your learning journey.
                 </p>
               </div>
             </div>
