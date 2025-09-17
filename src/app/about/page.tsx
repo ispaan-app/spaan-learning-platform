@@ -33,32 +33,32 @@ export default function AboutPage() {
       {/* Main Content */}
       <main className="relative max-w-6xl mx-auto px-6 py-12">
         {/* Hero Section */}
-        <div className="text-center mb-20 relative">
+        <div className="text-center mb-16 relative">
           <div className="relative z-10">
-            <div className="inline-flex items-center px-6 py-3 rounded-full mb-8 shadow-lg" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}>
+            <div className="inline-flex items-center px-6 py-3 rounded-full mb-6 shadow-lg" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}>
               <Sparkles className="w-5 h-5 mr-2" style={{ color: '#FF6E40' }} />
               <span className="font-semibold" style={{ color: '#1E3D59' }}>Innovation in Education</span>
             </div>
             
-            <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-tight">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
               <span className="block" style={{ color: '#1E3D59' }}>About</span>
-              <span className="block bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <span className="block" style={{ color: '#FF6E40' }}>
                 iSpaan
               </span>
             </h1>
             
-            <p className="text-2xl max-w-4xl mx-auto leading-relaxed mb-12" style={{ color: '#1E3D59' }}>
+            <p className="text-xl max-w-3xl mx-auto leading-relaxed mb-8" style={{ color: '#1E3D59' }}>
               Empowering South African learners through 
               <span className="relative inline-block mx-2">
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-semibold">
+                <span className="font-semibold" style={{ color: '#FF6E40' }}>
                   innovative
                 </span>
-                <div className="absolute -bottom-1 left-0 w-full h-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full"></div>
+                <div className="absolute -bottom-1 left-0 w-full h-1 rounded-full" style={{ backgroundColor: '#FF6E40' }}></div>
               </span>
               work-integrated learning experiences
             </p>
             
-            <div className="flex flex-wrap justify-center gap-4 text-sm">
+            <div className="flex flex-wrap justify-center gap-3 text-sm">
               <div className="flex items-center px-4 py-2 rounded-full shadow-lg" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}>
                 <Zap className="w-4 h-4 mr-2" style={{ color: '#FFC13B' }} />
                 <span style={{ color: '#1E3D59' }}>AI-Powered Learning</span>
@@ -76,7 +76,7 @@ export default function AboutPage() {
         </div>
 
         {/* Mission Section */}
-        <section className="mb-20">
+        <section className="mb-16">
           <div className="relative group">
             <div className="relative rounded-3xl shadow-2xl p-10" style={{ backgroundColor: '#F5F0E1' }}>
               <div className="flex items-center mb-8">
@@ -124,7 +124,7 @@ export default function AboutPage() {
         </section>
 
         {/* Vision Section */}
-        <section className="mb-20">
+        <section className="mb-16">
           <div className="relative group">
             <div className="relative rounded-3xl shadow-2xl p-10" style={{ backgroundColor: '#F5F0E1' }}>
               <div className="flex items-center mb-8">
@@ -160,13 +160,13 @@ export default function AboutPage() {
         </section>
 
         {/* Values Section */}
-        <section className="mb-20">
+        <section className="mb-16">
           <div className="text-center mb-12">
             <div className="inline-flex items-center px-6 py-3 rounded-full mb-6 shadow-lg" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}>
               <Heart className="w-5 h-5 mr-2" style={{ color: '#FF6E40' }} />
               <span className="font-semibold" style={{ color: '#1E3D59' }}>Our Core Values</span>
             </div>
-            <h2 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+            <h2 className="text-4xl font-bold" style={{ color: '#1E3D59' }}>
               What Drives Us
             </h2>
           </div>
@@ -226,13 +226,13 @@ export default function AboutPage() {
         </section>
 
         {/* Team Section */}
-        <section className="mb-20">
+        <section className="mb-16">
           <div className="text-center mb-12">
             <div className="inline-flex items-center px-6 py-3 rounded-full mb-6 shadow-lg" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}>
               <Users className="w-5 h-5 mr-2" style={{ color: '#FF6E40' }} />
               <span className="font-semibold" style={{ color: '#1E3D59' }}>Meet Our Team</span>
             </div>
-            <h2 className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+            <h2 className="text-4xl font-bold" style={{ color: '#1E3D59' }}>
               The People Behind iSpaan
             </h2>
             <p className="text-xl max-w-3xl mx-auto mt-6" style={{ color: '#1E3D59', opacity: 0.8 }}>
@@ -282,7 +282,7 @@ export default function AboutPage() {
         </section>
 
         {/* Contact Section */}
-        <section className="mb-20">
+        <section className="mb-16">
           <div className="relative group">
             <div className="relative rounded-3xl p-12 text-center overflow-hidden" style={{ backgroundColor: '#1E3D59' }}>
               <div className="relative z-10">
