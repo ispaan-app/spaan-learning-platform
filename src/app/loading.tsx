@@ -1,5 +1,5 @@
 ﻿import { PageLoader } from '@/components/ui/loading'
 
 export default function Loading() {
-  return <PageLoader message="Loading your dashboard..." />
+  return <PageLoader message="Preparing your experience..." />
 }
