@@ -429,7 +429,7 @@ export function HomePageContent({
         </div>
         
         <div className="relative max-w-7xl mx-auto px-6">
-          <div className="grid md:grid-cols-4 gap-8 mb-12">
+          <div className="grid md:grid-cols-3 gap-8 mb-12">
             <div className="md:col-span-2">
               <div className="flex items-center space-x-3 mb-6">
                 <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -459,23 +459,6 @@ export function HomePageContent({
               </div>
             </div>
             
-            <div>
-              <h4 className="text-xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">For Students</h4>
-              <ul className="space-y-3 text-gray-400">
-                <li><Link href="/apply" className="hover:text-white transition-colors flex items-center group">
-                  <ArrowRight className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" />
-                  Apply Now
-                </Link></li>
-                <li><Link href="/login/user" className="hover:text-white transition-colors flex items-center group">
-                  <ArrowRight className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" />
-                  Student Login
-                </Link></li>
-                <li><Link href="/programs" className="hover:text-white transition-colors flex items-center group">
-                  <ArrowRight className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform" />
-                  Programs
-                </Link></li>
-              </ul>
-            </div>
             
             <div>
               <h4 className="text-xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Platform</h4>
