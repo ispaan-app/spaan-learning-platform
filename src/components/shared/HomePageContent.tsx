@@ -2,7 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { ArrowRight, Users, Shield, Brain, CheckCircle, Star, Play, Smartphone, Laptop, Tablet, Zap, Globe, Award, Target, MessageCircle, Sparkles } from 'lucide-react'
+import { ArrowRight, Users, Shield, Brain, CheckCircle, Star, Play, Smartphone, Laptop, Tablet, Zap, Globe, Award, Target, MessageCircle, Sparkles, BarChart3 } from 'lucide-react'
 import { RealtimeStats } from './RealtimeStats'
 import { CharacterShowcase } from './CartoonCharacter'
 
@@ -348,7 +348,7 @@ export function HomePageContent({
                     <span className="text-white font-bold text-lg">3</span>
                   </div>
                   <div className="w-16 h-16 bg-gradient-to-r from-orange-400 to-red-400 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-                    <Brain className="w-8 h-8 text-white" />
+                    <BarChart3 className="w-8 h-8 text-white" />
                   </div>
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Advanced Analytics Dashboard</h3>
