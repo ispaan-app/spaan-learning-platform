@@ -12,12 +12,12 @@ export default function AboutPage() {
       <header className="relative shadow-lg border-b" style={{ backgroundColor: '#1E3D59', borderColor: 'rgba(245, 240, 225, 0.2)' }}>
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300" style={{ backgroundColor: '#FF6E40' }}>
-                <span className="text-white font-bold text-xl">iS</span>
-              </div>
-              <span className="text-3xl font-bold text-white">iSpaan</span>
-            </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300">
+                    <span className="text-white font-bold text-xl">iS</span>
+                  </div>
+                  <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">iSpaan</span>
+                </div>
             <Link 
               href="/"
               className="group inline-flex items-center px-6 py-3 text-white rounded-full font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
