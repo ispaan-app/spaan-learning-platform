@@ -245,36 +245,35 @@ export function EnhancedAdminDashboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Animated Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-cyan-400/10 to-blue-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+    <div className="min-h-screen" style={{ backgroundColor: '#F5F0E1' }}>
+      {/* Subtle Background Pattern */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-30">
+        <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl" style={{ backgroundColor: '#FF6E40' }}></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full blur-3xl" style={{ backgroundColor: '#FFC13B' }}></div>
       </div>
 
       <div className="relative max-w-7xl mx-auto p-6 space-y-8">
-        {/* Enhanced Header */}
+        {/* Clean Header */}
         <div className="relative">
           <div className="flex items-center justify-between mb-8">
             <div className="space-y-2">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold" style={{ color: '#1E3D59' }}>
                 Admin Dashboard
               </h1>
-              <p className="text-gray-600 text-lg">
+              <p className="text-lg" style={{ color: '#1E3D59', opacity: 0.7 }}>
                 Manage your platform with powerful insights and real-time data
               </p>
             </div>
             <div className="flex items-center space-x-4">
               <div className="relative group">
-                <button className="p-3 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
-                  <Bell className="w-6 h-6 text-gray-600" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+                <button className="p-3 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105" style={{ backgroundColor: '#F5F0E1' }}>
+                  <Bell className="w-6 h-6" style={{ color: '#1E3D59' }} />
+                  <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full" style={{ backgroundColor: '#FF6E40' }}></span>
                 </button>
               </div>
               <div className="relative group">
-                <button className="p-3 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
-                  <Settings className="w-6 h-6 text-gray-600" />
+                <button className="p-3 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105" style={{ backgroundColor: '#F5F0E1' }}>
+                  <Settings className="w-6 h-6" style={{ color: '#1E3D59' }} />
                 </button>
               </div>
             </div>
@@ -361,78 +360,74 @@ export function EnhancedAdminDashboardContent() {
           </div>
         </div>
 
-        {/* Enhanced Stats Cards */}
+        {/* Clean Stats Cards */}
         <Suspense fallback={<StatsSkeleton />}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Pending Applicants Card */}
             <div className="group relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative bg-white/90 backdrop-blur-sm rounded-3xl p-6 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
+              <div className="relative rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105" style={{ backgroundColor: '#F5F0E1' }}>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#FF6E40' }}>
                     <Clock className="w-6 h-6 text-white" />
                   </div>
                   <div className="text-right">
-                    <div className="text-3xl font-bold text-gray-900">{dashboardStats.pendingApplicants}</div>
-                    <div className="text-sm text-gray-600">Pending</div>
+                    <div className="text-3xl font-bold" style={{ color: '#1E3D59' }}>{dashboardStats.pendingApplicants}</div>
+                    <div className="text-sm" style={{ color: '#1E3D59', opacity: 0.7 }}>Pending</div>
                   </div>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Applicants</h3>
-                <p className="text-sm text-gray-600">Awaiting review and approval</p>
+                <h3 className="text-lg font-semibold mb-2" style={{ color: '#1E3D59' }}>Applicants</h3>
+                <p className="text-sm" style={{ color: '#1E3D59', opacity: 0.6 }}>Awaiting review and approval</p>
               </div>
             </div>
 
             {/* Total Learners Card */}
             <div className="group relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative bg-white/90 backdrop-blur-sm rounded-3xl p-6 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
+              <div className="relative rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105" style={{ backgroundColor: '#F5F0E1' }}>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#1E3D59' }}>
                     <Users className="w-6 h-6 text-white" />
                   </div>
                   <div className="text-right">
-                    <div className="text-3xl font-bold text-gray-900">{dashboardStats.totalLearners}</div>
-                    <div className="text-sm text-gray-600">Active</div>
+                    <div className="text-3xl font-bold" style={{ color: '#1E3D59' }}>{dashboardStats.totalLearners}</div>
+                    <div className="text-sm" style={{ color: '#1E3D59', opacity: 0.7 }}>Active</div>
                   </div>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Learners</h3>
-                <p className="text-sm text-gray-600">Currently enrolled students</p>
+                <h3 className="text-lg font-semibold mb-2" style={{ color: '#1E3D59' }}>Learners</h3>
+                <p className="text-sm" style={{ color: '#1E3D59', opacity: 0.6 }}>Currently enrolled students</p>
               </div>
             </div>
 
             {/* Active Placements Card */}
             <div className="group relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-green-600 to-emerald-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative bg-white/90 backdrop-blur-sm rounded-3xl p-6 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
+              <div className="relative rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105" style={{ backgroundColor: '#F5F0E1' }}>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#FFC13B' }}>
                     <Briefcase className="w-6 h-6 text-white" />
                   </div>
                   <div className="text-right">
-                    <div className="text-3xl font-bold text-gray-900">{dashboardStats.activePlacements}</div>
-                    <div className="text-sm text-gray-600">Active</div>
+                    <div className="text-3xl font-bold" style={{ color: '#1E3D59' }}>{dashboardStats.activePlacements}</div>
+                    <div className="text-sm" style={{ color: '#1E3D59', opacity: 0.7 }}>Active</div>
                   </div>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Placements</h3>
-                <p className="text-sm text-gray-600">Work-integrated learning opportunities</p>
+                <h3 className="text-lg font-semibold mb-2" style={{ color: '#1E3D59' }}>Placements</h3>
+                <p className="text-sm" style={{ color: '#1E3D59', opacity: 0.6 }}>Work-integrated learning opportunities</p>
               </div>
             </div>
 
             {/* Assigned Learners Card */}
             <div className="group relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative bg-white/90 backdrop-blur-sm rounded-3xl p-6 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
+              <div className="relative rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105" style={{ backgroundColor: '#F5F0E1' }}>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#FF6E40' }}>
                     <UserCheck className="w-6 h-6 text-white" />
                   </div>
                   <div className="text-right">
-                    <div className="text-3xl font-bold text-gray-900">{dashboardStats.assignedLearners}</div>
-                    <div className="text-sm text-gray-600">Assigned</div>
+                    <div className="text-3xl font-bold" style={{ color: '#1E3D59' }}>{dashboardStats.assignedLearners}</div>
+                    <div className="text-sm" style={{ color: '#1E3D59', opacity: 0.7 }}>Assigned</div>
                   </div>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Assigned</h3>
-                <p className="text-sm text-gray-600">Learners with active placements</p>
+                <h3 className="text-lg font-semibold mb-2" style={{ color: '#1E3D59' }}>Assigned</h3>
+                <p className="text-sm" style={{ color: '#1E3D59', opacity: 0.6 }}>Learners with active placements</p>
               </div>
             </div>
           </div>
@@ -444,29 +439,28 @@ export function EnhancedAdminDashboardContent() {
           <div className="lg:col-span-2 space-y-8">
             {/* Recent Admin Activity */}
             <div className="group relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative bg-white/90 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="relative rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300" style={{ backgroundColor: '#F5F0E1' }}>
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#1E3D59' }}>
                       <Activity className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900">Recent Activity</h3>
-                      <p className="text-sm text-gray-600">Platform activity and updates</p>
+                      <h3 className="text-xl font-bold" style={{ color: '#1E3D59' }}>Recent Activity</h3>
+                      <p className="text-sm" style={{ color: '#1E3D59', opacity: 0.7 }}>Platform activity and updates</p>
                     </div>
                   </div>
-                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#FF6E40' }}></div>
                 </div>
                 <div className="space-y-4">
                   {recentActivity.slice(0, 5).map((activity, index) => (
-                    <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50/50 rounded-2xl hover:bg-gray-100/50 transition-colors duration-200">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Activity className="w-4 h-4 text-blue-600" />
+                    <div key={index} className="flex items-center space-x-4 p-4 rounded-2xl transition-colors duration-200" style={{ backgroundColor: 'rgba(30, 61, 89, 0.05)' }}>
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FF6E40' }}>
+                        <Activity className="w-4 h-4 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{activity.description}</p>
-                        <p className="text-xs text-gray-500">{activity.timestamp}</p>
+                        <p className="text-sm font-medium" style={{ color: '#1E3D59' }}>{activity.description}</p>
+                        <p className="text-xs" style={{ color: '#1E3D59', opacity: 0.6 }}>{activity.timestamp}</p>
                       </div>
                     </div>
                   ))}
@@ -476,19 +470,18 @@ export function EnhancedAdminDashboardContent() {
 
             {/* Recent Applicants */}
             <div className="group relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative bg-white/90 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="relative rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300" style={{ backgroundColor: '#F5F0E1' }}>
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#FFC13B' }}>
                       <Users className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900">Recent Applicants</h3>
-                      <p className="text-sm text-gray-600">Latest application submissions</p>
+                      <h3 className="text-xl font-bold" style={{ color: '#1E3D59' }}>Recent Applicants</h3>
+                      <p className="text-sm" style={{ color: '#1E3D59', opacity: 0.7 }}>Latest application submissions</p>
                     </div>
                   </div>
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#FF6E40' }}></div>
                 </div>
                 
                 <div className="space-y-4">
@@ -498,27 +491,32 @@ export function EnhancedAdminDashboardContent() {
                     a.email?.toLowerCase().includes(searchRecent.toLowerCase()) ||
                     a.program?.toLowerCase().includes(searchRecent.toLowerCase())
                   ).map(applicant => (
-                    <div key={applicant.id} className="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl hover:bg-gray-100/50 transition-colors duration-200">
+                    <div key={applicant.id} className="flex items-center justify-between p-4 rounded-2xl transition-colors duration-200" style={{ backgroundColor: 'rgba(30, 61, 89, 0.05)' }}>
                       <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold">
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold" style={{ backgroundColor: '#1E3D59' }}>
                           {applicant.firstName?.[0] || 'A'}
                         </div>
                         <div>
-                          <h4 className="font-semibold text-gray-900">{applicant.firstName || 'Unknown'} {applicant.lastName || ''}</h4>
-                          <p className="text-sm text-gray-600">{applicant.email || 'No email'}</p>
-                          <p className="text-xs text-gray-500">{applicant.program || 'Unknown program'}</p>
+                          <h4 className="font-semibold" style={{ color: '#1E3D59' }}>{applicant.firstName || 'Unknown'} {applicant.lastName || ''}</h4>
+                          <p className="text-sm" style={{ color: '#1E3D59', opacity: 0.7 }}>{applicant.email || 'No email'}</p>
+                          <p className="text-xs" style={{ color: '#1E3D59', opacity: 0.6 }}>{applicant.program || 'Unknown program'}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          applicant.status === 'pending-review' ? 'bg-yellow-100 text-yellow-800' : 
-                          applicant.status === 'approved' ? 'bg-green-100 text-green-800' : 
-                          applicant.status === 'rejected' ? 'bg-red-100 text-red-800' : 
-                          'bg-gray-100 text-gray-800'
-                        }`}>
+                          applicant.status === 'pending-review' ? 'text-yellow-800' : 
+                          applicant.status === 'approved' ? 'text-green-800' : 
+                          applicant.status === 'rejected' ? 'text-red-800' : 
+                          'text-gray-800'
+                        }`} style={{ 
+                          backgroundColor: applicant.status === 'pending-review' ? '#FFC13B' : 
+                          applicant.status === 'approved' ? '#4ade80' : 
+                          applicant.status === 'rejected' ? '#f87171' : 
+                          '#e5e7eb'
+                        }}>
                           {applicant.status ? applicant.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown'}
                         </span>
-                        <button className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200">
+                        <button className="p-2 text-white rounded-lg transition-colors duration-200" style={{ backgroundColor: '#FF6E40' }}>
                           <Eye className="w-4 h-4" />
                         </button>
                       </div>
@@ -533,15 +531,14 @@ export function EnhancedAdminDashboardContent() {
           <div className="space-y-8">
             {/* Application Status Chart */}
             <div className="group relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-green-600 to-emerald-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative bg-white/90 backdrop-blur-sm rounded-3xl p-6 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="relative rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300" style={{ backgroundColor: '#F5F0E1' }}>
                 <div className="flex items-center space-x-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg">
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#FFC13B' }}>
                     <PieChart className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900">Application Status</h3>
-                    <p className="text-sm text-gray-600">Overview of applications</p>
+                    <h3 className="text-lg font-bold" style={{ color: '#1E3D59' }}>Application Status</h3>
+                    <p className="text-sm" style={{ color: '#1E3D59', opacity: 0.7 }}>Overview of applications</p>
                   </div>
                 </div>
                 <Suspense fallback={<ChartSkeleton />}>
@@ -552,33 +549,32 @@ export function EnhancedAdminDashboardContent() {
 
             {/* Quick Actions */}
             <div className="group relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-orange-600 to-red-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative bg-white/90 backdrop-blur-sm rounded-3xl p-6 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="relative rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300" style={{ backgroundColor: '#F5F0E1' }}>
                 <div className="flex items-center space-x-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl flex items-center justify-center shadow-lg">
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#FF6E40' }}>
                     <Zap className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900">Quick Actions</h3>
-                    <p className="text-sm text-gray-600">Common admin tasks</p>
+                    <h3 className="text-lg font-bold" style={{ color: '#1E3D59' }}>Quick Actions</h3>
+                    <p className="text-sm" style={{ color: '#1E3D59', opacity: 0.7 }}>Common admin tasks</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <button className="p-4 bg-blue-50 rounded-2xl hover:bg-blue-100 transition-colors duration-200 text-left">
-                    <Users className="w-6 h-6 text-blue-600 mb-2" />
-                    <p className="text-sm font-medium text-gray-900">Review Apps</p>
+                  <button className="p-4 rounded-2xl transition-colors duration-200 text-left" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}>
+                    <Users className="w-6 h-6 mb-2" style={{ color: '#1E3D59' }} />
+                    <p className="text-sm font-medium" style={{ color: '#1E3D59' }}>Review Apps</p>
                   </button>
-                  <button className="p-4 bg-green-50 rounded-2xl hover:bg-green-100 transition-colors duration-200 text-left">
-                    <Briefcase className="w-6 h-6 text-green-600 mb-2" />
-                    <p className="text-sm font-medium text-gray-900">Manage Placements</p>
+                  <button className="p-4 rounded-2xl transition-colors duration-200 text-left" style={{ backgroundColor: 'rgba(255, 192, 59, 0.1)' }}>
+                    <Briefcase className="w-6 h-6 mb-2" style={{ color: '#FFC13B' }} />
+                    <p className="text-sm font-medium" style={{ color: '#1E3D59' }}>Manage Placements</p>
                   </button>
-                  <button className="p-4 bg-purple-50 rounded-2xl hover:bg-purple-100 transition-colors duration-200 text-left">
-                    <BarChart3 className="w-6 h-6 text-purple-600 mb-2" />
-                    <p className="text-sm font-medium text-gray-900">View Analytics</p>
+                  <button className="p-4 rounded-2xl transition-colors duration-200 text-left" style={{ backgroundColor: 'rgba(255, 110, 64, 0.1)' }}>
+                    <BarChart3 className="w-6 h-6 mb-2" style={{ color: '#FF6E40' }} />
+                    <p className="text-sm font-medium" style={{ color: '#1E3D59' }}>View Analytics</p>
                   </button>
-                  <button className="p-4 bg-orange-50 rounded-2xl hover:bg-orange-100 transition-colors duration-200 text-left">
-                    <Settings className="w-6 h-6 text-orange-600 mb-2" />
-                    <p className="text-sm font-medium text-gray-900">Settings</p>
+                  <button className="p-4 rounded-2xl transition-colors duration-200 text-left" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}>
+                    <Settings className="w-6 h-6 mb-2" style={{ color: '#1E3D59' }} />
+                    <p className="text-sm font-medium" style={{ color: '#1E3D59' }}>Settings</p>
                   </button>
                 </div>
               </div>
@@ -586,17 +582,16 @@ export function EnhancedAdminDashboardContent() {
           </div>
         </div>
 
-        {/* Enhanced Core Functions */}
+        {/* Clean Core Functions */}
         <div className="group relative">
-          <div className="absolute -inset-1 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-          <div className="relative bg-white/90 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300">
+          <div className="relative rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300" style={{ backgroundColor: '#F5F0E1' }}>
             <div className="flex items-center space-x-3 mb-8">
-              <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#1E3D59' }}>
                 <Target className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Core Admin Functions</h2>
-                <p className="text-gray-600">Essential tools for platform management</p>
+                <h2 className="text-2xl font-bold" style={{ color: '#1E3D59' }}>Core Admin Functions</h2>
+                <p style={{ color: '#1E3D59', opacity: 0.7 }}>Essential tools for platform management</p>
               </div>
             </div>
             
@@ -654,20 +649,22 @@ export function EnhancedAdminDashboardContent() {
                 <a
                   key={action.href}
                   href={action.href}
-                  className="group/card p-6 bg-white/50 backdrop-blur-sm rounded-2xl border border-white/20 hover:bg-white/80 hover:shadow-lg transition-all duration-300 hover:scale-105"
+                  className="group/card p-6 rounded-2xl hover:shadow-lg transition-all duration-300 hover:scale-105"
+                  style={{ backgroundColor: 'rgba(30, 61, 89, 0.05)' }}
                 >
                   <div className="text-center">
-                    <div className={`w-16 h-16 bg-gradient-to-r from-${action.color}-500 to-${action.color}-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover/card:scale-110 transition-transform duration-300`}>
+                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg group-hover/card:scale-110 transition-transform duration-300" style={{ backgroundColor: action.color === 'blue' ? '#1E3D59' : action.color === 'green' ? '#FFC13B' : action.color === 'purple' ? '#FF6E40' : '#1E3D59' }}>
                       <action.icon className="w-8 h-8 text-white" />
                     </div>
-                    <h3 className="font-bold text-gray-900 group-hover/card:text-gray-800 mb-2 text-lg">{action.title}</h3>
-                    <p className="text-sm text-gray-600 group-hover/card:text-gray-700 mb-4 leading-relaxed">{action.description}</p>
+                    <h3 className="font-bold mb-2 text-lg group-hover/card:opacity-80 transition-opacity duration-200" style={{ color: '#1E3D59' }}>{action.title}</h3>
+                    <p className="text-sm mb-4 leading-relaxed group-hover/card:opacity-80 transition-opacity duration-200" style={{ color: '#1E3D59', opacity: 0.7 }}>{action.description}</p>
                     
                     <div className="space-y-1">
                       {action.features.map((feature, featureIndex) => (
                         <div 
                           key={featureIndex}
-                          className="text-xs text-gray-500 group-hover/card:text-gray-600 transition-colors duration-200"
+                          className="text-xs transition-colors duration-200"
+                          style={{ color: '#1E3D59', opacity: 0.6 }}
                         >
                           • {feature}
                         </div>
