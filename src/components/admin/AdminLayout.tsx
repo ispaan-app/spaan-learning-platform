@@ -31,7 +31,7 @@ export function AdminLayout({ children, userRole }: AdminLayoutProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F0E1' }}>
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     )
@@ -39,7 +39,7 @@ export function AdminLayout({ children, userRole }: AdminLayoutProps) {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F0E1' }}>
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
           <p className="text-gray-600 mb-4">Please log in to access this page.</p>
@@ -52,7 +52,7 @@ export function AdminLayout({ children, userRole }: AdminLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen flex" style={{ backgroundColor: '#F5F0E1' }}>
       {/* Connection Status */}
       <ConnectionStatus />
       
