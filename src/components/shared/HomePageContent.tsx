@@ -426,7 +426,7 @@ export function HomePageContent({
       {/* Technology Stack Section */}
       <section className="py-20 bg-gradient-to-br from-gray-900 to-blue-900 text-white">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
+          <div className="text-center">
             <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full mb-6 border border-white/20 shadow-lg">
               <Zap className="w-5 h-5 text-blue-600 mr-2 animate-pulse" />
               <span className="text-blue-700 font-semibold">Powered by Modern Technology</span>
@@ -437,76 +437,6 @@ export function HomePageContent({
             <p className="text-xl text-gray-300 max-w-4xl mx-auto">
               Our platform is built on modern, scalable technology stack ensuring reliability, security, and performance
             </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Frontend */}
-            <div className="group relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-                  <Smartphone className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4">Frontend</h3>
-                <ul className="space-y-2 text-gray-300">
-                  <li>• Next.js 14 with React</li>
-                  <li>• TypeScript</li>
-                  <li>• Tailwind CSS</li>
-                  <li>• Responsive Design</li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Backend */}
-            <div className="group relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-green-600 to-emerald-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
-                <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-                  <Shield className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4">Backend</h3>
-                <ul className="space-y-2 text-gray-300">
-                  <li>• Firebase Firestore</li>
-                  <li>• Firebase Authentication</li>
-                  <li>• Firebase Hosting</li>
-                  <li>• Real-time Database</li>
-                </ul>
-              </div>
-            </div>
-
-            {/* AI Integration */}
-            <div className="group relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
-                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-                  <Brain className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4">AI & Analytics</h3>
-                <ul className="space-y-2 text-gray-300">
-                  <li>• Google Genkit</li>
-                  <li>• Gemini 1.5 Flash</li>
-                  <li>• Real-time Analytics</li>
-                  <li>• Predictive Insights</li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Security */}
-            <div className="group relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-orange-600 to-red-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-              <div className="relative bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 transform group-hover:scale-105">
-                <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-                  <Target className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-4">Security</h3>
-                <ul className="space-y-2 text-gray-300">
-                  <li>• Enterprise Security</li>
-                  <li>• Data Encryption</li>
-                  <li>• Audit Logging</li>
-                  <li>• GDPR Compliance</li>
-                </ul>
-              </div>
-            </div>
           </div>
         </div>
       </section>
