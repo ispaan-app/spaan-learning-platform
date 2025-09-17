@@ -36,7 +36,7 @@ export function HomePageContent({
               <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300">
                 <span className="text-white font-bold text-xl">iS</span>
               </div>
-              <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{platformName}</span>
+              <span className="text-3xl font-bold" style={{ color: '#1E3D59' }}>{platformName}</span>
             </div>
             <div className="flex items-center space-x-6">
               <Link 
@@ -418,7 +418,7 @@ export function HomePageContent({
                 <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
                   <span className="text-white font-bold text-xl">iS</span>
                 </div>
-                <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{platformName}</span>
+                <span className="text-3xl font-bold text-white">{platformName}</span>
               </div>
               <p className="text-lg leading-relaxed mb-6 max-w-md" style={{ color: '#F5F0E1', opacity: 0.8 }}>
                 Empowering learners through innovative work-integrated learning experiences. 
