@@ -13,7 +13,11 @@ interface PlatformStats {
   averageRating: number
 }
 
-export function RealtimeStats() {
+interface RealtimeStatsProps {
+  variant?: 'default' | 'hero'
+}
+
+export function RealtimeStats({ variant = 'default' }: RealtimeStatsProps) {
   const [stats, setStats] = useState<PlatformStats>({
     activeLearners: 0,
     successRate: 0,
@@ -108,18 +112,46 @@ export function RealtimeStats() {
   }, [])
 
   if (loading) {
+    const isHero = variant === 'hero'
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-        {[...Array(4)].map((_, i) => (
+      <div className={`flex items-center space-x-8 ${isHero ? 'pt-8' : 'grid grid-cols-2 md:grid-cols-4 gap-8'}`}>
+        {[...Array(isHero ? 3 : 4)].map((_, i) => (
           <div key={i} className="text-center">
-            <div className="text-5xl font-bold text-white mb-2 animate-pulse">
-              <div className="h-12 bg-blue-300 rounded"></div>
+            <div className={`${isHero ? 'text-3xl' : 'text-5xl'} font-bold ${isHero ? 'text-blue-600' : 'text-white'} mb-2 animate-pulse`}>
+              <div className={`h-8 ${isHero ? 'bg-blue-300' : 'bg-blue-300'} rounded`}></div>
             </div>
-            <div className="text-blue-100 text-lg animate-pulse">
-              <div className="h-6 bg-blue-200 rounded"></div>
+            <div className={`text-sm ${isHero ? 'text-gray-600' : 'text-blue-100 text-lg'} animate-pulse`}>
+              <div className={`h-4 ${isHero ? 'bg-gray-300' : 'bg-blue-200'} rounded`}></div>
             </div>
           </div>
         ))}
+      </div>
+    )
+  }
+
+  const isHero = variant === 'hero'
+  
+  if (isHero) {
+    return (
+      <div className="flex items-center space-x-8 pt-8">
+        <div className="text-center">
+          <div className="text-3xl font-bold text-blue-600">
+            {stats.activeLearners.toLocaleString()}+
+          </div>
+          <div className="text-sm text-gray-600">Active Learners</div>
+        </div>
+        <div className="text-center">
+          <div className="text-3xl font-bold text-purple-600">
+            {stats.successRate}%
+          </div>
+          <div className="text-sm text-gray-600">Success Rate</div>
+        </div>
+        <div className="text-center">
+          <div className="text-3xl font-bold text-pink-600">
+            {stats.averageRating > 0 ? `${stats.averageRating}★` : '4.9★'}
+          </div>
+          <div className="text-sm text-gray-600">User Rating</div>
+        </div>
       </div>
     )
   }
@@ -155,3 +187,5 @@ export function RealtimeStats() {
     </div>
   )
 }
+
+

@@ -86,20 +86,7 @@ export function HomePageContent({
             </div>
             
             {/* Stats */}
-            <div className="flex items-center space-x-8 pt-8">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">10K+</div>
-                <div className="text-sm text-gray-600">Active Learners</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600">95%</div>
-                <div className="text-sm text-gray-600">Success Rate</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-pink-600">4.9★</div>
-                <div className="text-sm text-gray-600">User Rating</div>
-              </div>
-            </div>
+            <RealtimeStats variant="hero" />
           </div>
           
           {/* Right Content - App Showcase */}
