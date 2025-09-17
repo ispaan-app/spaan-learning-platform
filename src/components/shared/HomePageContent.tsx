@@ -2,7 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { ArrowRight, Users, Shield, Brain, CheckCircle, Star, Play, Download, Smartphone, Laptop, Tablet, Zap, Globe, Award, Target, MessageCircle, Sparkles } from 'lucide-react'
+import { ArrowRight, Users, Shield, Brain, CheckCircle, Star, Play, Smartphone, Laptop, Tablet, Zap, Globe, Award, Target, MessageCircle, Sparkles } from 'lucide-react'
 import { RealtimeStats } from './RealtimeStats'
 import { CharacterShowcase } from './CartoonCharacter'
 
@@ -74,7 +74,7 @@ export function HomePageContent({
               providing personalized career guidance and practical skills for today's job market.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex justify-center">
               <Link 
                 href="/apply"
                 className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
@@ -82,14 +82,6 @@ export function HomePageContent({
                 <Play className="w-5 h-5 mr-3" />
                 Start Learning
                 <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              
-              <Link 
-                href="/login"
-                className="group inline-flex items-center px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-full font-bold text-lg hover:border-blue-600 hover:text-blue-600 transition-all duration-300 transform hover:scale-105"
-              >
-                <Download className="w-5 h-5 mr-3" />
-                Download App
               </Link>
             </div>
             
@@ -239,7 +231,7 @@ export function HomePageContent({
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Real-Time Attendance</h3>
                 <p className="text-gray-600 leading-relaxed mb-6">
-                  GPS-based check-in/out system with QR code scanning for accurate work hour tracking and placement monitoring.
+                  GPS-based check-in/out system with QR code scanning for accurate work hour tracking and placement monitoring across South African workplaces.
                 </p>
                 <div className="flex items-center text-blue-600 font-semibold">
                   <span>Learn More</span>
@@ -257,7 +249,7 @@ export function HomePageContent({
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Career Mentor</h3>
                 <p className="text-gray-600 leading-relaxed mb-6">
-                  Personalized career guidance and learning recommendations powered by advanced AI technology for intelligent career development.
+                  Personalized career guidance and learning recommendations powered by advanced AI technology for intelligent career development and growth.
                 </p>
                 <div className="flex items-center text-purple-600 font-semibold">
                   <span>Learn More</span>
@@ -275,7 +267,7 @@ export function HomePageContent({
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Industry Placements</h3>
                 <p className="text-gray-600 leading-relaxed mb-6">
-                  Connect with industry partners for meaningful work-integrated learning experiences. Get matched with real work opportunities that build practical skills.
+                  Connect with South African industry partners for meaningful work-integrated learning experiences and real work opportunities that build practical skills.
                 </p>
                 <div className="flex items-center text-green-600 font-semibold">
                   <span>Learn More</span>
