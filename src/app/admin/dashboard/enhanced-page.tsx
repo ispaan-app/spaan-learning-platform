@@ -103,7 +103,7 @@ export default function EnhancedAdminDashboardPage() {
   )
 }
 
-function EnhancedAdminDashboardContent() {
+export function EnhancedAdminDashboardContent() {
   const recentActivity = useRealtimeAdminActivity(10)
   const adminNotifications = useRealtimeAdminNotifications(10)
   const [searchRecent, setSearchRecent] = useState('')
