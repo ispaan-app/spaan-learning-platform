@@ -14,7 +14,6 @@ import {
   AlertTriangle,
   Calendar,
   Timer,
-  Location,
   Smartphone,
   Wifi,
   Battery,
@@ -335,7 +334,7 @@ export function EnhancedCheckInPage() {
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-                      <Location className="w-5 h-5 text-white" />
+                      <MapPin className="w-5 h-5 text-white" />
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Main Office</h4>

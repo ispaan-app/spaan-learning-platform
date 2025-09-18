@@ -304,7 +304,7 @@ export function EnhancedDashboardLayout({
       default:
         return {
           title: 'User',
-          icon: User,
+          icon: Users,
           color: 'from-gray-600 via-blue-600 to-purple-500',
           bgColor: 'bg-gradient-to-r from-gray-600 via-blue-600 to-purple-500'
         }

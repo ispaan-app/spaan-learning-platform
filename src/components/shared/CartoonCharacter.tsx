@@ -176,7 +176,7 @@ export function CartoonCharacter({
     Object.keys(CUSTOMIZATION_OPTIONS).forEach(key => {
       const options = CUSTOMIZATION_OPTIONS[key as keyof typeof CUSTOMIZATION_OPTIONS]
       const randomValue = options[Math.floor(Math.random() * options.length)]
-      newConfig[key as keyof CharacterConfig] = randomValue
+      ;(newConfig as any)[key] = randomValue
     })
     
     setTimeout(() => {

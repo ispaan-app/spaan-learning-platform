@@ -454,7 +454,7 @@ export function EnhancedAdminDashboardContent() {
                         <Activity className="w-4 h-4 text-white" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium" style={{ color: '#1E3D59' }}>{activity.description}</p>
+                        <p className="text-sm font-medium" style={{ color: '#1E3D59' }}>{activity.details || activity.action}</p>
                         <p className="text-xs" style={{ color: '#1E3D59', opacity: 0.6 }}>{activity.timestamp}</p>
                       </div>
                     </div>

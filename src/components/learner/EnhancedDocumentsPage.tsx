@@ -51,7 +51,6 @@ import {
   FolderOpen,
   File,
   FileImage,
-  FilePdf,
   FileVideo,
   FileAudio,
   FileSpreadsheet,
@@ -162,7 +161,7 @@ export function EnhancedDocumentsPage() {
         count: 1,
         required: 3,
         color: 'text-green-600 bg-green-100',
-        icon: FilePdf
+        icon: FileText
       },
       {
         name: 'Medical',
@@ -184,7 +183,7 @@ export function EnhancedDocumentsPage() {
   const getFileIcon = (type: string) => {
     switch (type) {
       case 'pdf':
-        return FilePdf
+        return FileText
       case 'image':
         return FileImage
       case 'video':
