@@ -3,6 +3,8 @@
 import { adminDb } from '@/lib/firebase-admin'
 import { revalidatePath } from 'next/cache'
 import { safeToDate } from '@/lib/date-utils'
+import { auditLogger } from '@/lib/auditLogger'
+import { notificationActions, createAdminNotification } from '@/lib/notificationActions'
 
 export interface Placement {
   id?: string
@@ -40,7 +42,7 @@ export interface CreatePlacementData {
   longitude: number
 }
 
-export async function createPlacementAction(data: CreatePlacementData) {
+export async function createPlacementAction(data: CreatePlacementData, adminUser?: { userId: string, userRole: string }) {
   try {
     // Generate QR code data (using document ID after creation)
     const qrCodeData = `placement_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -61,6 +63,27 @@ export async function createPlacementAction(data: CreatePlacementData) {
     await docRef.update({
       qrCodeData: `placement_${docRef.id}`
     })
+
+    // Audit log
+    if (adminUser) {
+      await auditLogger.logData(
+        'PLACEMENT_CREATED',
+        adminUser.userId,
+        adminUser.userRole,
+        docRef.id,
+        'placement',
+        { placementData }
+      )
+    }
+
+    // Notify admins (optional: can be expanded to notify others)
+    await createAdminNotification(
+      'placement_updated',
+      'New Placement Created',
+      `A new placement for ${placementData.companyName} has been created.`,
+      'medium',
+      { placementId: docRef.id, companyName: placementData.companyName }
+    )
 
     revalidatePath('/admin/placements')
     revalidatePath('/admin/placements/create')
@@ -116,13 +139,34 @@ export async function getPlacementByIdAction(placementId: string): Promise<Place
   }
 }
 
-export async function updatePlacementStatusAction(placementId: string, status: 'active' | 'inactive' | 'full') {
+export async function updatePlacementStatusAction(placementId: string, status: 'active' | 'inactive' | 'full', adminUser?: { userId: string, userRole: string }) {
   try {
     const placementRef = adminDb.collection('placements').doc(placementId)
     await placementRef.update({
       status,
       updatedAt: new Date()
     })
+
+    // Audit log
+    if (adminUser) {
+      await auditLogger.logData(
+        'PLACEMENT_STATUS_UPDATED',
+        adminUser.userId,
+        adminUser.userRole,
+        placementId,
+        'placement',
+        { status }
+      )
+    }
+
+    // Notify admins
+    await createAdminNotification(
+      'placement_updated',
+      'Placement Status Updated',
+      `Placement ${placementId} status changed to ${status}.`,
+      'medium',
+      { placementId, status }
+    )
 
     revalidatePath('/admin/placements')
     revalidatePath(`/admin/placements/${placementId}`)
@@ -234,7 +278,7 @@ export async function getAllLearnersByProgramAction(programId: string): Promise<
   }
 }
 
-export async function enrollLearnerAction(placementId: string, learnerId: string) {
+export async function enrollLearnerAction(placementId: string, learnerId: string, adminUser?: { userId: string, userRole: string }) {
   try {
     // Get learner profile
     const learnerRef = adminDb.collection('learnerProfiles').doc(learnerId)
@@ -284,7 +328,26 @@ export async function enrollLearnerAction(placementId: string, learnerId: string
       status: placementData.assignedLearners + 1 >= placementData.capacity ? 'full' : 'active',
       updatedAt: new Date()
     })
-    
+
+    // Audit log
+    if (adminUser) {
+      await auditLogger.logData(
+        'LEARNER_ENROLLED',
+        adminUser.userId,
+        adminUser.userRole,
+        learnerId,
+        'learner',
+        { placementId, placementCompany: placementData.companyName }
+      )
+    }
+
+    // Notify learner
+    await notificationActions.notifyPlacementAssigned(
+      learnerId,
+      learnerData.firstName || learnerData.name || 'Learner',
+      placementData.companyName
+    )
+
     revalidatePath('/admin/placements')
     revalidatePath(`/admin/placements/${placementId}`)
     

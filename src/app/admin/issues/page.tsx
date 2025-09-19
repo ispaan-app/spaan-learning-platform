@@ -20,7 +20,17 @@ import {
   MapPin,
   X,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  TrendingUp,
+  Activity,
+  Zap,
+  Shield,
+  Bug,
+  Wrench,
+  Building,
+  DollarSign,
+  Timer,
+  HelpCircle
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { getIssuesAction, updateIssueStatusAction, IssueReport } from './actions'
@@ -125,8 +135,15 @@ export default function IssuesPage() {
   if (isLoading) {
     return (
       <AdminLayout userRole="admin">
-        <div className="flex items-center justify-center min-h-96">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="flex flex-col items-center justify-center min-h-96 space-y-4">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-transparent border-t-[#FF6E40] absolute top-0 left-0"></div>
+          </div>
+          <div className="text-center">
+            <h3 className="text-lg font-semibold" style={{ color: '#1E3D59' }}>Loading Issue Reports</h3>
+            <p className="text-sm text-gray-600">Please wait while we fetch the latest data...</p>
+          </div>
         </div>
       </AdminLayout>
     )
@@ -136,142 +153,192 @@ export default function IssuesPage() {
     <AdminLayout userRole="admin">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Issue Reports</h1>
-            <p className="text-gray-600">Manage and resolve user-reported issues</p>
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#1E3D59] to-[#2D5A87] opacity-5 rounded-2xl"></div>
+          <div className="relative bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-2xl p-6 shadow-lg">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 rounded-xl" style={{ backgroundColor: '#FF6E40' }}>
+                    <Shield className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl sm:text-4xl font-bold" style={{ color: '#1E3D59' }}>
+                      Issue Reports
+                    </h1>
+                    <p className="text-gray-600 text-lg">Manage and resolve user-reported issues</p>
+                  </div>
+                </div>
+              </div>
+              <Button
+                onClick={loadIssues}
+                className="flex items-center space-x-2 px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                style={{ backgroundColor: '#FF6E40' }}
+              >
+                <RefreshCw className="h-5 w-5" />
+                <span className="font-semibold">Refresh</span>
+              </Button>
+            </div>
           </div>
-          <Button
-            onClick={loadIssues}
-            variant="outline"
-            size="sm"
-            className="flex items-center space-x-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            <span>Refresh</span>
-          </Button>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-                <div>
-                  <p className="text-sm text-gray-600">Open Issues</p>
-                  <p className="text-2xl font-bold text-red-600">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-red-400/10 to-pink-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <CardContent className="relative p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-600">Open Issues</p>
+                  <p className="text-3xl font-bold text-red-600">
                     {issues.filter(i => i.status === 'open').length}
                   </p>
                 </div>
+                <div className="p-3 rounded-xl bg-red-600">
+                  <AlertTriangle className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <div className="mt-4 flex items-center text-sm text-gray-500">
+                <TrendingUp className="h-4 w-4 mr-1" />
+                <span>Requires immediate attention</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Clock className="h-5 w-5 text-yellow-600" />
-                <div>
-                  <p className="text-sm text-gray-600">In Progress</p>
-                  <p className="text-2xl font-bold text-yellow-600">
+          <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 to-orange-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <CardContent className="relative p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-600">In Progress</p>
+                  <p className="text-3xl font-bold" style={{ color: '#FFC13B' }}>
                     {issues.filter(i => i.status === 'in_progress').length}
                   </p>
                 </div>
+                <div className="p-3 rounded-xl" style={{ backgroundColor: '#FFC13B' }}>
+                  <Clock className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <div className="mt-4 flex items-center text-sm text-gray-500">
+                <Activity className="h-4 w-4 mr-1" />
+                <span>Currently being worked on</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="text-sm text-gray-600">Resolved</p>
-                  <p className="text-2xl font-bold text-green-600">
+          <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-400/10 to-emerald-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <CardContent className="relative p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-600">Resolved</p>
+                  <p className="text-3xl font-bold text-green-600">
                     {issues.filter(i => i.status === 'resolved').length}
                   </p>
                 </div>
+                <div className="p-3 rounded-xl bg-green-600">
+                  <CheckCircle className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <div className="mt-4 flex items-center text-sm text-gray-500">
+                <Zap className="h-4 w-4 mr-1" />
+                <span>Successfully resolved</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <AlertTriangle className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="text-sm text-gray-600">Total Issues</p>
-                  <p className="text-2xl font-bold text-blue-600">{issues.length}</p>
+          <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-indigo-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <CardContent className="relative p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-600">Total Issues</p>
+                  <p className="text-3xl font-bold" style={{ color: '#1E3D59' }}>
+                    {issues.length}
+                  </p>
                 </div>
+                <div className="p-3 rounded-xl" style={{ backgroundColor: '#1E3D59' }}>
+                  <Shield className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <div className="mt-4 flex items-center text-sm text-gray-500">
+                <Activity className="h-4 w-4 mr-1" />
+                <span>All time reports</span>
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Filters */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Card className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#1E3D59]/5 to-[#FF6E40]/5 opacity-50"></div>
+          <CardContent className="relative p-6">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="p-2 rounded-xl" style={{ backgroundColor: '#1E3D59' }}>
+                <Filter className="h-5 w-5 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold" style={{ color: '#1E3D59' }}>Filter & Search</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">Search Issues</label>
+                <div className="relative group">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-[#FF6E40] transition-colors" />
                   <input
                     type="text"
                     placeholder="Search issues..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF6E40]/20 focus:border-[#FF6E40] transition-all duration-300 bg-white/80 backdrop-blur-sm"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">Filter by Status</label>
                 <Select value={statusFilter} onValueChange={(value: 'all' | 'open' | 'in_progress' | 'resolved' | 'closed') => setStatusFilter(value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF6E40]/20 focus:border-[#FF6E40] transition-all duration-300 bg-white/80 backdrop-blur-sm">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="resolved">Resolved</SelectItem>
-                    <SelectItem value="closed">Closed</SelectItem>
+                  <SelectContent className="rounded-xl border-2 border-gray-200 shadow-xl">
+                    <SelectItem value="all" className="rounded-lg">All Status</SelectItem>
+                    <SelectItem value="open" className="rounded-lg">Open</SelectItem>
+                    <SelectItem value="in_progress" className="rounded-lg">In Progress</SelectItem>
+                    <SelectItem value="resolved" className="rounded-lg">Resolved</SelectItem>
+                    <SelectItem value="closed" className="rounded-lg">Closed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">Filter by Category</label>
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF6E40]/20 focus:border-[#FF6E40] transition-all duration-300 bg-white/80 backdrop-blur-sm">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="technical">Technical</SelectItem>
-                    <SelectItem value="placement">Placement</SelectItem>
-                    <SelectItem value="stipend">Stipend</SelectItem>
-                    <SelectItem value="attendance">Attendance</SelectItem>
-                    <SelectItem value="general">General</SelectItem>
+                  <SelectContent className="rounded-xl border-2 border-gray-200 shadow-xl">
+                    <SelectItem value="all" className="rounded-lg">All Categories</SelectItem>
+                    <SelectItem value="technical" className="rounded-lg">Technical</SelectItem>
+                    <SelectItem value="placement" className="rounded-lg">Placement</SelectItem>
+                    <SelectItem value="stipend" className="rounded-lg">Stipend</SelectItem>
+                    <SelectItem value="attendance" className="rounded-lg">Attendance</SelectItem>
+                    <SelectItem value="general" className="rounded-lg">General</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">Filter by Priority</label>
                 <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF6E40]/20 focus:border-[#FF6E40] transition-all duration-300 bg-white/80 backdrop-blur-sm">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Priorities</SelectItem>
-                    <SelectItem value="urgent">Urgent</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="low">Low</SelectItem>
+                  <SelectContent className="rounded-xl border-2 border-gray-200 shadow-xl">
+                    <SelectItem value="all" className="rounded-lg">All Priorities</SelectItem>
+                    <SelectItem value="urgent" className="rounded-lg">Urgent</SelectItem>
+                    <SelectItem value="high" className="rounded-lg">High</SelectItem>
+                    <SelectItem value="medium" className="rounded-lg">Medium</SelectItem>
+                    <SelectItem value="low" className="rounded-lg">Low</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -280,82 +347,104 @@ export default function IssuesPage() {
         </Card>
 
         {/* Issues List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5" />
-              <span>Issues ({filteredIssues.length})</span>
+        <Card className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#1E3D59]/3 to-[#FF6E40]/3 opacity-30"></div>
+          <CardHeader className="relative">
+            <CardTitle className="flex items-center space-x-3">
+              <div className="p-2 rounded-xl" style={{ backgroundColor: '#1E3D59' }}>
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <span className="text-2xl font-bold" style={{ color: '#1E3D59' }}>
+                  Issue Reports
+                </span>
+                <p className="text-sm text-gray-600 mt-1">
+                  {filteredIssues.length} issue{filteredIssues.length !== 1 ? 's' : ''} found
+                </p>
+              </div>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="relative">
             {filteredIssues.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {filteredIssues.map((issue) => (
                   <div
                     key={issue.id}
-                    className="p-4 border rounded-lg hover:shadow-sm transition-shadow"
+                    className="group relative overflow-hidden bg-white/80 backdrop-blur-sm border-2 border-gray-200/50 rounded-2xl p-6 hover:shadow-xl hover:border-[#FF6E40]/30 transition-all duration-300 transform hover:-translate-y-1"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 space-y-3">
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#1E3D59]/5 to-[#FF6E40]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="relative">
+                      <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-lg">{getCategoryIcon(issue.category)}</span>
-                            <div>
-                              <h3 className="font-semibold text-lg">{issue.title}</h3>
-                              <p className="text-sm text-gray-600">by {issue.userName} ({issue.userRole})</p>
-                            </div>
+                          <div className="p-3 rounded-xl bg-gradient-to-br from-[#FF6E40] to-[#FF8C69] shadow-lg">
+                            <span className="text-2xl">{getCategoryIcon(issue.category)}</span>
                           </div>
-                          <Badge className={getStatusColor(issue.status)}>
-                            {issue.status}
+                          <div className="space-y-1">
+                            <h3 className="text-xl font-bold" style={{ color: '#1E3D59' }}>
+                              {issue.title}
+                            </h3>
+                            <p className="text-sm font-medium text-gray-600">by {issue.userName} ({issue.userRole})</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <Badge 
+                            className={`px-4 py-2 rounded-xl font-semibold text-sm ${getStatusColor(issue.status)}`}
+                          >
+                            {issue.status.replace('_', ' ')}
                           </Badge>
-                          <Badge className={getPriorityColor(issue.priority)}>
+                          <Badge 
+                            className={`px-4 py-2 rounded-xl font-semibold text-sm ${getPriorityColor(issue.priority)}`}
+                          >
                             {issue.priority}
                           </Badge>
                         </div>
-
-                        <p className="text-sm text-gray-700 line-clamp-2">{issue.description}</p>
-
-                        <div className="flex items-center space-x-6 text-sm text-gray-500">
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="h-4 w-4" />
-                            <span>{issue.submittedAt.toLocaleDateString()}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <User className="h-4 w-4" />
-                            <span>{issue.userEmail}</span>
-                          </div>
-                          {issue.location && (
-                            <div className="flex items-center space-x-1">
-                              <MapPin className="h-4 w-4" />
-                              <span>{issue.location}</span>
-                            </div>
-                          )}
-                        </div>
                       </div>
 
-                      <div className="flex items-center space-x-2 ml-4">
-                        <Select
-                          value={issue.status}
-                          onValueChange={(value: 'open' | 'in_progress' | 'resolved' | 'closed') => handleStatusUpdate(issue.id!, value)}
-                        >
-                          <SelectTrigger className="w-32">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="open">Open</SelectItem>
-                            <SelectItem value="in_progress">In Progress</SelectItem>
-                            <SelectItem value="resolved">Resolved</SelectItem>
-                            <SelectItem value="closed">Closed</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="mb-4">
+                        <p className="text-sm text-gray-700 line-clamp-2 leading-relaxed">{issue.description}</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div className="flex items-center space-x-2 text-sm text-gray-500">
+                          <Calendar className="h-4 w-4" />
+                          <span>Submitted: {issue.submittedAt.toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 text-sm text-gray-500">
+                          <User className="h-4 w-4" />
+                          <span>{issue.userEmail}</span>
+                        </div>
+                        {issue.location && (
+                          <div className="flex items-center space-x-2 text-sm text-gray-500">
+                            <MapPin className="h-4 w-4" />
+                            <span>{issue.location}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Select
+                            value={issue.status}
+                            onValueChange={(value: 'open' | 'in_progress' | 'resolved' | 'closed') => handleStatusUpdate(issue.id!, value)}
+                          >
+                            <SelectTrigger className="w-40 h-10 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF6E40]/20 focus:border-[#FF6E40] transition-all duration-300">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-2 border-gray-200 shadow-xl">
+                              <SelectItem value="open" className="rounded-lg">Open</SelectItem>
+                              <SelectItem value="in_progress" className="rounded-lg">In Progress</SelectItem>
+                              <SelectItem value="resolved" className="rounded-lg">Resolved</SelectItem>
+                              <SelectItem value="closed" className="rounded-lg">Closed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                         <Button
                           onClick={() => openIssueDetails(issue)}
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center space-x-1"
+                          className="flex items-center space-x-2 px-4 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                          style={{ backgroundColor: '#FF6E40' }}
                         >
                           <Eye className="h-4 w-4" />
-                          <span>View</span>
+                          <span className="font-semibold">View Details</span>
                         </Button>
                       </div>
                     </div>
@@ -363,10 +452,12 @@ export default function IssuesPage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg font-medium">No issues found</p>
-                <p className="text-sm">All issues are resolved or no issues match your filters</p>
+              <div className="text-center py-12">
+                <div className="p-6 rounded-full bg-gray-100/80 backdrop-blur-sm w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+                  <Shield className="h-12 w-12 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">No issues found</h3>
+                <p className="text-gray-500">All issues are resolved or no issues match your filters</p>
               </div>
             )}
           </CardContent>
@@ -374,97 +465,139 @@ export default function IssuesPage() {
 
         {/* Issue Details Modal */}
         {selectedIssue && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold">{selectedIssue.title}</h2>
-                  <Button onClick={closeIssueDetails} variant="outline" size="sm">
-                    <X className="h-4 w-4" />
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="relative bg-white/95 backdrop-blur-md rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200/50">
+              <div className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-gray-200/50 p-6 rounded-t-2xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 rounded-xl" style={{ backgroundColor: '#FF6E40' }}>
+                      <Shield className="h-6 w-6 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-bold" style={{ color: '#1E3D59' }}>
+                      {selectedIssue.title}
+                    </h2>
+                  </div>
+                  <Button 
+                    onClick={closeIssueDetails} 
+                    className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
+                    variant="outline"
+                  >
+                    <X className="h-5 w-5" />
                   </Button>
                 </div>
+              </div>
+              <div className="p-6">
 
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-semibold text-sm text-gray-600">Reporter</h4>
-                      <p className="text-lg">{selectedIssue.userName} ({selectedIssue.userRole})</p>
-                      <p className="text-sm text-gray-500">{selectedIssue.userEmail}</p>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-[#1E3D59]/5 to-[#FF6E40]/5 border border-gray-200/50">
+                      <h4 className="font-bold text-sm text-gray-700 mb-2 flex items-center space-x-2">
+                        <User className="h-4 w-4" />
+                        <span>Reporter</span>
+                      </h4>
+                      <p className="text-xl font-semibold" style={{ color: '#1E3D59' }}>{selectedIssue.userName} ({selectedIssue.userRole})</p>
+                      <p className="text-sm text-gray-600">{selectedIssue.userEmail}</p>
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-sm text-gray-600">Submitted</h4>
-                      <p className="text-lg">{selectedIssue.submittedAt.toLocaleString()}</p>
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-[#FF6E40]/5 to-[#FFC13B]/5 border border-gray-200/50">
+                      <h4 className="font-bold text-sm text-gray-700 mb-2 flex items-center space-x-2">
+                        <Calendar className="h-4 w-4" />
+                        <span>Submitted</span>
+                      </h4>
+                      <p className="text-lg font-semibold" style={{ color: '#1E3D59' }}>{selectedIssue.submittedAt.toLocaleString()}</p>
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-sm text-gray-600">Category</h4>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-lg">{getCategoryIcon(selectedIssue.category)}</span>
-                        <span className="capitalize">{selectedIssue.category}</span>
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-[#FFC13B]/5 to-[#FF6E40]/5 border border-gray-200/50">
+                      <h4 className="font-bold text-sm text-gray-700 mb-2 flex items-center space-x-2">
+                        <Bug className="h-4 w-4" />
+                        <span>Category</span>
+                      </h4>
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 rounded-lg bg-white/80">
+                          <span className="text-xl">{getCategoryIcon(selectedIssue.category)}</span>
+                        </div>
+                        <span className="text-lg font-semibold capitalize">{selectedIssue.category}</span>
                       </div>
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-sm text-gray-600">Priority</h4>
-                      <Badge className={getPriorityColor(selectedIssue.priority)}>
+                    <div className="p-4 rounded-xl bg-gradient-to-br from-[#1E3D59]/5 to-[#2D5A87]/5 border border-gray-200/50">
+                      <h4 className="font-bold text-sm text-gray-700 mb-2 flex items-center space-x-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span>Priority</span>
+                      </h4>
+                      <Badge className={`px-4 py-2 rounded-xl font-semibold text-sm ${getPriorityColor(selectedIssue.priority)}`}>
                         {selectedIssue.priority}
                       </Badge>
                     </div>
                   </div>
 
-                  <div>
-                    <h4 className="font-semibold text-sm text-gray-600">Description</h4>
-                    <p className="text-gray-700 whitespace-pre-wrap">{selectedIssue.description}</p>
+                  <div className="p-4 rounded-xl bg-gray-50/80 backdrop-blur-sm border border-gray-200/50">
+                    <h4 className="font-bold text-sm text-gray-700 mb-3 flex items-center space-x-2">
+                      <MessageSquare className="h-4 w-4" />
+                      <span>Description</span>
+                    </h4>
+                    <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{selectedIssue.description}</p>
                   </div>
 
                   {selectedIssue.location && (
-                    <div>
-                      <h4 className="font-semibold text-sm text-gray-600">Location</h4>
-                      <p className="text-gray-700">{selectedIssue.location}</p>
+                    <div className="p-4 rounded-xl bg-blue-50/80 backdrop-blur-sm border border-blue-200/50">
+                      <h4 className="font-bold text-sm text-gray-700 mb-3 flex items-center space-x-2">
+                        <MapPin className="h-4 w-4" />
+                        <span>Location</span>
+                      </h4>
+                      <p className="text-gray-700 font-semibold">{selectedIssue.location}</p>
                     </div>
                   )}
 
-                  <div>
-                    <h4 className="font-semibold text-sm text-gray-600">Contact Information</h4>
-                    <div className="flex items-center space-x-2">
+                  <div className="p-4 rounded-xl bg-green-50/80 backdrop-blur-sm border border-green-200/50">
+                    <h4 className="font-bold text-sm text-gray-700 mb-3 flex items-center space-x-2">
                       {selectedIssue.contactMethod === 'email' ? (
-                        <Mail className="h-4 w-4 text-gray-500" />
+                        <Mail className="h-4 w-4" />
                       ) : (
-                        <Phone className="h-4 w-4 text-gray-500" />
+                        <Phone className="h-4 w-4" />
                       )}
-                      <span>{selectedIssue.contactInfo}</span>
-                    </div>
+                      <span>Contact Information</span>
+                    </h4>
+                    <p className="text-gray-700 font-semibold">{selectedIssue.contactInfo}</p>
                   </div>
 
                   {selectedIssue.placementInfo && (
-                    <div>
-                      <h4 className="font-semibold text-sm text-gray-600">Placement</h4>
-                      <p className="text-gray-700">
+                    <div className="p-4 rounded-xl bg-purple-50/80 backdrop-blur-sm border border-purple-200/50">
+                      <h4 className="font-bold text-sm text-gray-700 mb-3 flex items-center space-x-2">
+                        <Building className="h-4 w-4" />
+                        <span>Placement</span>
+                      </h4>
+                      <p className="text-gray-700 font-semibold">
                         {selectedIssue.placementInfo.companyName} - {selectedIssue.placementInfo.position}
                       </p>
                     </div>
                   )}
 
-                  <div className="pt-4 border-t">
+                  <div className="pt-6 border-t border-gray-200/50">
                     <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-semibold text-sm text-gray-600">Status</h4>
-                        <Badge className={getStatusColor(selectedIssue.status)}>
-                          {selectedIssue.status}
+                      <div className="p-4 rounded-xl bg-gradient-to-br from-[#1E3D59]/5 to-[#FF6E40]/5 border border-gray-200/50">
+                        <h4 className="font-bold text-sm text-gray-700 mb-2 flex items-center space-x-2">
+                          <Activity className="h-4 w-4" />
+                          <span>Current Status</span>
+                        </h4>
+                        <Badge className={`px-4 py-2 rounded-xl font-semibold text-sm ${getStatusColor(selectedIssue.status)}`}>
+                          {selectedIssue.status.replace('_', ' ')}
                         </Badge>
                       </div>
-                      <Select
-                        value={selectedIssue.status}
-                        onValueChange={(value: 'open' | 'in_progress' | 'resolved' | 'closed') => handleStatusUpdate(selectedIssue.id!, value)}
-                      >
-                        <SelectTrigger className="w-40">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="open">Open</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
-                          <SelectItem value="resolved">Resolved</SelectItem>
-                          <SelectItem value="closed">Closed</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center space-x-3">
+                        <label className="text-sm font-semibold text-gray-700">Update Status:</label>
+                        <Select
+                          value={selectedIssue.status}
+                          onValueChange={(value: 'open' | 'in_progress' | 'resolved' | 'closed') => handleStatusUpdate(selectedIssue.id!, value)}
+                        >
+                          <SelectTrigger className="w-48 h-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF6E40]/20 focus:border-[#FF6E40] transition-all duration-300">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-2 border-gray-200 shadow-xl">
+                            <SelectItem value="open" className="rounded-lg">Open</SelectItem>
+                            <SelectItem value="in_progress" className="rounded-lg">In Progress</SelectItem>
+                            <SelectItem value="resolved" className="rounded-lg">Resolved</SelectItem>
+                            <SelectItem value="closed" className="rounded-lg">Closed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -22,7 +22,42 @@ import {
   XCircle,
   AlertCircle,
   Info,
-  Settings
+  Settings,
+  Shield,
+  Zap,
+  Award,
+  BarChart3,
+  Star,
+  ArrowUpRight,
+  ArrowDownRight,
+  Percent,
+  MoreVertical,
+  Copy,
+  Share,
+  Play,
+  Pause,
+  Square,
+  Database,
+  Server,
+  Wifi,
+  HardDrive,
+  Cpu,
+  MemoryStick,
+  Monitor,
+  Smartphone,
+  Tablet,
+  Lock,
+  Unlock,
+  Key,
+  Globe,
+  Bell,
+  Target,
+  TrendingUp,
+  TrendingDown,
+  Mail,
+  Phone,
+  MapPin,
+  Upload
 } from 'lucide-react'
 import { db } from '@/lib/firebase'
 import { collection, getDocs, query, where, orderBy, limit, startAfter } from 'firebase/firestore'
@@ -183,20 +218,42 @@ export default function AdminAuditLogsPage() {
     <AdminLayout userRole="admin">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Audit Logs</h1>
-            <p className="text-gray-600 mt-1">Monitor all administrative actions and system events</p>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="outline" onClick={loadAuditLogs}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
-            <Button variant="outline" onClick={exportLogs}>
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV
-            </Button>
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#1E3D59] to-[#2D5A87] opacity-5 rounded-2xl"></div>
+          <div className="relative bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-2xl p-6 shadow-lg">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 rounded-xl" style={{ backgroundColor: '#FF6E40' }}>
+                    <FileText className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl sm:text-4xl font-bold" style={{ color: '#1E3D59' }}>
+                      Audit Logs
+                    </h1>
+                    <p className="text-gray-600 text-lg">Monitor all administrative actions and system events</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Button 
+                  variant="outline" 
+                  onClick={loadAuditLogs}
+                  className="px-6 py-3 rounded-xl border-2 border-gray-200 hover:bg-gray-50 transition-all duration-300"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <span className="font-semibold">Refresh</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={exportLogs}
+                  className="px-6 py-3 rounded-xl border-2 border-gray-200 hover:bg-gray-50 transition-all duration-300"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  <span className="font-semibold">Export CSV</span>
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 

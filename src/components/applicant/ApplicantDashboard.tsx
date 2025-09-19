@@ -108,7 +108,13 @@ export function ApplicantDashboard({ applicantData }: ApplicantDashboardProps) {
   const approvedRequired = documents.filter(doc => 
     doc.required && doc.status === 'approved'
   ).length
-  const completionPercentage = (approvedRequired / totalRequired) * 100
+  let completionPercentage = 0;
+  if (totalRequired > 0) {
+    completionPercentage = (approvedRequired / totalRequired) * 100;
+    if (!isFinite(completionPercentage) || isNaN(completionPercentage)) completionPercentage = 0;
+    if (completionPercentage < 0) completionPercentage = 0;
+    if (completionPercentage > 100) completionPercentage = 100;
+  }
 
   // Get document status for each required document
   const getDocumentStatus = (docId: string) => {

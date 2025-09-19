@@ -15,6 +15,8 @@ interface CreateUserData {
   phone?: string
   department?: string
   position?: string
+  activeProgram?: string
+  assignedPrograms?: string[]
   password?: string
 }
 
@@ -111,6 +113,8 @@ export async function createUserWithPasswordFallback(data: CreateUserData): Prom
       lastName: data.lastName,
       role: data.role,
       status: data.status,
+      activeProgram: data.activeProgram || '',
+      assignedPrograms: data.assignedPrograms || [],
       permissions: permissions,
       profile: {
         firstName: data.firstName,

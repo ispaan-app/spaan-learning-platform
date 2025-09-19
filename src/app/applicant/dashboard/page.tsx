@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { AiChatbot } from '@/components/ai-chatbot'
@@ -11,7 +11,7 @@ import { Progress } from '@/components/ui/progress'
 import { WelcomeCard } from '@/components/ui/welcome-card'
 import { useAuth } from '@/hooks/useAuth'
 import { db } from '@/lib/firebase'
-import { doc, getDoc, updateDoc, collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore'
 import { 
   FileText, 
   Upload, 
@@ -25,7 +25,98 @@ import {
   Award,
   Download,
   Eye,
-  RefreshCw
+  RefreshCw,
+  Wifi,
+  WifiOff,
+  Zap,
+  Target,
+  BarChart3,
+  Activity,
+  Bell,
+  Star,
+  Sparkles,
+  Globe,
+  Shield,
+  Heart,
+  ArrowRight,
+  ArrowUp,
+  ArrowDown,
+  Plus,
+  Minus,
+  X,
+  Check,
+  AlertTriangle,
+  Info,
+  ExternalLink,
+  Settings,
+  MessageCircle,
+  Phone,
+  Mail,
+  MapPin,
+  Timer,
+  Users,
+  Building2,
+  GraduationCap,
+  Briefcase,
+  DollarSign,
+  PieChart,
+  LineChart,
+  TrendingDown,
+  TrendingUp as TrendingUpIcon,
+  RotateCcw,
+  Play,
+  Pause,
+  Square,
+  Circle,
+  Square as SquareIcon,
+  Circle as CircleIcon,
+  Triangle,
+  Hexagon,
+  Octagon,
+  Pentagon,
+  Diamond,
+  Heart as HeartIcon,
+  Star as StarIcon,
+  Zap as ZapIcon,
+  Target as TargetIcon,
+  Globe as GlobeIcon,
+  Shield as ShieldIcon,
+  Building2 as Building2Icon,
+  GraduationCap as GraduationCapIcon,
+  Briefcase as BriefcaseIcon,
+  DollarSign as DollarSignIcon,
+  PieChart as PieChartIcon,
+  LineChart as LineChartIcon,
+  BarChart3 as BarChart3Icon,
+  Activity as ActivityIcon,
+  Bell as BellIcon,
+  MessageCircle as MessageCircleIcon,
+  Phone as PhoneIcon,
+  Mail as MailIcon,
+  MapPin as MapPinIcon,
+  Timer as TimerIcon,
+  Users as UsersIcon,
+  Settings as SettingsIcon,
+  ExternalLink as ExternalLinkIcon,
+  Info as InfoIcon,
+  AlertTriangle as AlertTriangleIcon,
+  Check as CheckIcon,
+  X as XIcon,
+  Plus as PlusIcon,
+  Minus as MinusIcon,
+  ArrowRight as ArrowRightIcon,
+  ArrowUp as ArrowUpIcon,
+  ArrowDown as ArrowDownIcon,
+  RotateCcw as RotateCcwIcon,
+  Play as PlayIcon,
+  Pause as PauseIcon,
+  Square as SquareIconIcon,
+  Circle as CircleIconIcon,
+  Triangle as TriangleIcon,
+  Hexagon as HexagonIcon,
+  Octagon as OctagonIcon,
+  Pentagon as PentagonIcon,
+  Diamond as DiamondIcon
 } from 'lucide-react'
 
 interface Document {
@@ -68,6 +159,9 @@ export default function ApplicantDashboardPage() {
     daysSinceApplication: 0,
     nextStep: 'Application Submitted'
   })
+  // Notifications state
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [showNotifications, setShowNotifications] = useState(false)
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -95,8 +189,13 @@ export default function ApplicantDashboardPage() {
           const uploadedDocs = Object.keys(userData.documents || {}).filter(
             key => userData.documents[key]?.status === 'uploaded'
           ).length
-          
-          const progress = Math.round((uploadedDocs / requiredDocs.length) * 100)
+          let progress = 0;
+          if (requiredDocs.length > 0) {
+            progress = Math.round((uploadedDocs / requiredDocs.length) * 100)
+            if (!isFinite(progress) || isNaN(progress)) progress = 0;
+            if (progress < 0) progress = 0;
+            if (progress > 100) progress = 100;
+          }
           
           // Calculate days since application
           const applicationDate = userData.createdAt?.toDate() || new Date()
@@ -174,17 +273,17 @@ export default function ApplicantDashboardPage() {
     fetchApplicationData()
   }, [user])
 
-  // Set up real-time activity updates
+  // Set up real-time activity and notifications updates
   useEffect(() => {
     if (!user) return
 
+    // Activities
     const activitiesQuery = query(
       collection(db, 'activities'),
       where('userId', '==', user.uid),
       orderBy('createdAt', 'desc')
     )
-
-    const unsubscribe = onSnapshot(activitiesQuery, (snapshot) => {
+    const unsubscribeActivities = onSnapshot(activitiesQuery, (snapshot) => {
       const activities: Activity[] = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -192,8 +291,36 @@ export default function ApplicantDashboardPage() {
       setRecentActivity(activities)
     })
 
-    return () => unsubscribe()
+    // Notifications
+    const notificationsQuery = query(
+      collection(db, 'notifications'),
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    )
+    const unsubscribeNotifications = onSnapshot(notificationsQuery, (snapshot) => {
+      setNotifications(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+    })
+
+    return () => {
+      unsubscribeActivities()
+      unsubscribeNotifications()
+    }
   }, [user])
+  // Mark notifications as read
+  const markNotificationsRead = async () => {
+    if (!user) return
+    const unread = notifications.filter(n => !n.read)
+    for (const n of unread) {
+      await updateDoc(doc(db, 'notifications', n.id), { read: true })
+    }
+  }
+
+  // Helper function to safely calculate progress percentage
+  const calculateProgress = (uploaded: number, total: number) => {
+    if (total <= 0) return 0;
+    const progress = Math.round((uploaded / total) * 100);
+    return isFinite(progress) && !isNaN(progress) ? Math.min(Math.max(progress, 0), 100) : 0;
+  }
 
   const getNextStep = (status: string, progress: number) => {
     if (progress < 100) return 'Complete Document Upload'
@@ -471,77 +598,133 @@ export default function ApplicantDashboardPage() {
 
           {/* Right Column - Documents and Quick Actions */}
           <div className="space-y-6">
-            {/* Document Status */}
-            <Card className="animate-in slide-in-from-right duration-700 delay-600">
-              <CardHeader>
+            {/* Enhanced Document Status */}
+            <Card className="bg-white/90 backdrop-blur-md shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 animate-in slide-in-from-right duration-700 delay-600">
+              <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg">
                 <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5 text-green-600" />
-                  <span>Document Status</span>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <FileText className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                        Document Status
+                      </span>
+                      <p className="text-sm text-gray-600">Track your document uploads</p>
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-500">
-                    {applicantStats.documentsUploaded}/{applicantStats.totalDocuments} uploaded
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-green-600">
+                      {applicantStats.documentsUploaded}/{applicantStats.totalDocuments}
+                    </div>
+                    <div className="text-sm text-gray-500">uploaded</div>
                   </div>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Progress Bar */}
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Document Progress</span>
-                    <span className="font-semibold">{Math.round((applicantStats.documentsUploaded / applicantStats.totalDocuments) * 100)}%</span>
+              <CardContent className="space-y-6 p-6">
+                {/* Enhanced Progress Bar */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
+                      <Target className="h-4 w-4 text-green-600" />
+                      <span>Document Progress</span>
+                    </span>
+                    <span className="text-lg font-bold text-green-600">
+                      {calculateProgress(applicantStats.documentsUploaded, applicantStats.totalDocuments)}%
+                    </span>
                   </div>
-                  <Progress value={(applicantStats.documentsUploaded / applicantStats.totalDocuments) * 100} className="h-2" />
+                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div 
+                      className="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-1000 ease-out relative"
+                      style={{ 
+                        width: `${calculateProgress(applicantStats.documentsUploaded, applicantStats.totalDocuments)}%` 
+                      }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>{applicantStats.documentsUploaded} uploaded</span>
+                    <span>{Math.max(0, applicantStats.totalDocuments - applicantStats.documentsUploaded)} remaining</span>
+                  </div>
                 </div>
 
-                {/* Documents List */}
-                <div className="space-y-3">
-                {documents.map((doc, index) => (
-                    <div key={index} className={`p-4 border rounded-lg transition-all duration-200 ${
-                      doc.status === 'uploaded' ? 'border-green-200 bg-green-50/30' :
-                      doc.status === 'rejected' ? 'border-red-200 bg-red-50/30' :
-                      'border-yellow-200 bg-yellow-50/30'
-                    } hover:shadow-md`}>
+                {/* Enhanced Documents List */}
+                <div className="space-y-4">
+                  {documents.map((doc, index) => (
+                    <div key={index} className={`group relative p-4 border-2 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02] ${
+                      doc.status === 'uploaded' ? 'border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 shadow-green-100' :
+                      doc.status === 'rejected' ? 'border-red-200 bg-gradient-to-r from-red-50 to-pink-50 shadow-red-100' :
+                      doc.status === 'approved' ? 'border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50 shadow-blue-100' :
+                      'border-yellow-200 bg-gradient-to-r from-yellow-50 to-orange-50 shadow-yellow-100'
+                    }`}>
+                      {/* Status Indicator */}
+                      <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
+                        {doc.status === 'uploaded' && <CheckCircle className="h-4 w-4 text-green-600" />}
+                        {doc.status === 'rejected' && <AlertCircle className="h-4 w-4 text-red-600" />}
+                        {doc.status === 'approved' && <Award className="h-4 w-4 text-blue-600" />}
+                        {doc.status === 'pending' && <Clock className="h-4 w-4 text-yellow-600" />}
+                      </div>
+                      
                       <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-3 flex-1">
+                        <div className="flex items-start space-x-4 flex-1">
                           <div className="flex-shrink-0 mt-1">
-                            {getDocumentStatusIcon(doc.status)}
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                              doc.status === 'uploaded' ? 'bg-green-100' :
+                              doc.status === 'rejected' ? 'bg-red-100' :
+                              doc.status === 'approved' ? 'bg-blue-100' :
+                              'bg-yellow-100'
+                            }`}>
+                              {getDocumentStatusIcon(doc.status)}
+                            </div>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-2">
-                              <p className="text-sm font-medium text-gray-900">{doc.name}</p>
+                            <div className="flex items-center space-x-3 mb-2">
+                              <p className="text-sm font-semibold text-gray-900">{doc.name}</p>
                               {doc.required && (
-                                <Badge variant="outline" className="text-xs px-2 py-0.5">
+                                <Badge variant="outline" className="text-xs px-2 py-1 bg-orange-100 text-orange-800 border-orange-200">
                                   Required
                                 </Badge>
                               )}
                             </div>
-                            <div className="mt-1 space-y-1">
-                        <p className="text-xs text-gray-500">
-                                {doc.uploadedAt ? `Uploaded ${formatDate(doc.uploadedAt)}` : 'Not uploaded'}
+                            <div className="space-y-2">
+                              <p className="text-xs text-gray-500 flex items-center space-x-1">
+                                <Calendar className="h-3 w-3" />
+                                <span>
+                                  {doc.uploadedAt ? `Uploaded ${formatDate(doc.uploadedAt)}` : 'Not uploaded'}
+                                </span>
                               </p>
                               {doc.rejectionReason && (
-                                <div className="p-2 bg-red-100 rounded text-xs text-red-700">
-                                  <strong>Rejection reason:</strong> {doc.rejectionReason}
+                                <div className="p-3 bg-red-100 rounded-lg border border-red-200">
+                                  <div className="flex items-start space-x-2">
+                                    <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                                    <div>
+                                      <p className="text-xs font-semibold text-red-800">Rejection Reason:</p>
+                                      <p className="text-xs text-red-700">{doc.rejectionReason}</p>
+                                    </div>
+                                  </div>
                                 </div>
                               )}
                             </div>
-                      </div>
-                    </div>
+                          </div>
+                        </div>
                         
-                        <div className="flex items-center space-x-2 ml-4">
-                    <Badge 
-                      variant="outline"
-                      className={
+                        <div className="flex flex-col items-end space-y-2">
+                          {/* Status Badge */}
+                          <Badge 
+                            className={`px-3 py-1 text-xs font-semibold shadow-sm ${
                               doc.status === 'uploaded' ? 'bg-green-100 text-green-800 border-green-200' :
                               doc.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-200' :
+                              doc.status === 'approved' ? 'bg-blue-100 text-blue-800 border-blue-200' :
                               'bg-yellow-100 text-yellow-800 border-yellow-200'
-                      }
-                    >
+                            }`}
+                          >
                             {doc.status === 'uploaded' ? 'Uploaded' : 
-                             doc.status === 'rejected' ? 'Rejected' : 'Pending'}
-                    </Badge>
+                             doc.status === 'rejected' ? 'Rejected' : 
+                             doc.status === 'approved' ? 'Approved' : 'Pending'}
+                          </Badge>
                           
+                          {/* Action Buttons */}
                           <div className="flex items-center space-x-1">
                             {doc.status === 'uploaded' && doc.url && (
                               <>
@@ -549,7 +732,7 @@ export default function ApplicantDashboardPage() {
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => window.open(doc.url, '_blank')}
-                                  className="h-8 w-8 p-0"
+                                  className="h-8 w-8 p-0 hover:bg-green-100 hover:text-green-700 transition-colors"
                                   title="View document"
                                 >
                                   <Eye className="h-4 w-4" />
@@ -563,7 +746,7 @@ export default function ApplicantDashboardPage() {
                                     link.download = `${doc.name}.pdf`
                                     link.click()
                                   }}
-                                  className="h-8 w-8 p-0"
+                                  className="h-8 w-8 p-0 hover:bg-green-100 hover:text-green-700 transition-colors"
                                   title="Download document"
                                 >
                                   <Download className="h-4 w-4" />
@@ -585,7 +768,11 @@ export default function ApplicantDashboardPage() {
                                   }
                                   handleDocumentUpload(documentTypeMap[doc.name as keyof typeof documentTypeMap] || 'certifiedid')
                                 }}
-                                className="h-8 text-xs"
+                                className={`h-8 text-xs transition-all duration-200 hover:scale-105 ${
+                                  doc.status === 'rejected' 
+                                    ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' 
+                                    : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                                }`}
                               >
                                 <Upload className="h-3 w-3 mr-1" />
                                 {doc.status === 'rejected' ? 'Re-upload' : 'Upload'}
@@ -598,61 +785,101 @@ export default function ApplicantDashboardPage() {
                   ))}
                 </div>
 
-                {/* Document Statistics */}
-                <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-                  <h4 className="text-sm font-semibold text-blue-900 mb-3">Document Summary</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-blue-700">Total Required:</span>
-                      <span className="font-semibold text-blue-900">{applicantStats.totalDocuments}</span>
+                {/* Enhanced Document Statistics */}
+                <div className="mt-6 p-6 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 rounded-xl border border-blue-200 shadow-lg">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <BarChart3 className="h-5 w-5 text-blue-600" />
+                    <h4 className="text-lg font-bold text-blue-900">Document Summary</h4>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                      <div className="text-2xl font-bold text-blue-900">{applicantStats.totalDocuments}</div>
+                      <div className="text-sm text-blue-700">Total Required</div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-blue-700">Uploaded:</span>
-                      <span className="font-semibold text-green-600">{applicantStats.documentsUploaded}</span>
+                    <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                      <div className="text-2xl font-bold text-green-600">{applicantStats.documentsUploaded}</div>
+                      <div className="text-sm text-green-700">Uploaded</div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-blue-700">Pending:</span>
-                      <span className="font-semibold text-yellow-600">{applicantStats.totalDocuments - applicantStats.documentsUploaded}</span>
+                    <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                      <div className="text-2xl font-bold text-yellow-600">
+                        {Math.max(0, applicantStats.totalDocuments - applicantStats.documentsUploaded)}
+                      </div>
+                      <div className="text-sm text-yellow-700">Pending</div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-blue-700">Progress:</span>
-                      <span className="font-semibold text-blue-900">{Math.round((applicantStats.documentsUploaded / applicantStats.totalDocuments) * 100)}%</span>
+                    <div className="text-center p-3 bg-white rounded-lg shadow-sm">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {calculateProgress(applicantStats.documentsUploaded, applicantStats.totalDocuments)}%
+                      </div>
+                      <div className="text-sm text-purple-700">Progress</div>
                     </div>
                   </div>
                   
+                  {/* Status Messages */}
                   {applicantStats.documentsUploaded < applicantStats.totalDocuments && (
-                    <div className="mt-3 p-2 bg-amber-100 rounded text-xs text-amber-800">
-                      <strong>⚠️ Action Required:</strong> Upload all required documents to complete your application and proceed to the next stage.
+                    <div className="p-4 bg-gradient-to-r from-amber-100 to-orange-100 rounded-lg border border-amber-200">
+                      <div className="flex items-start space-x-3">
+                        <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="font-semibold text-amber-800">Action Required</p>
+                          <p className="text-sm text-amber-700">
+                            Upload all required documents to complete your application and proceed to the next stage.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
                   
                   {applicantStats.documentsUploaded === applicantStats.totalDocuments && (
-                    <div className="mt-3 p-2 bg-green-100 rounded text-xs text-green-800">
-                      <strong>✅ Complete:</strong> All required documents have been uploaded. Your application is ready for review.
+                    <div className="p-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg border border-green-200">
+                      <div className="flex items-start space-x-3">
+                        <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="font-semibold text-green-800">Complete</p>
+                          <p className="text-sm text-green-700">
+                            All required documents have been uploaded. Your application is ready for review.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
 
-                {/* Quick Actions */}
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => router.push('/applicant/upload')}
-                    className="text-xs"
-                  >
-                    <Upload className="h-3 w-3 mr-1" />
-                    Upload Documents
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => router.push('/applicant/status')}
-                    className="text-xs"
-                  >
-                    <FileText className="h-3 w-3 mr-1" />
-                    View Status
-                  </Button>
+                {/* Enhanced Quick Actions */}
+                <div className="mt-6 space-y-3">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Zap className="h-4 w-4 text-purple-600" />
+                    <span className="text-sm font-semibold text-gray-700">Quick Actions</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-3">
+                    <Button
+                      onClick={() => router.push('/applicant/upload')}
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Documents
+                    </Button>
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => router.push('/applicant/status')}
+                        className="text-xs hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
+                      >
+                        <FileText className="h-3 w-3 mr-1" />
+                        View Status
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => router.push('/applicant/profile')}
+                        className="text-xs hover:bg-green-50 hover:border-green-300 transition-all duration-200"
+                      >
+                        <User className="h-3 w-3 mr-1" />
+                        Profile
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

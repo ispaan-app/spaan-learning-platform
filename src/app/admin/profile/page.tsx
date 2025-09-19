@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
-// import { Separator } from '@/components/ui/separator'
+import { Progress } from '@/components/ui/progress'
 import { 
   User, 
   Mail, 
@@ -41,11 +41,21 @@ import {
   Upload,
   Trash2,
   RefreshCw,
-  LogOut
+  LogOut,
+  Users,
+  Briefcase,
+  MessageSquare,
+  BarChart3,
+  Zap,
+  Star,
+  Target,
+  Globe,
+  Wifi,
+  WifiOff
 } from 'lucide-react'
 import { toast as sonnerToast } from 'sonner'
 import { db, storage } from '@/lib/firebase'
-import { collection, getDocs, query, where, updateDoc, doc, addDoc, setDoc, getDoc, orderBy, limit } from 'firebase/firestore'
+import { collection, getDocs, query, where, updateDoc, doc, addDoc, setDoc, getDoc, orderBy, limit, onSnapshot } from 'firebase/firestore'
 import { updateProfile, updatePassword } from 'firebase/auth'
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage'
 import { uploadAvatar } from '@/lib/fileUpload'
@@ -118,6 +128,18 @@ export default function AdminProfilePage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   
+  // Real-time data states
+  const [realTimeStats, setRealTimeStats] = useState({
+    totalApplicants: 0,
+    totalLearners: 0,
+    totalPlacements: 0,
+    totalAnnouncements: 0,
+    recentActivity: 0,
+    systemHealth: 'excellent'
+  })
+  const [isOnline, setIsOnline] = useState(true)
+  const [lastUpdate, setLastUpdate] = useState(new Date())
+  
   // Debug logging
   console.log('AdminProfilePage render:', { user: !!user, loading, profile: !!profile })
   
@@ -156,6 +178,7 @@ export default function AdminProfilePage() {
     console.log('useEffect triggered:', { user: !!user, loading })
     if (user && !loading) {
       loadProfile()
+      setupRealTimeListeners()
     }
   }, [user, loading])
   
@@ -166,6 +189,124 @@ export default function AdminProfilePage() {
       loadProfile()
     }
   }, [user, loading, profile])
+
+  // Real-time data listeners
+  const setupRealTimeListeners = () => {
+    if (!user) return
+
+    console.log('🔴 Setting up real-time listeners for admin profile...')
+
+    // Listen to applicants collection
+    const applicantsUnsubscribe = onSnapshot(
+      query(collection(db, 'users'), where('role', '==', 'applicant')),
+      (snapshot) => {
+        setRealTimeStats(prev => ({
+          ...prev,
+          totalApplicants: snapshot.size,
+          lastUpdate: new Date()
+        }))
+        console.log('📊 Real-time applicants update:', snapshot.size)
+      },
+      (error) => {
+        console.error('❌ Error listening to applicants:', error)
+      }
+    )
+
+    // Listen to learners collection
+    const learnersUnsubscribe = onSnapshot(
+      query(collection(db, 'users'), where('role', '==', 'learner')),
+      (snapshot) => {
+        setRealTimeStats(prev => ({
+          ...prev,
+          totalLearners: snapshot.size,
+          lastUpdate: new Date()
+        }))
+        console.log('👥 Real-time learners update:', snapshot.size)
+      },
+      (error) => {
+        console.error('❌ Error listening to learners:', error)
+      }
+    )
+
+    // Listen to placements collection
+    const placementsUnsubscribe = onSnapshot(
+      collection(db, 'placements'),
+      (snapshot) => {
+        setRealTimeStats(prev => ({
+          ...prev,
+          totalPlacements: snapshot.size,
+          lastUpdate: new Date()
+        }))
+        console.log('💼 Real-time placements update:', snapshot.size)
+      },
+      (error) => {
+        console.error('❌ Error listening to placements:', error)
+      }
+    )
+
+    // Listen to announcements collection
+    const announcementsUnsubscribe = onSnapshot(
+      collection(db, 'announcements'),
+      (snapshot) => {
+        setRealTimeStats(prev => ({
+          ...prev,
+          totalAnnouncements: snapshot.size,
+          lastUpdate: new Date()
+        }))
+        console.log('📢 Real-time announcements update:', snapshot.size)
+      },
+      (error) => {
+        console.error('❌ Error listening to announcements:', error)
+      }
+    )
+
+    // Listen to audit logs for recent activity
+    const auditLogsUnsubscribe = onSnapshot(
+      query(
+        collection(db, 'audit-logs'),
+        where('adminId', '==', user.uid),
+        orderBy('timestamp', 'desc'),
+        limit(10)
+      ),
+      (snapshot) => {
+        setRealTimeStats(prev => ({
+          ...prev,
+          recentActivity: snapshot.size,
+          lastUpdate: new Date()
+        }))
+        console.log('📈 Real-time activity update:', snapshot.size)
+      },
+      (error) => {
+        console.error('❌ Error listening to audit logs:', error)
+      }
+    )
+
+    // Online/offline detection
+    const handleOnline = () => {
+      setIsOnline(true)
+      console.log('🌐 Admin is online')
+    }
+
+    const handleOffline = () => {
+      setIsOnline(false)
+      console.log('📴 Admin is offline')
+    }
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    // Cleanup function
+    return () => {
+      console.log('🧹 Cleaning up real-time listeners...')
+      applicantsUnsubscribe()
+      learnersUnsubscribe()
+      placementsUnsubscribe()
+      announcementsUnsubscribe()
+      auditLogsUnsubscribe()
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }
 
   const ensureProfileExists = async () => {
     if (!user) return false
@@ -607,7 +748,7 @@ export default function AdminProfilePage() {
         <div className="flex items-center justify-center min-h-96">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           <span className="ml-2">Loading profile...</span>
-            </div>
+        </div>
       </AdminLayout>
     )
   }
@@ -643,380 +784,652 @@ export default function AdminProfilePage() {
   return (
     <AdminLayout userRole="admin">
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Profile Management</h1>
-            <p className="text-gray-600 mt-1">Manage your personal information, password, and account settings</p>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="outline" onClick={loadProfile}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
-            <Button onClick={() => setIsEditing(!isEditing)}>
-              <Edit className="w-4 h-4 mr-2" />
-              {isEditing ? 'Cancel Edit' : 'Edit Profile'}
-            </Button>
-          </div>
-        </div>
-
-        {/* Profile Overview Card */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-6">
-              <div className="relative">
-                <Avatar className="w-24 h-24">
-                  <AvatarImage src={profile.avatar} />
-                  <AvatarFallback className="text-xl">
-                    {profile.firstName.charAt(0)}{profile.lastName.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                
-              </div>
-              
-              <div className="flex-1">
-                <div className="flex items-center space-x-3 mb-2">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    {profile.firstName} {profile.lastName}
-                  </h2>
-                  <Badge className="bg-blue-100 text-blue-800">
-                    <Shield className="w-3 h-3 mr-1" />
-                    {profile.role.toUpperCase()}
-                  </Badge>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                  <div className="flex items-center space-x-2">
-                    <Mail className="w-4 h-4" />
-                    <span>{profile.email}</span>
+        {/* Enhanced Header with AppEver Design */}
+        <div className="relative overflow-hidden">
+          <div className="relative bg-white rounded-2xl p-8 shadow-xl">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300" style={{ backgroundColor: '#1E3D59' }}>
+                    <User className="w-6 h-6 text-white" />
                   </div>
-                  {profile.phone && (
-                    <div className="flex items-center space-x-2">
-                      <Phone className="w-4 h-4" />
-                      <span>{profile.phone}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>Joined {formatDate(profile.joinDate)}</span>
+                  <div>
+                    <h1 className="text-4xl font-bold" style={{ color: '#1E3D59' }}>
+                      Profile Management
+                    </h1>
+                    <p className="text-lg" style={{ color: '#1E3D59' }}>Manage your personal information, security, and account settings</p>
                   </div>
                 </div>
                 
-                {profile.bio && (
-                  <p className="mt-3 text-gray-700">{profile.bio}</p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Applications Reviewed</p>
-                  <p className="text-2xl font-bold text-gray-900">{profile.stats.applicationsReviewed}</p>
-                </div>
-                <FileText className="w-8 h-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Learners Managed</p>
-                  <p className="text-2xl font-bold text-gray-900">{profile.stats.learnersManaged}</p>
-                </div>
-                <User className="w-8 h-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Success Rate</p>
-                  <p className="text-2xl font-bold text-gray-900">{profile.stats.successRate}%</p>
-                </div>
-                <TrendingUp className="w-8 h-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Actions</p>
-                  <p className="text-2xl font-bold text-gray-900">{profile.stats.totalActions}</p>
-                </div>
-                <Activity className="w-8 h-8 text-orange-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
-            <TabsTrigger value="preferences">Preferences</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
-          </TabsList>
-
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            {/* Avatar Upload Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Picture</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center space-x-6">
-                  <div className="relative">
-                    <Avatar className="w-20 h-20">
-                      <AvatarImage src={profile.avatar} />
-                      <AvatarFallback className="text-lg">
-                        {profile.firstName.charAt(0)}{profile.lastName.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    
+                {/* Real-time Status Indicators */}
+                <div className="flex items-center space-x-6 mt-4">
+                  <div className="flex items-center space-x-2 px-3 py-2 rounded-lg" style={{ backgroundColor: '#F5F0E1' }}>
+                    <div className="w-2 h-2 rounded-full animate-pulse bg-green-500"></div>
+                    <span className="text-sm font-medium text-green-600">Live Data</span>
                   </div>
                   
-                  <div className="flex-1">
-                    <AvatarUpload
-                      onUpload={handleAvatarUpload}
-                      currentAvatar={profile.avatar}
-                      disabled={uploadingAvatar}
-                      label="Profile Picture"
-                      description="Upload a profile picture (max 5MB)"
-                    />
+                  <div className="flex items-center space-x-2 px-3 py-2 rounded-lg" style={{ backgroundColor: '#F5F0E1' }}>
+                    {isOnline ? (
+                      <Wifi className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <WifiOff className="w-4 h-4 text-gray-500" />
+                    )}
+                    <span className={`text-sm font-medium ${isOnline ? 'text-green-600' : 'text-gray-600'}`}>
+                      {isOnline ? 'Online' : 'Offline'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 px-3 py-2 rounded-lg" style={{ backgroundColor: '#F5F0E1' }}>
+                    <Clock className="w-4 h-4" style={{ color: '#FFC13B' }} />
+                    <span className="text-sm font-medium" style={{ color: '#1E3D59' }}>
+                      Updated {lastUpdate.toLocaleTimeString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <Button 
+                  variant="outline" 
+                  onClick={loadProfile}
+                  className="px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105"
+                  style={{ color: '#1E3D59' }}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  <span className="font-semibold">Refresh</span>
+                </Button>
+                <Button 
+                  onClick={() => setIsEditing(!isEditing)}
+                  className="px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  style={{ backgroundColor: '#FF6E40' }}
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  <span className="font-semibold">{isEditing ? 'Cancel Edit' : 'Edit Profile'}</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Enhanced Profile Overview Card */}
+        <div className="relative overflow-hidden">
+          <Card className="relative bg-white shadow-2xl">
+            <CardContent className="p-8">
+              <div className="flex items-center space-x-8">
+                <div className="relative group">
+                  <Avatar className="relative w-32 h-32 shadow-xl">
+                    <AvatarImage src={profile.avatar} className="object-cover" />
+                    <AvatarFallback className="text-2xl font-bold text-white" style={{ backgroundColor: '#1E3D59' }}>
+                      {profile.firstName.charAt(0)}{profile.lastName.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FF6E40' }}>
+                    <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                  </div>
+                </div>
+                
+                <div className="flex-1 space-y-4">
+                  <div className="flex items-center space-x-4 mb-4">
+                    <h2 className="text-3xl font-bold" style={{ color: '#1E3D59' }}>
+                      {profile.firstName} {profile.lastName}
+                    </h2>
+                    <Badge className="px-4 py-2 text-sm font-semibold text-white shadow-lg" style={{ backgroundColor: '#1E3D59' }}>
+                      <Shield className="w-4 h-4 mr-2" />
+                      {profile.role.toUpperCase()}
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="flex items-center space-x-3 p-3 rounded-xl backdrop-blur-sm" style={{ backgroundColor: '#F5F0E1' }}>
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#1E3D59' }}>
+                        <Mail className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium" style={{ color: '#1E3D59' }}>Email</p>
+                        <p className="font-semibold" style={{ color: '#1E3D59' }}>{profile.email}</p>
+                      </div>
+                    </div>
+                    
+                    {profile.phone && (
+                      <div className="flex items-center space-x-3 p-3 rounded-xl backdrop-blur-sm" style={{ backgroundColor: '#F5F0E1' }}>
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#FF6E40' }}>
+                          <Phone className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium" style={{ color: '#1E3D59' }}>Phone</p>
+                          <p className="font-semibold" style={{ color: '#1E3D59' }}>{profile.phone}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center space-x-3 p-3 rounded-xl backdrop-blur-sm" style={{ backgroundColor: '#F5F0E1' }}>
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#FFC13B' }}>
+                        <Calendar className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium" style={{ color: '#1E3D59' }}>Joined</p>
+                        <p className="font-semibold" style={{ color: '#1E3D59' }}>{formatDate(profile.joinDate)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {profile.bio && (
+                    <div className="mt-6 p-4 rounded-xl" style={{ backgroundColor: '#F5F0E1' }}>
+                      <p className="leading-relaxed" style={{ color: '#1E3D59' }}>{profile.bio}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Enhanced Real-time Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Applications Reviewed Card */}
+          <div className="relative group">
+            <Card className="relative bg-white shadow-xl hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#1E3D59' }}>
+                    <FileText className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 rounded-full animate-pulse bg-green-500"></div>
+                    <span className="text-xs font-medium text-green-600">Live</span>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-1" style={{ color: '#1E3D59' }}>Applications Reviewed</p>
+                  <p className="text-3xl font-bold mb-2" style={{ color: '#1E3D59' }}>{realTimeStats.totalApplicants}</p>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-full rounded-full h-2" style={{ backgroundColor: '#F5F0E1' }}>
+                      <div 
+                        className="h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min((realTimeStats.totalApplicants / 100) * 100, 100)}%`, backgroundColor: '#FF6E40' }}
+                      ></div>
+                    </div>
+                    <span className="text-xs" style={{ color: '#1E3D59' }}>100%</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
+          </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Personal Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {isEditing ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input
-                        id="firstName"
-                        value={editForm.firstName}
-                        onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        value={editForm.lastName}
-                        onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        value={editForm.phone}
-                        onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="department">Department</Label>
-                      <Input
-                        id="department"
-                        value={editForm.department}
-                        onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <Label htmlFor="location">Location</Label>
-                      <Input
-                        id="location"
-                        value={editForm.location}
-                        onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <Label htmlFor="bio">Bio</Label>
-                      <Textarea
-                        id="bio"
-                        value={editForm.bio}
-                        onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
-                        rows={3}
-                      />
-                    </div>
+          {/* Learners Managed Card */}
+          <div className="relative group">
+            <Card className="relative bg-white border shadow-xl hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105" style={{ borderColor: '#FFC13B' }}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#FFC13B' }}>
+                    <Users className="w-6 h-6 text-white" />
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="text-sm font-medium text-gray-500">Full Name</Label>
-                        <p className="text-gray-900">{profile.firstName} {profile.lastName}</p>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium text-gray-500">Email</Label>
-                        <p className="text-gray-900">{profile.email}</p>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium text-gray-500">Phone</Label>
-                        <p className="text-gray-900">{profile.phone || 'Not provided'}</p>
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="text-sm font-medium text-gray-500">Department</Label>
-                        <p className="text-gray-900">{profile.department}</p>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium text-gray-500">Location</Label>
-                        <p className="text-gray-900">{profile.location}</p>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium text-gray-500">Role</Label>
-                        <Badge className="bg-blue-100 text-blue-800">{profile.role}</Badge>
-                      </div>
-                    </div>
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 rounded-full animate-pulse bg-green-500"></div>
+                    <span className="text-xs font-medium text-green-600">Live</span>
                   </div>
-                )}
-                
-                {isEditing && (
-                  <div className="flex justify-end space-x-4 pt-4">
-                    <Button variant="outline" onClick={() => setIsEditing(false)}>
-                      <X className="w-4 h-4 mr-2" />
-                      Cancel
-                    </Button>
-                    <Button onClick={handleSaveProfile}>
-                      <Save className="w-4 h-4 mr-2" />
-                      Save Changes
-                    </Button>
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-1" style={{ color: '#1E3D59' }}>Learners Managed</p>
+                  <p className="text-3xl font-bold mb-2" style={{ color: '#1E3D59' }}>{realTimeStats.totalLearners}</p>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-full rounded-full h-2" style={{ backgroundColor: '#F5F0E1' }}>
+                      <div 
+                        className="h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min((realTimeStats.totalLearners / 50) * 100, 100)}%`, backgroundColor: '#FFC13B' }}
+                      ></div>
+                    </div>
+                    <span className="text-xs" style={{ color: '#1E3D59' }}>50</span>
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Placements Created Card */}
+          <div className="relative group">
+            <Card className="relative bg-white shadow-xl hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#1E3D59' }}>
+                    <Briefcase className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 rounded-full animate-pulse bg-green-500"></div>
+                    <span className="text-xs font-medium text-green-600">Live</span>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-1" style={{ color: '#1E3D59' }}>Placements Created</p>
+                  <p className="text-3xl font-bold mb-2" style={{ color: '#1E3D59' }}>{realTimeStats.totalPlacements}</p>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-full rounded-full h-2" style={{ backgroundColor: '#F5F0E1' }}>
+                      <div 
+                        className="h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min((realTimeStats.totalPlacements / 25) * 100, 100)}%`, backgroundColor: '#1E3D59' }}
+                      ></div>
+                    </div>
+                    <span className="text-xs" style={{ color: '#1E3D59' }}>25</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Activity Card */}
+          <div className="relative group">
+            <Card className="relative bg-white border shadow-xl hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105" style={{ borderColor: '#FF6E40' }}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#FF6E40' }}>
+                    <Activity className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 rounded-full animate-pulse bg-green-500"></div>
+                    <span className="text-xs font-medium text-green-600">Live</span>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-1" style={{ color: '#1E3D59' }}>Recent Activity</p>
+                  <p className="text-3xl font-bold mb-2" style={{ color: '#1E3D59' }}>{realTimeStats.recentActivity}</p>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-full rounded-full h-2" style={{ backgroundColor: '#F5F0E1' }}>
+                      <div 
+                        className="h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min((realTimeStats.recentActivity / 10) * 100, 100)}%`, backgroundColor: '#FF6E40' }}
+                      ></div>
+                    </div>
+                    <span className="text-xs" style={{ color: '#1E3D59' }}>10</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Enhanced Tabs with AppEver Design */}
+        <div className="relative">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="relative">
+            <TabsList className="grid w-full grid-cols-4 bg-white shadow-xl rounded-2xl p-2">
+              <TabsTrigger 
+                value="overview" 
+                className="data-[state=active]:text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+                style={{ 
+                  backgroundColor: activeTab === 'overview' ? '#1E3D59' : 'transparent',
+                  color: activeTab === 'overview' ? 'white' : '#1E3D59'
+                }}
+              >
+                <User className="w-4 h-4 mr-2" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger 
+                value="security" 
+                className="data-[state=active]:text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+                style={{ 
+                  backgroundColor: activeTab === 'security' ? '#FF6E40' : 'transparent',
+                  color: activeTab === 'security' ? 'white' : '#1E3D59'
+                }}
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Security
+              </TabsTrigger>
+              <TabsTrigger 
+                value="preferences" 
+                className="data-[state=active]:text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+                style={{ 
+                  backgroundColor: activeTab === 'preferences' ? '#FFC13B' : 'transparent',
+                  color: activeTab === 'preferences' ? 'white' : '#1E3D59'
+                }}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Preferences
+              </TabsTrigger>
+              <TabsTrigger 
+                value="activity" 
+                className="data-[state=active]:text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+                style={{ 
+                  backgroundColor: activeTab === 'activity' ? '#1E3D59' : 'transparent',
+                  color: activeTab === 'activity' ? 'white' : '#1E3D59'
+                }}
+              >
+                <Activity className="w-4 h-4 mr-2" />
+                Activity
+              </TabsTrigger>
+            </TabsList>
+
+          {/* Enhanced Overview Tab */}
+          <TabsContent value="overview" className="space-y-8 mt-8">
+            {/* Enhanced Avatar Upload Section */}
+            <div className="relative overflow-hidden">
+              <Card className="relative bg-white shadow-2xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-2xl font-bold flex items-center" style={{ color: '#1E3D59' }}>
+                    <Camera className="w-6 h-6 mr-3" style={{ color: '#1E3D59' }} />
+                    Profile Picture
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center space-x-8">
+                    <div className="relative group">
+                      <Avatar className="relative w-24 h-24 shadow-xl">
+                        <AvatarImage src={profile.avatar} className="object-cover" />
+                        <AvatarFallback className="text-xl font-bold text-white" style={{ backgroundColor: '#1E3D59' }}>
+                          {profile.firstName.charAt(0)}{profile.lastName.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FF6E40' }}>
+                        <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1">
+                      <AvatarUpload
+                        onUpload={handleAvatarUpload}
+                        currentAvatar={profile.avatar}
+                        disabled={uploadingAvatar}
+                        label="Profile Picture"
+                        description="Upload a profile picture (max 5MB)"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Enhanced Personal Information Section */}
+            <div className="relative overflow-hidden">
+              <Card className="relative bg-white shadow-2xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-2xl font-bold flex items-center" style={{ color: '#1E3D59' }}>
+                    <User className="w-6 h-6 mr-3" style={{ color: '#1E3D59' }} />
+                    Personal Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {isEditing ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName" className="text-sm font-semibold" style={{ color: '#1E3D59' }}>First Name</Label>
+                        <Input
+                          id="firstName"
+                          value={editForm.firstName}
+                          onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
+                          className="rounded-xl transition-colors duration-300"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName" className="text-sm font-semibold" style={{ color: '#1E3D59' }}>Last Name</Label>
+                        <Input
+                          id="lastName"
+                          value={editForm.lastName}
+                          onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
+                          className="rounded-xl transition-colors duration-300"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone" className="text-sm font-semibold" style={{ color: '#1E3D59' }}>Phone Number</Label>
+                        <Input
+                          id="phone"
+                          value={editForm.phone}
+                          onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                          className="rounded-xl transition-colors duration-300"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="department" className="text-sm font-semibold" style={{ color: '#1E3D59' }}>Department</Label>
+                        <Input
+                          id="department"
+                          value={editForm.department}
+                          onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
+                          className="rounded-xl transition-colors duration-300"
+                        />
+                      </div>
+                      <div className="md:col-span-2 space-y-2">
+                        <Label htmlFor="location" className="text-sm font-semibold" style={{ color: '#1E3D59' }}>Location</Label>
+                        <Input
+                          id="location"
+                          value={editForm.location}
+                          onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                          className="rounded-xl transition-colors duration-300"
+                        />
+                      </div>
+                      <div className="md:col-span-2 space-y-2">
+                        <Label htmlFor="bio" className="text-sm font-semibold" style={{ color: '#1E3D59' }}>Bio</Label>
+                        <Textarea
+                          id="bio"
+                          value={editForm.bio}
+                          onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                          rows={3}
+                          className="rounded-xl transition-colors duration-300"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-6">
+                        <div className="p-4 rounded-xl" style={{ backgroundColor: '#F5F0E1' }}>
+                          <Label className="text-sm font-semibold mb-2 block" style={{ color: '#1E3D59' }}>Full Name</Label>
+                          <p className="text-lg font-semibold" style={{ color: '#1E3D59' }}>{profile.firstName} {profile.lastName}</p>
+                        </div>
+                        <div className="p-4 rounded-xl" style={{ backgroundColor: '#F5F0E1' }}>
+                          <Label className="text-sm font-semibold mb-2 block" style={{ color: '#1E3D59' }}>Email</Label>
+                          <p className="text-lg font-semibold" style={{ color: '#1E3D59' }}>{profile.email}</p>
+                        </div>
+                        <div className="p-4 rounded-xl" style={{ backgroundColor: '#F5F0E1' }}>
+                          <Label className="text-sm font-semibold mb-2 block" style={{ color: '#1E3D59' }}>Phone</Label>
+                          <p className="text-lg font-semibold" style={{ color: '#1E3D59' }}>{profile.phone || 'Not provided'}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-6">
+                        <div className="p-4 rounded-xl" style={{ backgroundColor: '#F5F0E1' }}>
+                          <Label className="text-sm font-semibold mb-2 block" style={{ color: '#1E3D59' }}>Department</Label>
+                          <p className="text-lg font-semibold" style={{ color: '#1E3D59' }}>{profile.department}</p>
+                        </div>
+                        <div className="p-4 rounded-xl" style={{ backgroundColor: '#F5F0E1' }}>
+                          <Label className="text-sm font-semibold mb-2 block" style={{ color: '#1E3D59' }}>Location</Label>
+                          <p className="text-lg font-semibold" style={{ color: '#1E3D59' }}>{profile.location}</p>
+                        </div>
+                        <div className="p-4 rounded-xl" style={{ backgroundColor: '#F5F0E1' }}>
+                          <Label className="text-sm font-semibold mb-2 block" style={{ color: '#1E3D59' }}>Role</Label>
+                          <Badge className="text-white px-4 py-2 text-sm font-semibold" style={{ backgroundColor: '#1E3D59' }}>
+                            {profile.role.toUpperCase()}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {isEditing && (
+                    <div className="flex justify-end space-x-4 pt-6" style={{ borderTopColor: '#F5F0E1' }}>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setIsEditing(false)}
+                        className="px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105"
+                        style={{ color: '#1E3D59' }}
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        <span className="font-semibold">Cancel</span>
+                      </Button>
+                      <Button 
+                        onClick={handleSaveProfile}
+                        className="px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                        style={{ backgroundColor: '#FF6E40' }}
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        <span className="font-semibold">Save Changes</span>
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
-          {/* Security Tab */}
-          <TabsContent value="security" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Security Settings</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Password Change */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium">Password</h3>
-                      <p className="text-sm text-gray-500">Last changed: {formatDate(profile.security.lastPasswordChange)}</p>
+          {/* Enhanced Security Tab */}
+          <TabsContent value="security" className="space-y-8 mt-8">
+            <div className="relative overflow-hidden">
+              <Card className="relative bg-white shadow-2xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-2xl font-bold flex items-center" style={{ color: '#1E3D59' }}>
+                    <Shield className="w-6 h-6 mr-3" style={{ color: '#FF6E40' }} />
+                    Security Settings
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                {/* Enhanced Password Change */}
+                <div className="p-6 rounded-2xl" style={{ backgroundColor: '#F5F0E1' }}>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#1E3D59' }}>
+                        <Key className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold" style={{ color: '#1E3D59' }}>Password Security</h3>
+                        <p className="text-sm" style={{ color: '#1E3D59' }}>Last changed: {formatDate(profile.security.lastPasswordChange)}</p>
+                      </div>
                     </div>
-                    <Button variant="outline" onClick={() => setIsChangingPassword(!isChangingPassword)}>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsChangingPassword(!isChangingPassword)}
+                      className="px-6 py-3 rounded-xl border-2 transition-all duration-300 transform hover:scale-105"
+                      style={{ borderColor: '#1E3D59', color: '#1E3D59' }}
+                    >
                       <Key className="w-4 h-4 mr-2" />
-                      Change Password
+                      <span className="font-semibold">Change Password</span>
                     </Button>
                   </div>
                   
                   {isChangingPassword && (
-                    <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
-                      <div>
-                        <Label htmlFor="currentPassword">Current Password</Label>
-                        <div className="relative">
+                    <div className="space-y-6 p-6 bg-white rounded-xl shadow-lg">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label htmlFor="currentPassword" className="text-sm font-semibold" style={{ color: '#1E3D59' }}>Current Password</Label>
+                          <div className="relative">
+                            <Input
+                              id="currentPassword"
+                              type={showPassword ? 'text' : 'password'}
+                              value={passwordForm.currentPassword}
+                              onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                              className="rounded-xl transition-colors duration-300 pr-12"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-lg"
+                              style={{ backgroundColor: '#F5F0E1' }}
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="newPassword" className="text-sm font-semibold" style={{ color: '#1E3D59' }}>New Password</Label>
                           <Input
-                            id="currentPassword"
-                            type={showPassword ? 'text' : 'password'}
-                            value={passwordForm.currentPassword}
-                            onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                            id="newPassword"
+                            type="password"
+                            value={passwordForm.newPassword}
+                            onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                              className="rounded-xl transition-colors duration-300"
                           />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </Button>
                         </div>
                       </div>
-                      <div>
-                        <Label htmlFor="newPassword">New Password</Label>
-                        <Input
-                          id="newPassword"
-                          type="password"
-                          value={passwordForm.newPassword}
-                          onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmPassword" className="text-sm font-semibold" style={{ color: '#1E3D59' }}>Confirm New Password</Label>
                         <Input
                           id="confirmPassword"
                           type="password"
                           value={passwordForm.confirmPassword}
                           onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                          className="rounded-xl transition-colors duration-300"
                         />
                       </div>
-                      <div className="flex justify-end space-x-4">
-                        <Button variant="outline" onClick={() => setIsChangingPassword(false)}>
-                          Cancel
+                      <div className="flex justify-end space-x-4 pt-4" style={{ borderTopColor: '#F5F0E1' }}>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setIsChangingPassword(false)}
+                          className="px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105"
+                          style={{ color: '#1E3D59' }}
+                        >
+                          <X className="w-4 h-4 mr-2" />
+                          <span className="font-semibold">Cancel</span>
                         </Button>
-                        <Button onClick={handleChangePassword}>
+                        <Button 
+                          onClick={handleChangePassword}
+                          className="px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                          style={{ backgroundColor: '#FF6E40' }}
+                        >
                           <Save className="w-4 h-4 mr-2" />
-                          Update Password
+                          <span className="font-semibold">Update Password</span>
                         </Button>
                       </div>
                     </div>
                   )}
                 </div>
 
-                <div className="border-t"></div>
-
-                {/* Two-Factor Authentication */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">Two-Factor Authentication</h3>
-                    <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
+                {/* Enhanced Two-Factor Authentication */}
+                <div className="p-6 rounded-2xl" style={{ backgroundColor: '#F5F0E1' }}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#FFC13B' }}>
+                        <Shield className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold" style={{ color: '#1E3D59' }}>Two-Factor Authentication</h3>
+                        <p className="text-sm" style={{ color: '#1E3D59' }}>Add an extra layer of security to your account</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <span className={`text-sm font-semibold ${profile.security.twoFactorEnabled ? 'text-green-600' : ''}`} style={{ color: profile.security.twoFactorEnabled ? '#FF6E40' : '#1E3D59' }}>
+                        {profile.security.twoFactorEnabled ? 'Enabled' : 'Disabled'}
+                      </span>
+                      <Switch
+                        checked={profile.security.twoFactorEnabled}
+                        onCheckedChange={(checked) => {
+                          // In a real app, this would trigger 2FA setup
+                          sonnerToast.info('2FA setup would be implemented here')
+                        }}
+                        style={{ 
+                          backgroundColor: profile.security.twoFactorEnabled ? '#FFC13B' : '#F5F0E1'
+                        }}
+                      />
+                    </div>
                   </div>
-                  <Switch
-                    checked={profile.security.twoFactorEnabled}
-                    onCheckedChange={(checked) => {
-                      // In a real app, this would trigger 2FA setup
-                      sonnerToast.info('2FA setup would be implemented here')
-                    }}
-                  />
                 </div>
 
-                <div className="border-t"></div>
-
-                {/* Login History */}
-                <div>
-                  <h3 className="font-medium mb-4">Recent Login History</h3>
-                  <div className="space-y-3">
-                    {profile.security.loginHistory.map((login) => (
-                      <div key={login.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                {/* Enhanced Login History */}
+                <div className="p-6 rounded-2xl" style={{ backgroundColor: '#F5F0E1' }}>
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#1E3D59' }}>
+                      <Activity className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold" style={{ color: '#1E3D59' }}>Recent Login History</h3>
+                      <p className="text-sm" style={{ color: '#1E3D59' }}>Monitor your account access and security</p>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    {profile.security.loginHistory.map((login, index) => (
+                      <div key={login.id} className="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-lg" style={{ backgroundColor: '#FF6E40' }}>
+                            <div className="w-3 h-3 bg-white rounded-full"></div>
+                          </div>
                           <div>
-                            <p className="text-sm font-medium">{login.device}</p>
-                            <p className="text-xs text-gray-500">{login.location}</p>
+                            <p className="text-sm font-semibold" style={{ color: '#1E3D59' }}>{login.device}</p>
+                            <p className="text-xs flex items-center" style={{ color: '#1E3D59' }}>
+                              <MapPin className="w-3 h-3 mr-1" />
+                              {login.location}
+                            </p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-gray-900">{formatDate(login.timestamp)}</p>
-                          <p className="text-xs text-gray-500">{login.ipAddress}</p>
+                          <p className="text-sm font-semibold" style={{ color: '#1E3D59' }}>{formatDate(login.timestamp)}</p>
+                          <p className="text-xs flex items-center" style={{ color: '#1E3D59' }}>
+                            <Globe className="w-3 h-3 mr-1" />
+                            {login.ipAddress}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -1024,145 +1437,268 @@ export default function AdminProfilePage() {
                 </div>
               </CardContent>
             </Card>
+            </div>
           </TabsContent>
 
-          {/* Preferences Tab */}
-          <TabsContent value="preferences" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Notification Preferences</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">Email Notifications</h3>
-                    <p className="text-sm text-gray-500">Receive notifications via email</p>
+          {/* Enhanced Preferences Tab */}
+          <TabsContent value="preferences" className="space-y-8 mt-8">
+            {/* Notification Preferences */}
+            <div className="relative overflow-hidden">
+              <Card className="relative bg-white shadow-2xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-2xl font-bold flex items-center" style={{ color: '#1E3D59' }}>
+                    <Bell className="w-6 h-6 mr-3" style={{ color: '#FFC13B' }} />
+                    Notification Preferences
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="p-4 rounded-xl" style={{ backgroundColor: '#F5F0E1' }}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg" style={{ backgroundColor: '#1E3D59' }}>
+                            <Mail className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold" style={{ color: '#1E3D59' }}>Email Notifications</h3>
+                            <p className="text-sm" style={{ color: '#1E3D59' }}>Receive notifications via email</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={preferences.notifications.email}
+                          onCheckedChange={(checked) => setPreferences({
+                            ...preferences,
+                            notifications: { ...preferences.notifications, email: checked }
+                          })}
+                          style={{ 
+                            backgroundColor: preferences.notifications.email ? '#1E3D59' : '#F5F0E1'
+                          }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 rounded-xl" style={{ backgroundColor: '#F5F0E1' }}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg" style={{ backgroundColor: '#FF6E40' }}>
+                            <Bell className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold" style={{ color: '#1E3D59' }}>Push Notifications</h3>
+                            <p className="text-sm" style={{ color: '#1E3D59' }}>Receive push notifications in browser</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={preferences.notifications.push}
+                          onCheckedChange={(checked) => setPreferences({
+                            ...preferences,
+                            notifications: { ...preferences.notifications, push: checked }
+                          })}
+                          style={{ 
+                            backgroundColor: preferences.notifications.push ? '#FF6E40' : '#F5F0E1'
+                          }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 rounded-xl" style={{ backgroundColor: '#F5F0E1' }}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg" style={{ backgroundColor: '#FFC13B' }}>
+                            <MessageSquare className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold" style={{ color: '#1E3D59' }}>SMS Notifications</h3>
+                            <p className="text-sm" style={{ color: '#1E3D59' }}>Receive notifications via SMS</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={preferences.notifications.sms}
+                          onCheckedChange={(checked) => setPreferences({
+                            ...preferences,
+                            notifications: { ...preferences.notifications, sms: checked }
+                          })}
+                          style={{ 
+                            backgroundColor: preferences.notifications.sms ? '#FFC13B' : '#F5F0E1'
+                          }}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <Switch
-                    checked={preferences.notifications.email}
-                    onCheckedChange={(checked) => setPreferences({
-                      ...preferences,
-                      notifications: { ...preferences.notifications, email: checked }
-                    })}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">Push Notifications</h3>
-                    <p className="text-sm text-gray-500">Receive push notifications in browser</p>
-                  </div>
-                  <Switch
-                    checked={preferences.notifications.push}
-                    onCheckedChange={(checked) => setPreferences({
-                      ...preferences,
-                      notifications: { ...preferences.notifications, push: checked }
-                    })}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">SMS Notifications</h3>
-                    <p className="text-sm text-gray-500">Receive notifications via SMS</p>
-                  </div>
-                  <Switch
-                    checked={preferences.notifications.sms}
-                    onCheckedChange={(checked) => setPreferences({
-                      ...preferences,
-                      notifications: { ...preferences.notifications, sms: checked }
-                    })}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Privacy Settings</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">Show Email</h3>
-                    <p className="text-sm text-gray-500">Make email visible to other users</p>
+            {/* Privacy Settings */}
+            <div className="relative overflow-hidden">
+              <Card className="relative bg-white shadow-2xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-2xl font-bold flex items-center" style={{ color: '#1E3D59' }}>
+                    <Lock className="w-6 h-6 mr-3" style={{ color: '#1E3D59' }} />
+                    Privacy Settings
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="p-4 rounded-xl" style={{ backgroundColor: '#F5F0E1' }}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg" style={{ backgroundColor: '#1E3D59' }}>
+                            <Mail className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold" style={{ color: '#1E3D59' }}>Show Email</h3>
+                            <p className="text-sm" style={{ color: '#1E3D59' }}>Make email visible to other users</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={preferences.privacy.showEmail}
+                          onCheckedChange={(checked) => setPreferences({
+                            ...preferences,
+                            privacy: { ...preferences.privacy, showEmail: checked }
+                          })}
+                          style={{ 
+                            backgroundColor: preferences.privacy.showEmail ? '#1E3D59' : '#F5F0E1'
+                          }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 rounded-xl" style={{ backgroundColor: '#F5F0E1' }}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg" style={{ backgroundColor: '#FF6E40' }}>
+                            <Phone className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold" style={{ color: '#1E3D59' }}>Show Phone</h3>
+                            <p className="text-sm" style={{ color: '#1E3D59' }}>Make phone number visible to other users</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={preferences.privacy.showPhone}
+                          onCheckedChange={(checked) => setPreferences({
+                            ...preferences,
+                            privacy: { ...preferences.privacy, showPhone: checked }
+                          })}
+                          style={{ 
+                            backgroundColor: preferences.privacy.showPhone ? '#FF6E40' : '#F5F0E1'
+                          }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 rounded-xl" style={{ backgroundColor: '#F5F0E1' }}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg" style={{ backgroundColor: '#FFC13B' }}>
+                            <MapPin className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold" style={{ color: '#1E3D59' }}>Show Location</h3>
+                            <p className="text-sm" style={{ color: '#1E3D59' }}>Make location visible to other users</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={preferences.privacy.showLocation}
+                          onCheckedChange={(checked) => setPreferences({
+                            ...preferences,
+                            privacy: { ...preferences.privacy, showLocation: checked }
+                          })}
+                          style={{ 
+                            backgroundColor: preferences.privacy.showLocation ? '#FFC13B' : '#F5F0E1'
+                          }}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <Switch
-                    checked={preferences.privacy.showEmail}
-                    onCheckedChange={(checked) => setPreferences({
-                      ...preferences,
-                      privacy: { ...preferences.privacy, showEmail: checked }
-                    })}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">Show Phone</h3>
-                    <p className="text-sm text-gray-500">Make phone number visible to other users</p>
-                  </div>
-                  <Switch
-                    checked={preferences.privacy.showPhone}
-                    onCheckedChange={(checked) => setPreferences({
-                      ...preferences,
-                      privacy: { ...preferences.privacy, showPhone: checked }
-                    })}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">Show Location</h3>
-                    <p className="text-sm text-gray-500">Make location visible to other users</p>
-                  </div>
-                  <Switch
-                    checked={preferences.privacy.showLocation}
-                    onCheckedChange={(checked) => setPreferences({
-                      ...preferences,
-                      privacy: { ...preferences.privacy, showLocation: checked }
-                    })}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
 
             <div className="flex justify-end">
-              <Button onClick={handleSavePreferences}>
-                <Save className="w-4 h-4 mr-2" />
-                Save Preferences
+              <Button 
+                onClick={handleSavePreferences}
+                className="px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                style={{ backgroundColor: '#1E3D59' }}
+              >
+                <Save className="w-5 h-5 mr-3" />
+                <span className="font-semibold text-lg">Save Preferences</span>
               </Button>
             </div>
           </TabsContent>
 
-          {/* Activity Tab */}
-          <TabsContent value="activity" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {profile.activity && profile.activity.length > 0 ? (
-                    profile.activity.map((activity) => (
-                      <div key={activity.id} className="flex items-start space-x-3 p-4 border rounded-lg">
-                        <div className="flex-shrink-0 mt-1">
-                          {getActivityIcon(activity.type)}
+          {/* Enhanced Activity Tab */}
+          <TabsContent value="activity" className="space-y-8 mt-8">
+            <div className="relative overflow-hidden">
+              <Card className="relative bg-white shadow-2xl">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-2xl font-bold flex items-center" style={{ color: '#1E3D59' }}>
+                    <Activity className="w-6 h-6 mr-3" style={{ color: '#FF6E40' }} />
+                    Recent Activity
+                    <div className="ml-auto flex items-center space-x-2 px-3 py-1 rounded-full" style={{ backgroundColor: '#F5F0E1' }}>
+                      <div className="w-2 h-2 rounded-full animate-pulse bg-green-500"></div>
+                      <span className="text-sm font-medium text-green-600">Live Updates</span>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {profile.activity && profile.activity.length > 0 ? (
+                      profile.activity.map((activity, index) => (
+                        <div key={activity.id} className="group relative">
+                          <div className="relative flex items-start space-x-4 p-6 bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 transform group-hover:scale-[1.02]">
+                            <div className="flex-shrink-0 mt-1">
+                              <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#FF6E40' }}>
+                                {getActivityIcon(activity.type)}
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="text-lg font-semibold" style={{ color: '#1E3D59' }}>{activity.title}</p>
+                                <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: '#F5F0E1', color: '#1E3D59' }}>
+                                  {formatDate(activity.timestamp)}
+                                </span>
+                              </div>
+                              <p className="leading-relaxed" style={{ color: '#1E3D59' }}>{activity.description}</p>
+                              <div className="mt-3 flex items-center space-x-4">
+                                <div className="flex items-center space-x-1">
+                                  <div className={`w-2 h-2 rounded-full ${
+                                    activity.type === 'success' ? 'bg-green-500' :
+                                    activity.type === 'warning' ? 'bg-yellow-500' :
+                                    activity.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+                                  }`}></div>
+                                  <span className="text-xs font-medium capitalize" style={{ color: '#1E3D59' }}>{activity.type}</span>
+                                </div>
+                                <div className="flex items-center space-x-1" style={{ color: '#1E3D59' }}>
+                                  <Clock className="w-3 h-3" />
+                                  <span className="text-xs">{new Date(activity.timestamp).toLocaleTimeString()}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900">{activity.title}</p>
-                          <p className="text-sm text-gray-500">{activity.description}</p>
-                          <p className="text-xs text-gray-400 mt-1">{formatDate(activity.timestamp)}</p>
+                      ))
+                    ) : (
+                      <div className="text-center py-16">
+                        <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: '#F5F0E1' }}>
+                          <Activity className="w-12 h-12" style={{ color: '#FF6E40' }} />
+                        </div>
+                        <h3 className="text-2xl font-bold mb-3" style={{ color: '#1E3D59' }}>No Recent Activity</h3>
+                        <p className="text-lg mb-6" style={{ color: '#1E3D59' }}>Your recent actions will appear here in real-time.</p>
+                        <div className="flex items-center justify-center space-x-2 text-sm">
+                          <div className="w-2 h-2 rounded-full animate-pulse bg-green-500"></div>
+                          <span className="text-green-600">Live monitoring enabled</span>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Recent Activity</h3>
-                      <p className="text-gray-600">Your recent actions will appear here.</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </AdminLayout>
   )

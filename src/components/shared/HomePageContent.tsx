@@ -57,9 +57,9 @@ export function HomePageContent({
         <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
           <div className="space-y-6">
-            <div className="inline-flex items-center px-6 py-3 rounded-full mb-6 shadow-lg" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}>
-              <Sparkles className="w-5 h-5 mr-2" style={{ color: '#FF6E40' }} />
-              <span className="font-semibold" style={{ color: '#1E3D59' }}>AI-Powered Career Development Platform</span>
+            <div className="inline-flex items-center px-6 py-3 rounded-full mb-6 shadow-lg bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">
+              <Sparkles className="w-5 h-5 mr-2 text-white" />
+              <span className="font-semibold text-white">AI-Powered Career Development Platform</span>
             </div>
             
             <h1 className="text-4xl md:text-6xl font-bold leading-tight">
@@ -368,7 +368,7 @@ export function HomePageContent({
           </div>
           
           <RealtimeStats />
-        </div>
+            </div>
       </section>
 
       {/* Character Showcase Section */}
@@ -400,7 +400,7 @@ export function HomePageContent({
               Join Our Community
               <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
             </Link>
-          </div>
+            </div>
           
           {/* Character Showcase */}
           <div className="flex justify-center">
@@ -441,7 +441,7 @@ export function HomePageContent({
                   <Play className="w-4 h-4 mr-2" />
                   Access Platform
                 </Link>
-              </div>
+            </div>
             </div>
             
             

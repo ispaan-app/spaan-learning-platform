@@ -5,6 +5,25 @@
 /* stylelint-enable at-rule-no-unknown */
 
 @layer base {
+  /* CSS Reset for consistency */
+  html {
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+  *, *::before, *::after {
+    box-sizing: inherit;
+    margin: 0;
+    padding: 0;
+  }
+  :focus-visible {
+    outline: 2px solid hsl(var(--coral));
+    outline-offset: 2px;
+  }
+  body {
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  }
   :root {
     /* New Color Palette */
     --background: 45 30% 95%; /* #F5F0E1 - Off-white/cream background */
@@ -38,41 +57,18 @@
   /* Dark theme disabled - only light theme is used */
   /*
   .dark {
-    --background: 210 40% 6%;
-    --foreground: 45 20% 98%;
-    --card: 210 30% 10%;
-    --card-foreground: 45 20% 98%;
-    --popover: 210 30% 10%;
-    --popover-foreground: 45 20% 98%;
-    --primary: 15 100% 63%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 25% 14%;
-    --secondary-foreground: 45 20% 98%;
-    --muted: 210 20% 16%;
-    --muted-foreground: 45 15% 75%;
-    --accent: 45 100% 65%;
-    --accent-foreground: 210 40% 6%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 210 20% 18%;
-    --input: 210 20% 12%;
-    --ring: 15 100% 63%;
-    --dark-blue: 210 40% 6%;
-    --cream: 45 20% 98%;
-    --coral: 15 100% 63%;
-    --gold: 45 100% 65%;
+    ...dark theme variables and utilities (disabled)
   }
   */
 }
 
 @layer base {
   * {
-    /* stylelint-disable-next-line at-rule-no-unknown */
-    @apply border-border;
+    border-color: hsl(45 30% 85%);
   }
   body {
-    /* stylelint-disable-next-line at-rule-no-unknown */
-    @apply bg-background text-foreground;
+    background-color: hsl(45 30% 95%);
+    color: hsl(210 50% 20%);
   }
 }
 

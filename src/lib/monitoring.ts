@@ -431,5 +431,23 @@ export function captureApiCall(endpoint: string, method: string, duration: numbe
   performanceMonitor.recordApiCall(endpoint, method, duration, statusCode)
 }
 
+export function captureError(error: Error, context?: {
+  severity?: 'low' | 'medium' | 'high' | 'critical'
+  tags?: Record<string, string>
+  url?: string
+  userAgent?: string
+  componentStack?: string
+}) {
+  errorTracker.recordError(error, {
+    severity: context?.severity || 'medium',
+    additionalContext: {
+      ...context?.tags,
+      url: context?.url,
+      userAgent: context?.userAgent,
+      componentStack: context?.componentStack
+    }
+  })
+}
+
 // Initialize monitoring
 initializeHealthChecks()

@@ -25,6 +25,8 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { db } from '@/lib/firebase'
 import { collection, getDocs, query, where, orderBy, doc, updateDoc, addDoc } from 'firebase/firestore'
+import { auditLogger } from '@/lib/auditLogger'
+import { notificationActions } from '@/lib/notificationActions'
 
 interface User {
   id: string
@@ -125,25 +127,34 @@ export function GrantPermissionsManagement() {
         return
       }
 
+      // Permission check: only super-admin can escalate
+      if (user.role === 'super-admin') {
+        toast.error('Cannot escalate privileges for another super admin')
+        return
+      }
+
       // Update user role
       await updateDoc(doc(db, 'users', user.id), {
         role: grantRoleForm.newRole,
         updatedAt: new Date().toISOString()
       })
 
-      // Log the action
-      await addDoc(collection(db, 'audit-logs'), {
-        action: 'ROLE_GRANTED',
-        adminId: 'super-admin',
-        adminName: 'Super Admin',
-        targetUserId: user.id,
-        targetUserEmail: user.email,
-        details: {
-          previousRole: user.role,
-          newRole: grantRoleForm.newRole
-        },
-        timestamp: new Date().toISOString()
-      })
+      // Audit log (centralized)
+      await auditLogger.logData(
+        'ROLE_GRANTED',
+        'super-admin',
+        'super-admin',
+        user.id,
+        'user',
+        { previousRole: user.role, newRole: grantRoleForm.newRole, targetUserEmail: user.email }
+      )
+
+      // Notify user
+      await notificationActions.notifyProfileUpdated(
+        user.id,
+        user.firstName || user.email,
+        [`Role changed to ${grantRoleForm.newRole}`]
+      )
 
       toast.success(`Successfully granted ${grantRoleForm.newRole} role to ${user.email}`)
       setGrantRoleForm({ userEmail: '', newRole: 'admin' })
@@ -187,21 +198,28 @@ export function GrantPermissionsManagement() {
 
       const docRef = await addDoc(collection(db, 'users'), userData)
 
-      // Log the action
-      await addDoc(collection(db, 'audit-logs'), {
-        action: 'ADMIN_CREATED',
-        adminId: 'super-admin',
-        adminName: 'Super Admin',
-        targetUserId: docRef.id,
-        targetUserEmail: createAdminForm.email,
-        details: {
+      // Audit log (centralized)
+      await auditLogger.logData(
+        'ADMIN_CREATED',
+        'super-admin',
+        'super-admin',
+        docRef.id,
+        'user',
+        {
           role: createAdminForm.role,
           department: createAdminForm.department,
           assignedProject: createAdminForm.assignedProject,
-          assignedProgram: createAdminForm.assignedProgram
-        },
-        timestamp: new Date().toISOString()
-      })
+          assignedProgram: createAdminForm.assignedProgram,
+          targetUserEmail: createAdminForm.email
+        }
+      )
+
+      // Notify new admin
+      await notificationActions.notifyWelcome(
+        docRef.id,
+        `${createAdminForm.firstName} ${createAdminForm.lastName}`,
+        createAdminForm.role
+      )
 
       toast.success(`Successfully created ${createAdminForm.role} account for ${createAdminForm.email}`)
       setCreateAdminForm({

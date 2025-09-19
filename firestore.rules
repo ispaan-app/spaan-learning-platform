@@ -1,13 +1,72 @@
+    // Placements: only admin/super-admin can write, learners can read their own
+    match /placements/{placementId} {
+      allow read: if request.auth != null && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super-admin'] || resource.data.learnerId == request.auth.uid);
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super-admin'];
+    }
+
+    // Class Sessions: only admin/super-admin can write, all can read
+    match /classSessions/{sessionId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super-admin'];
+    }
+
+    // Reports: only admin/super-admin can write, all can read
+    match /reports/{reportId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super-admin'];
+    }
+
+    // Audit Logs: only admin/super-admin can write/read
+    match /auditLogs/{logId} {
+      allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super-admin'];
+    }
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // ULTRA PERMISSIVE RULES - FOR EMERGENCY DEVELOPMENT USE ONLY
-    // These rules allow ALL access to ALL documents for ALL users
-    // WARNING: DO NOT USE IN PRODUCTION!
-    
+    // Only authenticated users can read/write their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Only authenticated users can read/write their own documents
+    match /documents/{documentId} {
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // Attendance: only learner can write, admin can read for review
+    match /attendance/{attendanceId} {
+      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super-admin']);
+      allow write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Leave Requests: only learner can write, admin can read for review
+    match /leaveRequests/{leaveId} {
+      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super-admin']);
+      allow write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Stipend Reports: only learner can write, admin/super-admin can read
+    match /stipendReports/{reportId} {
+      allow read: if request.auth != null && (resource.data.learnerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super-admin']);
+      allow write: if request.auth != null && request.auth.uid == resource.data.learnerId;
+    }
+
+    // Issue Reports: only learner can write, admin/super-admin can read
+    match /issueReports/{issueId} {
+      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super-admin']);
+      allow write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Activities: only allow user to read their own activities
+    match /activities/{activityId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
+    // Default: deny all
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }

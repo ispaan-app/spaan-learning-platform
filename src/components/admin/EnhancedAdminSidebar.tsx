@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { LogoDark } from '@/components/ui/logo'
 import { UserProfileCompact } from '@/components/shared/UserProfile'
 import { useAuth } from '@/hooks/useAuth'
+import { useNotifications } from '@/hooks/useNotifications'
 import { 
   LayoutDashboard, 
   Users, 
@@ -103,8 +104,8 @@ const navigationItems = {
       href: '/super-admin/inbox',
       icon: Inbox,
       description: 'Notifications & messages',
-      color: 'indigo',
-      badge: '3'
+      color: 'purple',
+      badge: null // Will be set dynamically
     },
     {
       title: 'Profile',
@@ -153,8 +154,8 @@ const navigationItems = {
       href: '/admin/inbox',
       icon: Inbox,
       description: 'Notifications & messages',
-      color: 'indigo',
-      badge: '8'
+      color: 'purple',
+      badge: null // Will be set dynamically
     },
     {
       title: 'Analytics',
@@ -188,6 +189,14 @@ const navigationItems = {
       icon: LayoutDashboard,
       description: 'Your applications',
       color: 'blue',
+      badge: null
+    },
+    {
+      title: 'Profile',
+      href: '/applicant/profile',
+      icon: User,
+      description: 'Your profile & settings',
+      color: 'gray',
       badge: null
     }
   ],
@@ -229,12 +238,27 @@ const navigationItems = {
 
 const getColorClasses = (color: string, isActive: boolean) => {
   if (isActive) {
+    if (color === 'purple') {
+      return {
+        background: '#8B5CF6',
+        textColor: '#F5F0E1',
+        shadow: '0 4px 6px -1px rgba(139, 92, 246, 0.25)'
+      }
+    }
     return {
       background: '#FF6E40',
       textColor: '#F5F0E1',
       shadow: '0 4px 6px -1px rgba(255, 110, 64, 0.25)'
     }
   } else {
+    if (color === 'purple') {
+      return {
+        background: 'transparent',
+        textColor: '#F5F0E1',
+        hoverBackground: 'rgba(139, 92, 246, 0.1)',
+        hoverTextColor: '#8B5CF6'
+      }
+    }
     return {
       background: 'transparent',
       textColor: '#F5F0E1',
@@ -248,6 +272,7 @@ export function EnhancedAdminSidebar({ userRole, isCollapsed = false, onToggle }
   const [collapsed, setCollapsed] = useState(isCollapsed)
   const pathname = usePathname()
   const { user, userData } = useAuth()
+  const { unreadCount, stats, loading: notificationsLoading } = useNotifications()
 
   const toggleCollapsed = () => {
     setCollapsed(!collapsed)
@@ -255,6 +280,17 @@ export function EnhancedAdminSidebar({ userRole, isCollapsed = false, onToggle }
   }
 
   const items = navigationItems[userRole] || []
+  
+  // Update inbox items with real notification data
+  const updatedItems = items.map(item => {
+    if (item.title === 'Inbox') {
+      return {
+        ...item,
+        badge: unreadCount > 0 ? unreadCount.toString() : null
+      }
+    }
+    return item
+  })
 
   return (
     <div className={cn(
@@ -279,15 +315,30 @@ export function EnhancedAdminSidebar({ userRole, isCollapsed = false, onToggle }
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                 iSpaan
               </h1>
-              <p className="text-xs" style={{ color: '#F5F0E1', opacity: 0.7 }}>Admin Panel</p>
+              <div className="flex items-center space-x-2">
+                <p className="text-xs" style={{ color: '#F5F0E1', opacity: 0.7 }}>Admin Panel</p>
+                {!notificationsLoading && unreadCount > 0 && (
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#8B5CF6' }}></div>
+                    <span className="text-xs font-medium" style={{ color: '#8B5CF6' }}>
+                      {unreadCount} new
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
         {collapsed && (
-          <div className="flex justify-center w-full">
+          <div className="flex justify-center w-full relative">
             <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300">
               <span className="text-white font-bold text-xl">iS</span>
             </div>
+            {!notificationsLoading && unreadCount > 0 && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#8B5CF6' }}>
+                <span className="text-xs text-white font-bold">{unreadCount > 9 ? '9+' : unreadCount}</span>
+              </div>
+            )}
           </div>
         )}
         <Button
@@ -310,7 +361,7 @@ export function EnhancedAdminSidebar({ userRole, isCollapsed = false, onToggle }
 
       {/* Navigation */}
       <nav className="relative z-10 flex-1 p-4 space-y-2 overflow-y-auto">
-        {items.map((item, index) => {
+        {updatedItems.map((item, index) => {
           const IconComponent = item.icon
           const isActive = pathname === item.href
           const colorClasses = getColorClasses(item.color, isActive)
@@ -342,7 +393,9 @@ export function EnhancedAdminSidebar({ userRole, isCollapsed = false, onToggle }
               )}>
                 <IconComponent className="h-5 w-5" />
                 {item.badge && (
-                  <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFC13B' }}>
+                  <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full flex items-center justify-center" style={{ 
+                    backgroundColor: item.color === 'purple' ? '#8B5CF6' : '#FFC13B' 
+                  }}>
                     <span className="text-xs text-white font-bold">{item.badge}</span>
                   </div>
                 )}
@@ -382,6 +435,32 @@ export function EnhancedAdminSidebar({ userRole, isCollapsed = false, onToggle }
               </button>
             </div>
           </div>
+          
+          {/* Notification Summary */}
+          {!notificationsLoading && (unreadCount > 0 || stats.totalNotifications > 0) && (
+            <div className="mt-4 p-3 rounded-xl" style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}>
+              <div className="flex items-center space-x-2 mb-2">
+                <Bell className="h-4 w-4" style={{ color: '#8B5CF6' }} />
+                <span className="text-xs font-semibold" style={{ color: '#8B5CF6' }}>Notifications</span>
+              </div>
+              <div className="text-xs space-y-1" style={{ color: '#F5F0E1', opacity: 0.8 }}>
+                <div className="flex justify-between">
+                  <span>Unread:</span>
+                  <span className="font-medium" style={{ color: '#8B5CF6' }}>{unreadCount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Total:</span>
+                  <span className="font-medium">{stats.totalNotifications}</span>
+                </div>
+                {stats.unreadMessages > 0 && (
+                  <div className="flex justify-between">
+                    <span>Messages:</span>
+                    <span className="font-medium" style={{ color: '#8B5CF6' }}>{stats.unreadMessages}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

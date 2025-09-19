@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -22,6 +22,24 @@ export default function DocumentUploadPage() {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
 
+  // Restore draft from localStorage
+  useEffect(() => {
+    const draft = localStorage.getItem('applicantUploadDraft')
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft)
+        if (parsed.documentType === documentType) {
+          setError(parsed.error || '')
+        }
+      } catch {}
+    }
+  }, [documentType])
+
+  // Save draft to localStorage on change
+  useEffect(() => {
+    localStorage.setItem('applicantUploadDraft', JSON.stringify({ documentType, error }))
+  }, [documentType, error])
+
   const documentTypes = {
     certifiedid: 'Certified ID',
     proofofaddress: 'Proof of Address',
@@ -39,15 +57,15 @@ export default function DocumentUploadPage() {
         setError('Please upload a PDF, Word document, or image file')
         return
       }
-      
       // Validate file size (10MB max)
       if (selectedFile.size > 10 * 1024 * 1024) {
         setError('File size must be less than 10MB')
         return
       }
-      
       setFile(selectedFile)
       setError('')
+      // Save file name in draft
+      localStorage.setItem('applicantUploadDraft', JSON.stringify({ documentType, fileName: selectedFile.name, error: '' }))
     }
   }
 
@@ -57,7 +75,7 @@ export default function DocumentUploadPage() {
     setUploading(true)
     setError('')
 
-    try {
+  try {
       // Map document type to the format expected by the server action
       const documentTypeMap = {
         'certifiedid': 'certifiedId',
@@ -80,14 +98,41 @@ export default function DocumentUploadPage() {
 
       if (result.success) {
         setSuccess(true)
+        localStorage.removeItem('applicantUploadDraft')
         setTimeout(() => {
           router.push('/applicant/dashboard')
         }, 2000)
       } else {
         setError(result.error || 'Failed to upload document. Please try again.')
+        // Log error to Firestore
+        fetch('/api/log-error', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.uid,
+            context: 'document-upload',
+            error: result.error || 'Unknown error',
+            fileName: file.name,
+            documentType: serverDocumentType,
+            timestamp: new Date().toISOString()
+          })
+        })
       }
     } catch (err) {
       setError('Failed to upload document. Please try again.')
+      // Log error to Firestore
+      fetch('/api/log-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user?.uid,
+          context: 'document-upload',
+          error: err instanceof Error ? err.message : String(err),
+          fileName: file?.name,
+          documentType: documentType,
+          timestamp: new Date().toISOString()
+        })
+      })
       console.error('Upload error:', err)
     } finally {
       setUploading(false)

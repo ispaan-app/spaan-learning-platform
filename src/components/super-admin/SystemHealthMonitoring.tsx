@@ -10,6 +10,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
 import { db, storage } from '@/lib/firebase'
+import { auditLogger } from '@/lib/auditLogger'
+import { notificationActions } from '@/lib/notificationActions'
 import { 
   collection, 
   getDocs, 
@@ -375,6 +377,38 @@ export function SystemHealthMonitoring() {
     }
   }
 
+  // Helper: log and notify on new alert
+  const handleNewSystemAlert = async (alert: SystemAlert) => {
+    await auditLogger.logSystem('SYSTEM_ALERT', {
+      alertType: alert.type,
+      message: alert.message,
+      service: alert.service,
+      timestamp: alert.timestamp,
+    })
+    if (alert.type === 'error' || alert.type === 'warning') {
+      // Notify all super admins
+      const superAdmins = await getDocs(query(collection(db, 'users'), where('role', '==', 'super-admin')))
+      const userIds = superAdmins.docs.map(doc => doc.id)
+      await notificationActions.notifyAnnouncement(
+        userIds,
+        `System ${alert.type === 'error' ? 'Error' : 'Warning'}`,
+        alert.message,
+        'System Health Monitor'
+      )
+    }
+  }
+
+  // Helper: log and notify on alert resolution
+  const handleResolveAlert = async (alert: SystemAlert) => {
+    await auditLogger.logSystem('SYSTEM_ALERT_RESOLVED', {
+      alertType: alert.type,
+      message: alert.message,
+      service: alert.service,
+      timestamp: alert.timestamp,
+      resolved: true
+    })
+  }
+
   // Load performance logs
   const loadPerformanceLogs = async () => {
     try {
@@ -522,12 +556,15 @@ export function SystemHealthMonitoring() {
     try {
       // Update alert in database
       await updateDoc(doc(db, 'system-alerts', alertId), { resolved: true })
-      
+      // Find alert details
+      const alert = alerts.find(a => a.id === alertId)
+      if (alert) {
+        await handleResolveAlert(alert)
+      }
       // Update local state
       setAlerts(prev => prev.map(alert => 
         alert.id === alertId ? { ...alert, resolved: true } : alert
       ))
-      
       toast.success('Alert resolved')
     } catch (error) {
       toast.error('Failed to resolve alert')

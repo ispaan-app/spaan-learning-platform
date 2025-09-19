@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -10,9 +10,9 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Loader2, Save, X, User, Settings, Shield } from 'lucide-react'
+import { Loader2, Save, X, User, Settings, Shield, BookOpen } from 'lucide-react'
 import { db } from '@/lib/firebase'
-import { doc, setDoc, updateDoc, collection, addDoc } from 'firebase/firestore'
+import { doc, setDoc, updateDoc, collection, addDoc, getDocs } from 'firebase/firestore'
 import { useToast } from '@/hooks/use-toast'
 import { SUPER_ADMIN_PERMISSIONS, ADMIN_PERMISSIONS } from '@/lib/permissions'
 import { createUserWithPassword, resetUserPassword } from '../../app/super-admin/users/user-actions'
@@ -28,6 +28,8 @@ const userSchema = z.object({
   phone: z.string().optional(),
   department: z.string().optional(),
   position: z.string().optional(),
+  activeProgram: z.string().optional(),
+  assignedPrograms: z.array(z.string()).optional(),
   permissions: z.array(z.string()).optional(),
   password: z.string().min(8, 'Password must be at least 8 characters').optional()
 })
@@ -46,6 +48,8 @@ interface User {
   createdAt?: string
   updatedAt?: string
   lastLoginAt?: string
+  activeProgram?: string
+  assignedPrograms?: string[]
   profile?: {
     firstName?: string
     lastName?: string
@@ -68,6 +72,10 @@ export function CompactUserForm({ user, onClose, onSave }: CompactUserFormProps)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [generatedPassword, setGeneratedPassword] = useState<string>('')
   const [createdUserId, setCreatedUserId] = useState<string>('')
+  const [programs, setPrograms] = useState<Array<{ id: string; name: string; description?: string }>>([])
+  const [loadingPrograms, setLoadingPrograms] = useState(false)
+  const [selectedPrograms, setSelectedPrograms] = useState<string[]>([])
+  const programsLoaded = useRef(false)
   const toast = useToast()
 
   const {
@@ -88,12 +96,61 @@ export function CompactUserForm({ user, onClose, onSave }: CompactUserFormProps)
       phone: user?.profile?.phone || '',
       department: user?.profile?.department || '',
       position: user?.profile?.position || '',
+      activeProgram: user?.activeProgram || '',
+      assignedPrograms: user?.assignedPrograms || [],
       permissions: user?.permissions || [],
       password: ''
     }
   })
 
   const selectedRole = watch('role')
+
+  // Load programs on component mount
+  useEffect(() => {
+    // Prevent multiple loads
+    if (programsLoaded.current || loadingPrograms) return
+
+    const loadPrograms = async () => {
+      try {
+        setLoadingPrograms(true)
+        programsLoaded.current = true
+        console.log('Loading programs from Firestore...')
+        const programsSnapshot = await getDocs(collection(db, 'programs'))
+        console.log('Programs snapshot:', programsSnapshot.size, 'documents')
+        
+        const programsData = programsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          name: doc.data().name || '',
+          description: doc.data().description || ''
+        }))
+        
+        console.log('Programs data:', programsData)
+        setPrograms(programsData)
+        
+        // If no programs exist, create some sample programs
+        if (programsData.length === 0) {
+          console.log('No programs found, creating sample programs...')
+          const samplePrograms = [
+            { id: 'sample-1', name: 'Software Development', description: 'Full-stack web development program' },
+            { id: 'sample-2', name: 'Data Science', description: 'Data analysis and machine learning program' },
+            { id: 'sample-3', name: 'Digital Marketing', description: 'Online marketing and social media program' }
+          ]
+          setPrograms(samplePrograms)
+        }
+      } catch (error) {
+        console.error('Error loading programs:', error)
+        // Set some fallback programs if loading fails
+        const fallbackPrograms = [
+          { id: 'fallback-1', name: 'General Program', description: 'Default program for admin management' }
+        ]
+        setPrograms(fallbackPrograms)
+      } finally {
+        setLoadingPrograms(false)
+      }
+    }
+
+    loadPrograms()
+  }, []) // Empty dependency array - only run once on mount
 
   useEffect(() => {
     if (user) {
@@ -106,9 +163,12 @@ export function CompactUserForm({ user, onClose, onSave }: CompactUserFormProps)
         phone: user.profile?.phone || '',
         department: user.profile?.department || '',
         position: user.profile?.position || '',
+        activeProgram: user.activeProgram || '',
+        assignedPrograms: user.assignedPrograms || [],
         password: ''
       })
       setSelectedPermissions(user.permissions || [])
+      setSelectedPrograms(user.assignedPrograms || [])
     } else {
       reset({
         email: '',
@@ -119,9 +179,12 @@ export function CompactUserForm({ user, onClose, onSave }: CompactUserFormProps)
         phone: '',
         department: '',
         position: '',
+        activeProgram: '',
+        assignedPrograms: [],
         password: ''
       })
       setSelectedPermissions([])
+      setSelectedPrograms([])
     }
   }, [user, reset])
 
@@ -149,6 +212,8 @@ export function CompactUserForm({ user, onClose, onSave }: CompactUserFormProps)
           lastName: data.lastName,
           role: data.role,
           status: data.status,
+          activeProgram: data.activeProgram || '',
+          assignedPrograms: selectedPrograms,
           permissions: selectedPermissions,
           profile: {
             firstName: data.firstName,
@@ -177,6 +242,8 @@ export function CompactUserForm({ user, onClose, onSave }: CompactUserFormProps)
           phone: data.phone,
           department: data.department,
           position: data.position,
+          activeProgram: data.activeProgram,
+          assignedPrograms: selectedPrograms,
           password: data.password || undefined
         })
 
@@ -205,6 +272,22 @@ export function CompactUserForm({ user, onClose, onSave }: CompactUserFormProps)
     } else {
       setSelectedPermissions(selectedPermissions.filter(p => p !== permission))
     }
+  }
+
+  const handleProgramToggle = (programId: string) => {
+    if (selectedPrograms.includes(programId)) {
+      setSelectedPrograms(selectedPrograms.filter(id => id !== programId))
+    } else {
+      setSelectedPrograms([...selectedPrograms, programId])
+    }
+  }
+
+  const handleSelectAllPrograms = () => {
+    setSelectedPrograms(programs.map(p => p.id))
+  }
+
+  const handleClearAllPrograms = () => {
+    setSelectedPrograms([])
   }
 
   const getAvailablePermissions = () => {
@@ -366,6 +449,107 @@ export function CompactUserForm({ user, onClose, onSave }: CompactUserFormProps)
                 className="h-9"
               />
             </div>
+
+            {/* Program Assignments - Only for Admin and Super Admin */}
+            {(selectedRole === 'admin' || selectedRole === 'super-admin') && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm flex items-center space-x-2">
+                    <BookOpen className="w-4 h-4" />
+                    <span>Assigned Programs</span>
+                  </Label>
+                  {!loadingPrograms && programs.length > 0 && (
+                    <div className="flex space-x-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSelectAllPrograms}
+                        disabled={selectedPrograms.length === programs.length}
+                        className="h-7 text-xs"
+                      >
+                        Select All
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleClearAllPrograms}
+                        disabled={selectedPrograms.length === 0}
+                        className="h-7 text-xs"
+                      >
+                        Clear All
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="max-h-48 overflow-y-auto border rounded-md p-3 bg-gray-50">
+                  {loadingPrograms ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      <span className="text-sm text-gray-500">Loading programs...</span>
+                    </div>
+                  ) : programs.length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-gray-500 mb-2">No programs available</p>
+                      <p className="text-xs text-gray-400">Debug: loadingPrograms={loadingPrograms.toString()}, programs.length={programs.length}</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="text-xs text-gray-400 mb-2">Debug: Found {programs.length} programs</div>
+                      {programs.map((program) => (
+                        <div key={program.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-100">
+                          <Checkbox
+                            id={`program-${program.id}`}
+                            checked={selectedPrograms.includes(program.id)}
+                            onCheckedChange={() => handleProgramToggle(program.id)}
+                            className="h-4 w-4"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <label 
+                              htmlFor={`program-${program.id}`}
+                              className="text-sm font-medium cursor-pointer"
+                            >
+                              {program.name}
+                            </label>
+                            {program.description && (
+                              <p className="text-xs text-gray-500 mt-1">{program.description}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {selectedPrograms.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedPrograms.map((programId) => {
+                      const program = programs.find(p => p.id === programId)
+                      return program ? (
+                        <div key={programId} className="flex items-center space-x-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                          <span>{program.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleProgramToggle(programId)}
+                            className="ml-1 hover:bg-blue-200 rounded-full p-0.5"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : null
+                    })}
+                  </div>
+                )}
+                
+                {!loadingPrograms && programs.length > 0 && (
+                  <p className="text-xs text-gray-500">
+                    Select one or more programs that this admin/super admin user can manage. Leave empty for access to all programs.
+                  </p>
+                )}
+              </div>
+            )}
           </TabsContent>
 
           {(selectedRole === 'admin' || selectedRole === 'super-admin') && (

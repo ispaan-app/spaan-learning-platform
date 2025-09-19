@@ -98,6 +98,17 @@ export async function uploadDocument(formData: FormData) {
 
     // Audit log: document uploaded
     await logDocumentUploaded(userId, 'applicant', documentType, { fileName: file.name, documentId: docRef.id })
+
+    // Create notification for applicant
+    await adminDb.collection('notifications').add({
+      userId,
+      type: 'document-uploaded',
+      documentType,
+      documentId: docRef.id,
+      message: `Your ${documentType} has been uploaded and is pending review.`,
+      read: false,
+      createdAt: new Date(),
+    })
     return { 
       success: true, 
       documentId: docRef.id,
@@ -145,9 +156,23 @@ export async function reviewDocument(documentId: string, status: 'approved' | 'r
       updatedAt: new Date(),
     })
 
-  // Audit log: document reviewed
-  await logDocumentReviewed(document.userId, 'admin', document.documentType, status, { documentId, reviewedBy, rejectionReason })
-  return { success: true }
+    // Create notification for applicant
+    await adminDb.collection('notifications').add({
+      userId: document.userId,
+      type: 'document-reviewed',
+      documentType: document.documentType,
+      documentId,
+      status,
+      message: status === 'approved'
+        ? `Your ${document.documentType} has been approved.`
+        : `Your ${document.documentType} was rejected: ${rejectionReason || 'No reason provided.'}`,
+      read: false,
+      createdAt: new Date(),
+    })
+
+    // Audit log: document reviewed
+    await logDocumentReviewed(document.userId, 'admin', document.documentType, status, { documentId, reviewedBy, rejectionReason })
+    return { success: true }
   } catch (error) {
     return { success: false, error: 'Failed to review document' }
   }
