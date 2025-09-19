@@ -25,7 +25,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { db } from '@/lib/firebase'
 import { collection, getDocs, query, where, orderBy, doc, updateDoc, addDoc } from 'firebase/firestore'
-import { auditLogger } from '@/lib/auditLogger'
+// import { auditLogger } from '@/lib/auditLogger' // Server-side only
 import { notificationActions } from '@/lib/notificationActions'
 
 interface User {
@@ -140,14 +140,14 @@ export function GrantPermissionsManagement() {
       })
 
       // Audit log (centralized)
-      await auditLogger.logData(
-        'ROLE_GRANTED',
-        'super-admin',
-        'super-admin',
-        user.id,
-        'user',
-        { previousRole: user.role, newRole: grantRoleForm.newRole, targetUserEmail: user.email }
-      )
+      // await auditLogger.logData( // Server-side only
+      //   'ROLE_GRANTED',
+      //   'super-admin',
+      //   'super-admin',
+      //   user.id,
+      //   'user',
+      //   { previousRole: user.role, newRole: grantRoleForm.newRole, targetUserEmail: user.email }
+      // )
 
       // Notify user
       await notificationActions.notifyProfileUpdated(
@@ -199,20 +199,20 @@ export function GrantPermissionsManagement() {
       const docRef = await addDoc(collection(db, 'users'), userData)
 
       // Audit log (centralized)
-      await auditLogger.logData(
-        'ADMIN_CREATED',
-        'super-admin',
-        'super-admin',
-        docRef.id,
-        'user',
-        {
-          role: createAdminForm.role,
-          department: createAdminForm.department,
-          assignedProject: createAdminForm.assignedProject,
-          assignedProgram: createAdminForm.assignedProgram,
-          targetUserEmail: createAdminForm.email
-        }
-      )
+      // await auditLogger.logData( // Server-side only
+      //   'ADMIN_CREATED',
+      //   'super-admin',
+      //   'super-admin',
+      //   docRef.id,
+      //   'user',
+      //   {
+      //     role: createAdminForm.role,
+      //     department: createAdminForm.department,
+      //     assignedProject: createAdminForm.assignedProject,
+      //     assignedProgram: createAdminForm.assignedProgram,
+      //     targetUserEmail: createAdminForm.email
+      //   }
+      // )
 
       // Notify new admin
       await notificationActions.notifyWelcome(

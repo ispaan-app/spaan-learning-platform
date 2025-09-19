@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import Avatar from 'avataaars'
+// import Avatar from 'avataaars' // Removed due to dependency conflicts
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Sparkles, RefreshCw, Heart, Star, Zap, Award, Target, Brain, Users, Globe, Shield, Crown } from 'lucide-react'
@@ -190,20 +190,12 @@ export function CartoonCharacter({
       {/* Character Display */}
       <div className="relative">
         <div className={`transition-all duration-300 ${isAnimating ? 'scale-110 opacity-70' : 'scale-100 opacity-100'}`}>
-          <Avatar
+          <div 
+            className="bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-2xl"
             style={{ width: size, height: size }}
-            avatarStyle={characterConfig.avatarStyle}
-            topType={characterConfig.topType}
-            accessoriesType={characterConfig.accessoriesType}
-            hairColor={characterConfig.hairColor}
-            facialHairType={characterConfig.facialHairType}
-            clotheType={characterConfig.clotheType}
-            clotheColor={characterConfig.clotheColor}
-            eyeType={characterConfig.eyeType}
-            eyebrowType={characterConfig.eyebrowType}
-            mouthType={characterConfig.mouthType}
-            skinColor={characterConfig.skinColor}
-          />
+          >
+            {characterConfig.avatarStyle === 'Circle' ? '👤' : '🎭'}
+          </div>
         </div>
         
         {/* Floating Icons */}
@@ -345,10 +337,12 @@ export function CharacterShowcase() {
               transform: `rotate(${index * 15}deg)`,
             }}
           >
-            <Avatar
+            <div 
+              className="bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-2xl"
               style={{ width: 100, height: 100 }}
-              {...CHARACTER_PRESETS[character]}
-            />
+            >
+              👤
+            </div>
           </div>
         ))}
       </div>
