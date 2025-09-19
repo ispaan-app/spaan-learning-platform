@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import Avatar from 'avataaars'
+import Avatar from 'react-nice-avatar'
 import { 
   ArrowRight, 
   ArrowLeft, 
@@ -34,7 +34,21 @@ interface OnboardingStep {
   title: string
   subtitle: string
   description: string
-  avatarConfig: any
+  avatarConfig: {
+    sex: 'man' | 'woman'
+    faceColor: string
+    earSize: 'small' | 'big'
+    eyeStyle: 'circle' | 'oval' | 'smile'
+    noseStyle: 'short' | 'long' | 'round'
+    mouthStyle: 'laugh' | 'smile' | 'peace'
+    shirtStyle: 'hoody' | 'short' | 'polo'
+    glassesStyle: 'none' | 'round' | 'square'
+    hairColor: string
+    hairStyle: 'normal' | 'thick' | 'mohawk' | 'womanLong' | 'womanShort'
+    hatStyle: 'none' | 'beanie' | 'turban'
+    shirtColor: string
+    bgColor: string
+  }
   features: string[]
   color: string
   icon: React.ComponentType<any>
@@ -47,17 +61,19 @@ const onboardingSteps: OnboardingStep[] = [
     subtitle: 'Your Learning Journey Starts Here',
     description: 'We\'re excited to have you join our community of learners and innovators.',
     avatarConfig: {
-      avatarStyle: 'Circle',
-      topType: 'ShortHairShortCurly',
-      accessoriesType: 'Blank',
-      hairColor: 'BrownDark',
-      facialHairType: 'Blank',
-      clotheType: 'Hoodie',
-      clotheColor: 'Blue01',
-      eyeType: 'Happy',
-      eyebrowType: 'Default',
-      mouthType: 'Smile',
-      skinColor: 'Light'
+      sex: 'man' as const,
+      faceColor: '#F9C9B6',
+      earSize: 'small' as const,
+      eyeStyle: 'smile' as const,
+      noseStyle: 'short' as const,
+      mouthStyle: 'smile' as const,
+      shirtStyle: 'hoody' as const,
+      glassesStyle: 'none' as const,
+      hairColor: '#8B4513',
+      hairStyle: 'normal' as const,
+      hatStyle: 'none' as const,
+      shirtColor: '#4A90E2',
+      bgColor: '#E8F4FD'
     },
     features: [
       'Personalized learning paths',
@@ -74,17 +90,19 @@ const onboardingSteps: OnboardingStep[] = [
     subtitle: 'Find the Perfect Program',
     description: 'Explore our diverse range of programs designed to match your interests and career goals.',
     avatarConfig: {
-      avatarStyle: 'Circle',
-      topType: 'LongHairStraight',
-      accessoriesType: 'Blank',
-      hairColor: 'Blonde',
-      facialHairType: 'Blank',
-      clotheType: 'BlazerShirt',
-      clotheColor: 'Blue02',
-      eyeType: 'Default',
-      eyebrowType: 'Default',
-      mouthType: 'Default',
-      skinColor: 'Medium'
+      sex: 'woman' as const,
+      faceColor: '#F9C9B6',
+      earSize: 'small' as const,
+      eyeStyle: 'circle' as const,
+      noseStyle: 'short' as const,
+      mouthStyle: 'smile' as const,
+      shirtStyle: 'polo' as const,
+      glassesStyle: 'none' as const,
+      hairColor: '#D4AF37',
+      hairStyle: 'womanLong' as const,
+      hatStyle: 'none' as const,
+      shirtColor: '#2E8B57',
+      bgColor: '#F0F8F0'
     },
     features: [
       'Computer Science',
@@ -101,17 +119,19 @@ const onboardingSteps: OnboardingStep[] = [
     subtitle: 'Interactive Learning Experience',
     description: 'Engage with hands-on projects, peer collaboration, and expert guidance.',
     avatarConfig: {
-      avatarStyle: 'Circle',
-      topType: 'ShortHairShortWaved',
-      accessoriesType: 'Blank',
-      hairColor: 'Black',
-      facialHairType: 'Blank',
-      clotheType: 'ShirtCrewNeck',
-      clotheColor: 'Red01',
-      eyeType: 'Happy',
-      eyebrowType: 'Default',
-      mouthType: 'Smile',
-      skinColor: 'Dark'
+      sex: 'man' as const,
+      faceColor: '#F9C9B6',
+      earSize: 'small' as const,
+      eyeStyle: 'smile' as const,
+      noseStyle: 'short' as const,
+      mouthStyle: 'smile' as const,
+      shirtStyle: 'short' as const,
+      glassesStyle: 'none' as const,
+      hairColor: '#000000',
+      hairStyle: 'normal' as const,
+      hatStyle: 'none' as const,
+      shirtColor: '#FF6B6B',
+      bgColor: '#FFF0F0'
     },
     features: [
       'Interactive lessons',
@@ -128,17 +148,19 @@ const onboardingSteps: OnboardingStep[] = [
     subtitle: 'Transform Your Career',
     description: 'Graduate with industry-ready skills and a portfolio that opens doors.',
     avatarConfig: {
-      avatarStyle: 'Circle',
-      topType: 'LongHairFrida',
-      accessoriesType: 'Blank',
-      hairColor: 'Brown',
-      facialHairType: 'Blank',
-      clotheType: 'BlazerSweater',
-      clotheColor: 'Gray01',
-      eyeType: 'Happy',
-      eyebrowType: 'Default',
-      mouthType: 'Smile',
-      skinColor: 'Light'
+      sex: 'woman' as const,
+      faceColor: '#F9C9B6',
+      earSize: 'small' as const,
+      eyeStyle: 'smile' as const,
+      noseStyle: 'short' as const,
+      mouthStyle: 'laugh' as const,
+      shirtStyle: 'polo' as const,
+      glassesStyle: 'none' as const,
+      hairColor: '#8B4513',
+      hairStyle: 'womanLong' as const,
+      hatStyle: 'none' as const,
+      shirtColor: '#9B59B6',
+      bgColor: '#F3E5F5'
     },
     features: [
       'Industry certifications',

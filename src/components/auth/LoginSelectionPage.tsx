@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import Avatar from 'avataaars'
+import Avatar from 'react-nice-avatar'
 import { User, Shield, Crown, ArrowRight, Sparkles, Zap, Globe, Star, CheckCircle, Award, Target, Brain, Users, Clock, Check, Heart, Smile, ThumbsUp, Play, ChevronRight } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 
@@ -36,17 +36,19 @@ export function LoginSelectionPage() {
                   <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
                     <Avatar
                       style={{ width: 90, height: 90 }}
-                      avatarStyle="Circle"
-                      topType="ShortHairShortCurly"
-                      accessoriesType="Blank"
-                      hairColor="BrownDark"
-                      facialHairType="Blank"
-                      clotheType="Hoodie"
-                      clotheColor="Blue01"
-                      eyeType="Happy"
-                      eyebrowType="Default"
-                      mouthType="Smile"
-                      skinColor="Light"
+                      sex="man"
+                      faceColor="#F9C9B6"
+                      earSize="small"
+                      eyeStyle="smile"
+                      noseStyle="short"
+                      mouthStyle="smile"
+                      shirtStyle="hoody"
+                      glassesStyle="none"
+                      hairColor="#8B4513"
+                      hairStyle="normal"
+                      hatStyle="none"
+                      shirtColor="#4A90E2"
+                      bgColor="#E8F4FD"
                     />
                   </div>
                 </div>
@@ -201,17 +203,19 @@ export function LoginSelectionPage() {
                       <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
                         <Avatar
                           style={{ width: 60, height: 60 }}
-                          avatarStyle="Circle"
-                          topType="LongHairStraight"
-                          accessoriesType="Blank"
-                          hairColor="Blonde"
-                          facialHairType="Blank"
-                          clotheType="BlazerShirt"
-                          clotheColor="Blue02"
-                          eyeType="Happy"
-                          eyebrowType="Default"
-                          mouthType="Smile"
-                          skinColor="Medium"
+                          sex="woman"
+                          faceColor="#F9C9B6"
+                          earSize="small"
+                          eyeStyle="smile"
+                          noseStyle="short"
+                          mouthStyle="smile"
+                          shirtStyle="polo"
+                          glassesStyle="none"
+                          hairColor="#D4AF37"
+                          hairStyle="womanLong"
+                          hatStyle="none"
+                          shirtColor="#2E8B57"
+                          bgColor="#F0F8F0"
                         />
                       </div>
                     </div>

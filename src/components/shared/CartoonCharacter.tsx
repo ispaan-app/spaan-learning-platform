@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import Avatar from 'avataaars'
+import Avatar from 'react-nice-avatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Sparkles, RefreshCw, Heart, Star, Zap, Award, Target, Brain, Users, Globe, Shield, Crown } from 'lucide-react'
@@ -14,71 +14,81 @@ interface CharacterProps {
 }
 
 interface CharacterConfig {
-  avatarStyle: 'Circle' | 'Transparent'
-  topType: string
-  accessoriesType: string
+  sex: 'man' | 'woman'
+  faceColor: string
+  earSize: 'small' | 'big'
+  eyeStyle: 'circle' | 'oval' | 'smile'
+  noseStyle: 'short' | 'long' | 'round'
+  mouthStyle: 'laugh' | 'smile' | 'peace'
+  shirtStyle: 'hoody' | 'short' | 'polo'
+  glassesStyle: 'none' | 'round' | 'square'
   hairColor: string
-  facialHairType: string
-  clotheType: string
-  clotheColor: string
-  eyeType: string
-  eyebrowType: string
-  mouthType: string
-  skinColor: string
+  hairStyle: 'normal' | 'thick' | 'mohawk' | 'womanLong' | 'womanShort'
+  hatStyle: 'none' | 'beanie' | 'turban'
+  shirtColor: string
+  bgColor: string
 }
 
 const CHARACTER_PRESETS = {
   learner: {
-    avatarStyle: 'Circle' as const,
-    topType: 'ShortHairDreads01',
-    accessoriesType: 'PrescriptionGlasses',
-    hairColor: 'Black',
-    facialHairType: 'Blank',
-    clotheType: 'Hoodie',
-    clotheColor: 'Blue01',
-    eyeType: 'Happy',
-    eyebrowType: 'Default',
-    mouthType: 'Smile',
-    skinColor: 'DarkBrown'
+    sex: 'man' as const,
+    faceColor: '#F9C9B6',
+    earSize: 'small' as const,
+    eyeStyle: 'smile' as const,
+    noseStyle: 'short' as const,
+    mouthStyle: 'smile' as const,
+    shirtStyle: 'hoody' as const,
+    glassesStyle: 'round' as const,
+    hairColor: '#000000',
+    hairStyle: 'normal' as const,
+    hatStyle: 'none' as const,
+    shirtColor: '#4A90E2',
+    bgColor: '#E8F4FD'
   },
   admin: {
-    avatarStyle: 'Circle' as const,
-    topType: 'ShortHairShortFlat',
-    accessoriesType: 'Blank',
-    hairColor: 'Black',
-    facialHairType: 'Blank',
-    clotheType: 'BlazerShirt',
-    clotheColor: 'Blue01',
-    eyeType: 'Default',
-    eyebrowType: 'Default',
-    mouthType: 'Default',
-    skinColor: 'Black'
+    sex: 'man' as const,
+    faceColor: '#F9C9B6',
+    earSize: 'small' as const,
+    eyeStyle: 'circle' as const,
+    noseStyle: 'short' as const,
+    mouthStyle: 'smile' as const,
+    shirtStyle: 'polo' as const,
+    glassesStyle: 'none' as const,
+    hairColor: '#000000',
+    hairStyle: 'normal' as const,
+    hatStyle: 'none' as const,
+    shirtColor: '#2E8B57',
+    bgColor: '#F0F8F0'
   },
   mentor: {
-    avatarStyle: 'Circle' as const,
-    topType: 'LongHairFro',
-    accessoriesType: 'Blank',
-    hairColor: 'Black',
-    facialHairType: 'Blank',
-    clotheType: 'BlazerShirt',
-    clotheColor: 'PastelGreen',
-    eyeType: 'Happy',
-    eyebrowType: 'Default',
-    mouthType: 'Smile',
-    skinColor: 'DarkBrown'
+    sex: 'woman' as const,
+    faceColor: '#F9C9B6',
+    earSize: 'small' as const,
+    eyeStyle: 'smile' as const,
+    noseStyle: 'short' as const,
+    mouthStyle: 'laugh' as const,
+    shirtStyle: 'polo' as const,
+    glassesStyle: 'none' as const,
+    hairColor: '#8B4513',
+    hairStyle: 'womanLong' as const,
+    hatStyle: 'none' as const,
+    shirtColor: '#FF6B6B',
+    bgColor: '#FFF0F0'
   },
   superAdmin: {
-    avatarStyle: 'Circle' as const,
-    topType: 'ShortHairShortCurly',
-    accessoriesType: 'Blank',
-    hairColor: 'Black',
-    facialHairType: 'BeardMedium',
-    clotheType: 'BlazerShirt',
-    clotheColor: 'Red',
-    eyeType: 'Default',
-    eyebrowType: 'Default',
-    mouthType: 'Default',
-    skinColor: 'Black'
+    sex: 'man' as const,
+    faceColor: '#F9C9B6',
+    earSize: 'small' as const,
+    eyeStyle: 'oval' as const,
+    noseStyle: 'round' as const,
+    mouthStyle: 'peace' as const,
+    shirtStyle: 'polo' as const,
+    glassesStyle: 'square' as const,
+    hairColor: '#8B4513',
+    hairStyle: 'thick' as const,
+    hatStyle: 'none' as const,
+    shirtColor: '#9B59B6',
+    bgColor: '#F3E5F5'
   }
 }
 
@@ -190,20 +200,10 @@ export function CartoonCharacter({
       {/* Character Display */}
       <div className="relative">
         <div className={`transition-all duration-300 ${isAnimating ? 'scale-110 opacity-70' : 'scale-100 opacity-100'}`}>
-          <Avatar
-            style={{ width: size, height: size }}
-            avatarStyle={characterConfig.avatarStyle}
-            topType={characterConfig.topType}
-            accessoriesType={characterConfig.accessoriesType}
-            hairColor={characterConfig.hairColor}
-            facialHairType={characterConfig.facialHairType}
-            clotheType={characterConfig.clotheType}
-            clotheColor={characterConfig.clotheColor}
-            eyeType={characterConfig.eyeType}
-            eyebrowType={characterConfig.eyebrowType}
-            mouthType={characterConfig.mouthType}
-            skinColor={characterConfig.skinColor}
-          />
+      <Avatar
+        style={{ width: size, height: size }}
+        {...characterConfig}
+      />
         </div>
         
         {/* Floating Icons */}
