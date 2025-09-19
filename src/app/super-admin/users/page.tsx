@@ -146,59 +146,59 @@ export default function SuperAdminUsersPage() {
 
   // Real-time data processing
   const processUsersData = (usersData: User[]) => {
-    const now = new Date()
-    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-    const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    
-    const total = usersData.length
-    const active = usersData.filter(u => u.status === 'active').length
-    const pending = usersData.filter(u => u.status === 'pending' || !u.status).length
-    const inactive = usersData.filter(u => u.status === 'inactive').length
-    const suspended = usersData.filter(u => u.status === 'suspended').length
-    
-    const newThisWeek = usersData.filter(u => {
-      const createdAt = new Date(u.createdAt || '')
-      return createdAt >= oneWeekAgo
-    }).length
-    
-    const newThisMonth = usersData.filter(u => {
-      const createdAt = new Date(u.createdAt || '')
-      return createdAt >= oneMonthAgo
-    }).length
-    
-    const lastLoginToday = usersData.filter(u => {
-      if (!u.lastLoginAt) return false
-      const lastLogin = new Date(u.lastLoginAt)
-      return lastLogin >= todayStart
-    }).length
-    
-    const neverLoggedIn = usersData.filter(u => !u.lastLoginAt).length
+      const now = new Date()
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      
+      const total = usersData.length
+      const active = usersData.filter(u => u.status === 'active').length
+      const pending = usersData.filter(u => u.status === 'pending' || !u.status).length
+      const inactive = usersData.filter(u => u.status === 'inactive').length
+      const suspended = usersData.filter(u => u.status === 'suspended').length
+      
+      const newThisWeek = usersData.filter(u => {
+        const createdAt = new Date(u.createdAt || '')
+        return createdAt >= oneWeekAgo
+      }).length
+      
+      const newThisMonth = usersData.filter(u => {
+        const createdAt = new Date(u.createdAt || '')
+        return createdAt >= oneMonthAgo
+      }).length
+      
+      const lastLoginToday = usersData.filter(u => {
+        if (!u.lastLoginAt) return false
+        const lastLogin = new Date(u.lastLoginAt)
+        return lastLogin >= todayStart
+      }).length
+      
+      const neverLoggedIn = usersData.filter(u => !u.lastLoginAt).length
     const onlineUsers = usersData.filter(u => u.isOnline).length
-    
-    // Calculate role statistics
-    const roleStatsData = {
-      'super-admin': usersData.filter(u => u.role === 'super-admin').length,
-      'admin': usersData.filter(u => u.role === 'admin').length,
-      'learner': usersData.filter(u => u.role === 'learner').length,
-      'applicant': usersData.filter(u => u.role === 'applicant').length
-    }
-    
+      
+      // Calculate role statistics
+      const roleStatsData = {
+        'super-admin': usersData.filter(u => u.role === 'super-admin').length,
+        'admin': usersData.filter(u => u.role === 'admin').length,
+        'learner': usersData.filter(u => u.role === 'learner').length,
+        'applicant': usersData.filter(u => u.role === 'applicant').length
+      }
+      
     setRealTimeStats({ 
-      total, 
-      active, 
-      pending, 
-      inactive, 
-      suspended,
-      newThisWeek,
-      newThisMonth,
-      lastLoginToday,
+        total, 
+        active, 
+        pending, 
+        inactive, 
+        suspended,
+        newThisWeek,
+        newThisMonth,
+        lastLoginToday,
       neverLoggedIn,
       onlineUsers,
       systemHealth: onlineUsers > total * 0.8 ? 'excellent' : onlineUsers > total * 0.5 ? 'good' : 'poor'
-    })
+      })
     
-    setRoleStats(roleStatsData)
+      setRoleStats(roleStatsData)
     setLastUpdate(new Date())
   }
 
@@ -642,17 +642,17 @@ export default function SuperAdminUsersPage() {
         <div className="relative overflow-hidden">
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, #1E3D59, #8B5CF6, #FF6E40)' }}></div>
           <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl p-8 shadow-2xl">
-            <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
               <div className="space-y-4">
                 <div className="flex items-center space-x-4">
                   <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300">
                     <Crown className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
+            </div>
+            <div>
                     <h1 className="text-4xl font-bold" style={{ color: '#1E3D59' }}>User Management</h1>
                     <p className="text-lg" style={{ color: '#1E3D59' }}>Comprehensive user administration and real-time analytics</p>
-                  </div>
-                </div>
+            </div>
+          </div>
                 
                 {/* Real-time Status Indicators */}
                 <div className="flex items-center space-x-6">
@@ -689,33 +689,33 @@ export default function SuperAdminUsersPage() {
               </div>
               
               <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <Select value={viewMode} onValueChange={(value: any) => setViewMode(value)}>
+            <div className="flex items-center space-x-2">
+              <Select value={viewMode} onValueChange={(value: any) => setViewMode(value)}>
                     <SelectTrigger className="w-32 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="table">
-                        <div className="flex items-center space-x-2">
-                          <FileText className="h-4 w-4" />
-                          <span>Table</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="grid">
-                        <div className="flex items-center space-x-2">
-                          <BarChart3 className="h-4 w-4" />
-                          <span>Grid</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="analytics">
-                        <div className="flex items-center space-x-2">
-                          <TrendingUp className="h-4 w-4" />
-                          <span>Analytics</span>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="table">
+                    <div className="flex items-center space-x-2">
+                      <FileText className="h-4 w-4" />
+                      <span>Table</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="grid">
+                    <div className="flex items-center space-x-2">
+                      <BarChart3 className="h-4 w-4" />
+                      <span>Grid</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="analytics">
+                    <div className="flex items-center space-x-2">
+                      <TrendingUp className="h-4 w-4" />
+                      <span>Analytics</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
                 
                 <Button 
                   variant="outline"
@@ -728,25 +728,25 @@ export default function SuperAdminUsersPage() {
                   <span className="font-semibold">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
                 </Button>
                 
-                <Button 
-                  variant="outline"
-                  onClick={handleExportUsers}
-                  disabled={filteredUsers.length === 0}
+            <Button 
+              variant="outline"
+              onClick={handleExportUsers}
+              disabled={filteredUsers.length === 0}
                   className="px-6 py-3 rounded-xl transition-all duration-300 transform hover:scale-105"
                   style={{ color: '#1E3D59' }}
-                >
-                  <Download className="mr-2 h-4 w-4" />
+            >
+              <Download className="mr-2 h-4 w-4" />
                   <span className="font-semibold">Export</span>
-                </Button>
+            </Button>
                 
-                <Button 
-                  onClick={handleCreateUser}
+            <Button 
+              onClick={handleCreateUser}
                   className="px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                   style={{ backgroundColor: '#FF6E40' }}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
+            >
+              <Plus className="mr-2 h-4 w-4" />
                   <span className="font-semibold">Add User</span>
-                </Button>
+            </Button>
               </div>
             </div>
           </div>
@@ -1514,15 +1514,15 @@ export default function SuperAdminUsersPage() {
             </div>
             
             {/* UserManagementTable */}
-            <UserManagementTable
-              users={filteredUsers}
-              loading={loading}
-              selectedUsers={selectedUsers}
-              onSelectionChange={setSelectedUsers}
-              onEditUser={handleEditUser}
-              onToggleStatus={handleToggleUserStatus}
-              onDeleteUser={handleDeleteUser}
-            />
+        <UserManagementTable
+          users={filteredUsers}
+          loading={loading}
+          selectedUsers={selectedUsers}
+          onSelectionChange={setSelectedUsers}
+          onEditUser={handleEditUser}
+          onToggleStatus={handleToggleUserStatus}
+          onDeleteUser={handleDeleteUser}
+        />
           </div>
         )}
 
