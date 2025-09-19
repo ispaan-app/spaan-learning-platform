@@ -1,4 +1,4 @@
-# 🚀 Deployment Options for iSpaan Learning Platform
+# 🚀 Deployment Options for iSpaan
 
 ## ✅ Current Status
 - **GitHub Repository**: ✅ Published at `https://github.com/ispaan-app/spaan-learning-platform.git`

@@ -1,6 +1,6 @@
 # iSpaan Design System
 
-A comprehensive, modern UI/UX design system built for the iSpaan learning platform. This design system follows clean, professional principles and provides a consistent foundation for building beautiful, accessible user interfaces.
+A comprehensive, modern UI/UX design system built for iSpaan. This design system follows clean, professional principles and provides a consistent foundation for building beautiful, accessible user interfaces.
 
 ## 🎨 Design Principles
 

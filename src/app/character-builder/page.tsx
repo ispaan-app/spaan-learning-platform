@@ -34,7 +34,7 @@ export default function CharacterBuilderPage() {
             </h1>
             
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-12">
-              Design your unique cartoon character and bring your personality to life in the iSpaan learning platform
+              Design your unique cartoon character and bring your personality to life in iSpaan
             </p>
 
             <div className="flex justify-center mb-8">
