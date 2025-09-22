@@ -14,6 +14,7 @@ import { auth } from '@/lib/firebase'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { LogIn, Mail, Lock } from 'lucide-react'
+import { EnhancedSuccessPopup } from '@/components/ui/enhanced-success-popup'
 
 const loginSchema = z.object({
   email: z.string()
@@ -32,6 +33,11 @@ interface AdminLoginFormProps {
 export function AdminLoginForm({ selectedRole }: AdminLoginFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false)
+  const [loginResult, setLoginResult] = useState<{
+    userRole: string
+    redirectTo: string
+  } | null>(null)
   const router = useRouter()
 
   const {
@@ -122,14 +128,20 @@ export function AdminLoginForm({ selectedRole }: AdminLoginFormProps) {
         localStorage.setItem('userPermissions', JSON.stringify(userData.permissions))
       }
 
-      // Redirect based on role
+      // Determine redirect URL and show success popup
+      let redirectTo = '/'
       if (userRole === 'admin') {
-        router.push('/admin/dashboard')
+        redirectTo = '/admin/dashboard'
       } else if (userRole === 'super-admin') {
-        router.push('/super-admin/dashboard')
-      } else {
-        router.push('/')
+        redirectTo = '/super-admin/dashboard'
       }
+
+      // Set login result and show success popup
+      setLoginResult({
+        userRole,
+        redirectTo
+      })
+      setShowSuccessPopup(true)
 
     } catch (err: any) {
       console.error('Login error:', err)
@@ -151,6 +163,7 @@ export function AdminLoginForm({ selectedRole }: AdminLoginFormProps) {
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {error && (
         <Alert variant="destructive">
@@ -220,6 +233,23 @@ export function AdminLoginForm({ selectedRole }: AdminLoginFormProps) {
         </p>
       </div>
     </form>
+
+    {/* Enhanced Success Popup */}
+    {loginResult && (
+      <EnhancedSuccessPopup
+        isVisible={showSuccessPopup}
+        onClose={() => setShowSuccessPopup(false)}
+        title={`Welcome Back, ${selectedRole === 'admin' ? 'Admin' : 'Super Admin'}!`}
+        message="You have successfully logged in to your administrative dashboard. Your personalized control panel is ready!"
+        redirectTo={loginResult.redirectTo}
+        userRole={loginResult.userRole}
+        redirectMessage="Preparing your administrative dashboard..."
+        redirectDelay={2500}
+        stayLabel="Stay Here"
+        goLabel="Go to Dashboard"
+      />
+    )}
+    </>
   )
 }
 

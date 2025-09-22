@@ -11,6 +11,38 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import DocumentViewer from '@/components/admin/DocumentViewer'
+
+// Helper to transform applicant Firestore document data into DocumentViewer format
+// import type { Document } from '@/components/admin/DocumentViewer';
+
+async function getApplicantDocuments(applicant: any): Promise<any[]> {
+  if (!applicant) return [];
+  try {
+    const result = await getApplicantDocumentsAction(applicant.id);
+    if (result.success && Array.isArray(result.documents)) {
+      const documents = result.documents.map((doc: any) => ({
+        ...doc,
+        size: formatFileSize(doc.fileSize || 0)
+      }));
+      return documents;
+    } else {
+      console.error('Error fetching documents:', result.error);
+      return [];
+    }
+  } catch (error) {
+    console.error('Error fetching documents:', error);
+    return [];
+  }
+}
+
+// Helper to format file size
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
 import { 
   FileText, 
   Search, 
@@ -67,11 +99,15 @@ import {
   Key,
   Globe,
   Bell,
-  Info
+  Info,
+  BookOpen
 } from 'lucide-react'
 import { db } from '@/lib/firebase'
-import { collection, getDocs, query, where, orderBy, updateDoc, doc } from 'firebase/firestore'
+import { collection, getDocs, query, where, orderBy, updateDoc, doc, onSnapshot } from 'firebase/firestore'
+import { adminDb } from '@/lib/firebase-admin'
 import { toast as sonnerToast } from 'sonner'
+import { getApplicantDocumentsAction } from '@/app/actions/documentActions'
+import { ProgramService } from '@/lib/program-service'
 
 interface Applicant {
   id: string
@@ -81,15 +117,12 @@ interface Applicant {
   email: string
   phone: string
   program: string
+  highestQualification?: string
+  fieldOfStudy?: string
+  yearsOfExperience?: number
   applicationDate: string
   status: 'pending-review' | 'document-review' | 'approved' | 'rejected' | 'waitlisted'
-  documents?: {
-    certifiedId: boolean
-    proofOfAddress: boolean
-    highestQualification: boolean
-    proofOfBanking: boolean
-    taxNumber: boolean
-  }
+  role?: 'applicant' | 'learner' | 'admin' | 'super-admin'
   documentStatus?: {
     certifiedId: 'pending' | 'approved' | 'rejected'
     proofOfAddress: 'pending' | 'approved' | 'rejected'
@@ -127,6 +160,11 @@ export default function AdminApplicantsPage() {
   const [programFilter, setProgramFilter] = useState('all')
   const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null)
   const [showDocumentViewer, setShowDocumentViewer] = useState(false)
+  const [applicantDocuments, setApplicantDocuments] = useState<any[]>([])
+  const [loadingDocuments, setLoadingDocuments] = useState(false)
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false)
+  const [applicantReadyForPromotion, setApplicantReadyForPromotion] = useState<Applicant | null>(null)
+  const [programNames, setProgramNames] = useState<{ [key: string]: string }>({})
   const [stats, setStats] = useState<ApplicationStats>({
     total: 0,
     pendingReview: 0,
@@ -141,12 +179,45 @@ export default function AdminApplicantsPage() {
   useEffect(() => {
     loadApplicants()
     
-    // Set up real-time updates
-    const interval = setInterval(() => {
-      loadApplicants()
-    }, 30000) // Refresh every 30 seconds
+    // Set up real-time listener for applicants
+    const applicantsQuery = query(
+      collection(db, 'users'),
+      where('role', '==', 'applicant'),
+      orderBy('createdAt', 'desc')
+    )
     
-    return () => clearInterval(interval)
+    const unsubscribe = onSnapshot(applicantsQuery, (snapshot) => {
+      const applicantsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        friendlyId: `APP-${doc.id.slice(-6).toUpperCase()}`,
+        role: 'applicant', // Explicitly set role
+        ...doc.data()
+      })) as Applicant[]
+      
+      setApplicants(applicantsData)
+      calculateStats(applicantsData)
+      
+      // Fetch program names for all unique program IDs
+      const uniqueProgramIds = Array.from(new Set(applicantsData.map(a => a.program).filter(Boolean)))
+      if (uniqueProgramIds.length > 0) {
+        ProgramService.getProgramNames(uniqueProgramIds)
+          .then(setProgramNames)
+          .catch(error => {
+            console.error('Error fetching program names:', error)
+            const fallbackMap: { [key: string]: string } = {}
+            uniqueProgramIds.forEach(id => {
+              fallbackMap[id] = id
+            })
+            setProgramNames(fallbackMap)
+          })
+      }
+    }, (error) => {
+      console.error('Error in real-time listener:', error)
+      // Fallback to manual refresh
+      loadApplicants()
+    })
+    
+    return () => unsubscribe()
   }, [])
 
   const loadApplicants = async () => {
@@ -161,11 +232,29 @@ export default function AdminApplicantsPage() {
       const applicantsData = applicantsSnapshot.docs.map(doc => ({
           id: doc.id,
         friendlyId: `APP-${doc.id.slice(-6).toUpperCase()}`,
+        role: 'applicant', // Explicitly set role
         ...doc.data()
       })) as Applicant[]
 
       setApplicants(applicantsData)
       calculateStats(applicantsData)
+
+      // Fetch program names for all unique program IDs using ProgramService
+      const uniqueProgramIds = Array.from(new Set(applicantsData.map(a => a.program).filter(Boolean)))
+      if (uniqueProgramIds.length > 0) {
+        try {
+          const programNamesMap = await ProgramService.getProgramNames(uniqueProgramIds)
+          setProgramNames(programNamesMap)
+        } catch (error) {
+          console.error('Error fetching program names:', error)
+          // Set fallback mapping
+          const fallbackMap: { [key: string]: string } = {}
+          uniqueProgramIds.forEach(id => {
+            fallbackMap[id] = id
+          })
+          setProgramNames(fallbackMap)
+        }
+      }
     } catch (error) {
       console.error('Error loading applicants:', error)
       sonnerToast.error('Failed to load applicants')
@@ -179,6 +268,14 @@ export default function AdminApplicantsPage() {
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
     const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
 
+    // Debug logging
+    console.log('Calculating stats for applicants:', applicantsData.length)
+    console.log('Sample applicant statuses:', applicantsData.slice(0, 3).map(a => ({ 
+      name: `${a.firstName} ${a.lastName}`, 
+      status: a.status, 
+      createdAt: a.createdAt 
+    })))
+
     const newStats: ApplicationStats = {
       total: applicantsData.length,
       pendingReview: applicantsData.filter(a => a.status === 'pending-review').length,
@@ -186,10 +283,25 @@ export default function AdminApplicantsPage() {
       approved: applicantsData.filter(a => a.status === 'approved').length,
       rejected: applicantsData.filter(a => a.status === 'rejected').length,
       waitlisted: applicantsData.filter(a => a.status === 'waitlisted').length,
-      newThisWeek: applicantsData.filter(a => new Date(a.createdAt) > oneWeekAgo).length,
-      newThisMonth: applicantsData.filter(a => new Date(a.createdAt) > oneMonthAgo).length
+      newThisWeek: applicantsData.filter(a => {
+        try {
+          return new Date(a.createdAt || a.applicationDate) > oneWeekAgo
+        } catch (error) {
+          console.warn('Invalid date for applicant:', a.id, a.createdAt, a.applicationDate)
+          return false
+        }
+      }).length,
+      newThisMonth: applicantsData.filter(a => {
+        try {
+          return new Date(a.createdAt || a.applicationDate) > oneMonthAgo
+        } catch (error) {
+          console.warn('Invalid date for applicant:', a.id, a.createdAt, a.applicationDate)
+          return false
+        }
+      }).length
     }
 
+    console.log('Calculated stats:', newStats)
     setStats(newStats)
   }
 
@@ -224,49 +336,255 @@ export default function AdminApplicantsPage() {
       case 'waitlisted':
         return <Badge className="bg-purple-100 text-purple-800">Waitlisted</Badge>
       default:
-        return <Badge className="bg-gray-100 text-gray-800">Unknown</Badge>
+        return <Badge className="bg-yellow-100 text-yellow-800">Pending Review</Badge>
     }
   }
 
-  const handleViewDocuments = (applicant: Applicant) => {
+  const handleViewDocuments = async (applicant: Applicant) => {
     setSelectedApplicant(applicant)
+    setLoadingDocuments(true)
     setShowDocumentViewer(true)
-  }
-
-  const handleApproveDocument = (documentType: string) => {
-    if (selectedApplicant) {
-      // Update document status
-      const updatedDocumentStatus = {
-        ...selectedApplicant.documentStatus,
-        [documentType]: 'approved'
-      }
-
-      // Check if all documents are approved
-      const allApproved = Object.values(updatedDocumentStatus).every(status => status === 'approved')
-      
-      // Update applicant status
-      const newStatus = allApproved ? 'approved' : 'document-review'
-      
-      updateApplicantStatus(selectedApplicant.id, newStatus, updatedDocumentStatus)
+    
+    try {
+      const documents = await getApplicantDocuments(applicant)
+      setApplicantDocuments(documents)
+    } catch (error) {
+      console.error('Error loading documents:', error)
+      sonnerToast.error('Failed to load documents')
+    } finally {
+      setLoadingDocuments(false)
     }
   }
 
-  const handleRejectDocument = (documentType: string, reason: string) => {
-    if (selectedApplicant) {
-      // Update document status
-      const updatedDocumentStatus = {
-        ...selectedApplicant.documentStatus,
-        [documentType]: 'rejected'
+  const handleApproveDocument = async (documentType: string) => {
+    if (!selectedApplicant) return;
+    try {
+      // Find the document to approve
+      const document = applicantDocuments.find(doc => doc.type === documentType);
+      if (!document) {
+        sonnerToast.error('Document not found');
+        return;
       }
 
-      // Update rejection reasons
-      const updatedRejectionReasons = [
-        ...(selectedApplicant.rejectionReasons || []),
-        `${documentType}: ${reason}`
-      ]
-      
-      // Update applicant status
-      updateApplicantStatus(selectedApplicant.id, 'rejected', updatedDocumentStatus, updatedRejectionReasons)
+      // Call the reviewDocument action
+      const response = await fetch('/api/documents/review', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          documentId: document.id,
+          status: 'approved',
+          reviewedBy: 'admin', // In a real app, use current user ID
+        }),
+      });
+
+      if (response.ok) {
+        // Update applicant's documentStatus in Firestore
+        const newDocumentStatus = {
+          ...(selectedApplicant.documentStatus || {}),
+          [documentType]: 'approved',
+        };
+        // If all documents are approved, set applicant status to 'approved'
+        const allApproved = Object.values(newDocumentStatus).filter(Boolean).length === 5 &&
+          Object.values(newDocumentStatus).every(status => status === 'approved');
+        await updateDoc(doc(db, 'users', selectedApplicant.id), {
+          documentStatus: newDocumentStatus,
+          status: allApproved ? 'approved' : 'document-review',
+          updatedAt: new Date().toISOString(),
+        });
+        
+        // Update local state immediately
+        const updatedApplicant = {
+          ...selectedApplicant,
+          documentStatus: newDocumentStatus,
+          status: (allApproved ? 'approved' : 'document-review') as 'approved' | 'document-review'
+        } as Applicant;
+        setSelectedApplicant(updatedApplicant);
+        
+        // Update the applicants list immediately
+        setApplicants(prevApplicants => 
+          prevApplicants.map(applicant => 
+            applicant.id === selectedApplicant.id 
+              ? updatedApplicant 
+              : applicant
+          )
+        );
+        
+        // Update documents list immediately
+        setApplicantDocuments(prevDocs => 
+          prevDocs.map(doc => 
+            doc.type === documentType 
+              ? { ...doc, status: 'approved' }
+              : doc
+          )
+        );
+        
+        sonnerToast.success('Document approved successfully');
+        
+        // Check if all documents are now approved
+      const updatedDocumentStatus = {
+          ...(selectedApplicant.documentStatus || {}),
+          [documentType]: 'approved',
+        };
+        
+        const requiredDocuments = ['certifiedId', 'proofOfAddress', 'highestQualification', 'proofOfBanking', 'taxNumber'] as const;
+        const allDocumentsApproved = requiredDocuments.every(docType => 
+          updatedDocumentStatus[docType as keyof typeof updatedDocumentStatus] === 'approved'
+        );
+        
+        if (allDocumentsApproved) {
+          // Show success popup for promotion
+          setApplicantReadyForPromotion(updatedApplicant);
+          setShowSuccessPopup(true);
+        }
+      } else {
+        sonnerToast.error('Failed to approve document');
+      }
+    } catch (error) {
+      console.error('Error approving document:', error);
+      sonnerToast.error('Failed to approve document');
+    }
+  }
+
+  const handlePromoteToLearner = async (applicantId: string) => {
+    try {
+      const response = await fetch('/api/promote-to-learner', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: applicantId,
+          approvedBy: 'admin', // In a real app, use current user ID
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Remove the promoted applicant from the applicants list
+        setApplicants(prevApplicants => 
+          prevApplicants.filter(applicant => applicant.id !== applicantId)
+        );
+        
+        // Close the document viewer and success popup
+        setShowDocumentViewer(false);
+        setShowSuccessPopup(false);
+        setSelectedApplicant(null);
+        setApplicantReadyForPromotion(null);
+        
+        sonnerToast.success('Applicant successfully promoted to learner!');
+      } else {
+        sonnerToast.error(result.error || 'Failed to promote to learner');
+        if (result.details) {
+          console.log('Promotion details:', result.details);
+        }
+      }
+    } catch (error) {
+      console.error('Error promoting to learner:', error);
+      sonnerToast.error('Failed to promote to learner');
+    }
+  }
+
+  const handlePromoteFromPopup = async () => {
+    if (applicantReadyForPromotion) {
+      await handlePromoteToLearner(applicantReadyForPromotion.id);
+    }
+  }
+
+  const checkCanPromote = (applicant: Applicant) => {
+    if (applicant.role !== 'applicant' || applicant.status !== 'approved') {
+      return false;
+    }
+    
+    if (!applicant.documentStatus) {
+      return false;
+    }
+    
+    const { documentStatus } = applicant;
+    const requiredDocuments = [
+      'certifiedId', 
+      'proofOfAddress', 
+      'highestQualification', 
+      'proofOfBanking', 
+      'taxNumber'
+    ] as const;
+    
+    return requiredDocuments.every(docType => 
+      documentStatus[docType] === 'approved'
+    );
+  }
+
+  const handleRejectDocument = async (documentType: string, reason: string) => {
+    if (!selectedApplicant) return;
+    try {
+      // Find the document to reject
+      const document = applicantDocuments.find(doc => doc.type === documentType);
+      if (!document) {
+        sonnerToast.error('Document not found');
+        return;
+      }
+
+      // Call the reviewDocument action
+      const response = await fetch('/api/documents/review', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          documentId: document.id,
+          status: 'rejected',
+          reviewedBy: 'admin', // In a real app, use current user ID
+          rejectionReason: reason,
+        }),
+      });
+
+      if (response.ok) {
+        // Update applicant's documentStatus in Firestore
+        const newDocumentStatus = {
+          ...(selectedApplicant.documentStatus || {}),
+          [documentType]: 'rejected',
+        };
+        await updateDoc(doc(db, 'users', selectedApplicant.id), {
+          documentStatus: newDocumentStatus,
+          status: 'rejected',
+          updatedAt: new Date().toISOString(),
+        });
+        
+        // Update local state immediately
+        const updatedApplicant = {
+          ...selectedApplicant,
+          documentStatus: newDocumentStatus,
+          status: 'rejected' as 'rejected'
+        } as Applicant;
+        setSelectedApplicant(updatedApplicant);
+        
+        // Update the applicants list immediately
+        setApplicants(prevApplicants => 
+          prevApplicants.map(applicant => 
+            applicant.id === selectedApplicant.id 
+              ? updatedApplicant 
+              : applicant
+          )
+        );
+        
+        // Update documents list immediately
+        setApplicantDocuments(prevDocs => 
+          prevDocs.map(doc => 
+            doc.type === documentType 
+              ? { ...doc, status: 'rejected' }
+              : doc
+          )
+        );
+        
+        sonnerToast.success('Document rejected successfully');
+      } else {
+        sonnerToast.error('Failed to reject document');
+      }
+    } catch (error) {
+      console.error('Error rejecting document:', error);
+      sonnerToast.error('Failed to reject document');
     }
   }
 
@@ -296,28 +614,24 @@ export default function AdminApplicantsPage() {
   }
 
   const formatDate = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleDateString('en-US', {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'N/A';
+    return date.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
-      })
-    } catch (error) {
-      console.error('Error formatting date:', error)
-      return 'Invalid Date'
-    }
+    });
   }
 
-  const programMap: { [key: string]: string } = {
-    'software-development': 'Software Development',
-    'data-science': 'Data Science',
-    'cybersecurity': 'Cybersecurity',
-    'digital-marketing': 'Digital Marketing'
+  // Helper function to get program name
+  const getProgramName = (programId: string) => {
+    return programNames[programId] || programId || 'Unknown Program'
   }
 
-  const uniquePrograms = Array.from(new Set(applicants.map(a => programMap[a.program] || a.program)))
+  const uniquePrograms = Array.from(new Set(applicants.map(a => getProgramName(a.program))))
 
   return (
     <AdminLayout userRole="admin">
@@ -363,6 +677,15 @@ export default function AdminApplicantsPage() {
         </div>
 
         {/* Stats Cards */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900">Application Statistics</h2>
+            <div className="flex items-center space-x-2 text-sm text-green-600">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span>Live Data</span>
+            </div>
+          </div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-indigo-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -370,7 +693,13 @@ export default function AdminApplicantsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-gray-600">Total Applications</p>
-                  <p className="text-3xl font-bold text-blue-600">{stats.total}</p>
+                  <p className="text-3xl font-bold text-blue-600">
+                    {loading ? (
+                      <div className="animate-pulse bg-blue-200 h-8 w-12 rounded"></div>
+                    ) : (
+                      stats.total
+                    )}
+                  </p>
                 </div>
                 <div className="p-3 rounded-xl bg-blue-600">
                   <FileText className="h-6 w-6 text-white" />
@@ -389,7 +718,13 @@ export default function AdminApplicantsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-gray-600">Pending Review</p>
-                  <p className="text-3xl font-bold text-yellow-600">{stats.pendingReview}</p>
+                  <p className="text-3xl font-bold text-yellow-600">
+                    {loading ? (
+                      <div className="animate-pulse bg-yellow-200 h-8 w-8 rounded"></div>
+                    ) : (
+                      stats.pendingReview
+                    )}
+                  </p>
                 </div>
                 <div className="p-3 rounded-xl bg-yellow-600">
                   <Clock className="h-6 w-6 text-white" />
@@ -408,7 +743,13 @@ export default function AdminApplicantsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-gray-600">Approved</p>
-                  <p className="text-3xl font-bold text-green-600">{stats.approved}</p>
+                  <p className="text-3xl font-bold text-green-600">
+                    {loading ? (
+                      <div className="animate-pulse bg-green-200 h-8 w-8 rounded"></div>
+                    ) : (
+                      stats.approved
+                    )}
+                  </p>
                 </div>
                 <div className="p-3 rounded-xl bg-green-600">
                   <CheckCircle className="h-6 w-6 text-white" />
@@ -427,7 +768,13 @@ export default function AdminApplicantsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-gray-600">New This Week</p>
-                  <p className="text-3xl font-bold text-purple-600">{stats.newThisWeek}</p>
+                  <p className="text-3xl font-bold text-purple-600">
+                    {loading ? (
+                      <div className="animate-pulse bg-purple-200 h-8 w-8 rounded"></div>
+                    ) : (
+                      stats.newThisWeek
+                    )}
+                  </p>
                 </div>
                 <div className="p-3 rounded-xl bg-purple-600">
                   <TrendingUp className="h-6 w-6 text-white" />
@@ -550,17 +897,25 @@ export default function AdminApplicantsPage() {
                             <p className="text-gray-600">{applicant.email}</p>
                             <p className="text-sm text-gray-500">ID: {applicant.friendlyId}</p>
                           </div>
-                            {getStatusBadge(applicant.status)}
+                              <div className="ml-4">{getStatusBadge(applicant.status)}</div>
                           </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                           <div className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
                             <Calendar className="w-4 h-4 text-blue-600" />
-                            <span><span className="font-medium">Applied:</span> {formatDate(applicant.applicationDate)}</span>
+                            <span>
+                              <span className="font-medium">Applied:</span> {
+                                applicant.createdAt && !isNaN(new Date(applicant.createdAt).getTime())
+                                  ? formatDate(applicant.createdAt)
+                                  : applicant.applicationDate && !isNaN(new Date(applicant.applicationDate).getTime())
+                                    ? formatDate(applicant.applicationDate)
+                                    : 'N/A'
+                              }
+                            </span>
                         </div>
                           <div className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
                             <User className="w-4 h-4 text-green-600" />
-                            <span><span className="font-medium">Program:</span> {formatProgramName(applicant.program)}</span>
+                              <span><span className="font-medium">Program:</span> {getProgramName(applicant.program)}</span>
                       </div>
                           <div className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
                             <Phone className="w-4 h-4 text-purple-600" />
@@ -568,21 +923,62 @@ export default function AdminApplicantsPage() {
                       </div>
                     </div>
                     
-                    {/* Document Status */}
-                        {applicant.documents && (
+                        {/* Additional Program Information */}
+                        {(applicant.highestQualification || applicant.fieldOfStudy || applicant.yearsOfExperience) && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                            {applicant.highestQualification && (
+                              <div className="flex items-center space-x-2 text-sm text-gray-600 bg-blue-50 px-3 py-2 rounded-lg">
+                                <Award className="w-4 h-4 text-blue-600" />
+                                <span><span className="font-medium">Qualification:</span> {applicant.highestQualification}</span>
+                              </div>
+                            )}
+                            {applicant.fieldOfStudy && (
+                              <div className="flex items-center space-x-2 text-sm text-gray-600 bg-green-50 px-3 py-2 rounded-lg">
+                                <BookOpen className="w-4 h-4 text-green-600" />
+                                <span><span className="font-medium">Field:</span> {applicant.fieldOfStudy}</span>
+                              </div>
+                            )}
+                            {applicant.yearsOfExperience !== undefined && (
+                              <div className="flex items-center space-x-2 text-sm text-gray-600 bg-orange-50 px-3 py-2 rounded-lg">
+                                <TrendingUp className="w-4 h-4 text-orange-600" />
+                                <span><span className="font-medium">Experience:</span> {applicant.yearsOfExperience} years</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                    
+                    {/* Document Status - Real Data */}
+                        {applicant.documentStatus && (
                           <div className="bg-gray-50 rounded-xl p-4 mb-4">
-                            <h4 className="font-semibold text-gray-900 mb-3">Document Status</h4>
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="font-semibold text-gray-900">Document Status</h4>
+                              {checkCanPromote(applicant) && (
+                                <div className="flex items-center space-x-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                                  <CheckCircle className="w-4 h-4" />
+                                  <span>Ready for Promotion</span>
+                                </div>
+                              )}
+                            </div>
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                              {Object.entries(applicant.documents).map(([docType, uploaded]) => (
+                              {Object.entries(applicant.documentStatus).map(([docType, status]) => (
                                 <div key={docType} className="flex items-center space-x-2">
-                                  {uploaded ? (
+                                  {status === 'approved' ? (
                                     <CheckCircle className="w-4 h-4 text-green-600" />
-                                  ) : (
+                                  ) : status === 'rejected' ? (
                                     <XCircle className="w-4 h-4 text-red-600" />
+                                  ) : (
+                                    <Clock className="w-4 h-4 text-yellow-600" />
                                   )}
                                   <span className="text-sm text-gray-700 capitalize">
                                     {docType.replace(/([A-Z])/g, ' $1').trim()}
                           </span>
+                                  <span className={`text-xs px-2 py-1 rounded-full ${
+                                    status === 'approved' ? 'bg-green-100 text-green-800' :
+                                    status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                    'bg-yellow-100 text-yellow-800'
+                                  }`}>
+                                    {status}
+                                  </span>
                   </div>
                 ))}
                           </div>
@@ -599,6 +995,16 @@ export default function AdminApplicantsPage() {
                           <Eye className="w-4 h-4 mr-2" />
                           View Documents
                               </Button>
+                              
+                              {checkCanPromote(applicant) && (
+                                <Button
+                                  onClick={() => handlePromoteToLearner(applicant.id)}
+                                  className="px-4 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white"
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-2" />
+                                  Promote to Learner
+                                </Button>
+                              )}
                               <Button
                           variant="outline" 
                           className="px-4 py-2 rounded-xl border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-300"
@@ -622,11 +1028,61 @@ export default function AdminApplicantsPage() {
             onClose={() => {
               setShowDocumentViewer(false)
               setSelectedApplicant(null)
+              setApplicantDocuments([])
             }}
             applicant={selectedApplicant}
+            documents={applicantDocuments}
             onApprove={handleApproveDocument}
             onReject={handleRejectDocument}
+            loading={loadingDocuments}
           />
+        )}
+
+        {/* Success Popup Modal */}
+        {showSuccessPopup && applicantReadyForPromotion && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+              <div className="text-center">
+                {/* Success Icon */}
+                <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+                  <CheckCircle className="h-10 w-10 text-green-600" />
+                </div>
+                
+                {/* Success Message */}
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  🎉 All Documents Approved!
+                </h3>
+                
+                <p className="text-gray-600 mb-6">
+                  <span className="font-semibold">{applicantReadyForPromotion.firstName} {applicantReadyForPromotion.lastName}</span> has successfully submitted all required documents and is ready to be promoted to a learner.
+                </p>
+                
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    onClick={handlePromoteFromPopup}
+                    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+                  >
+                    <CheckCircle className="w-5 h-5 mr-2" />
+                    Promote to Learner
+                  </Button>
+                  
+                  <Button
+                    onClick={() => setShowSuccessPopup(false)}
+                    variant="outline"
+                    className="flex-1 px-6 py-3 rounded-xl border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-300"
+                  >
+                    Close
+                  </Button>
+                </div>
+                
+                {/* Additional Info */}
+                <p className="text-xs text-gray-500 mt-4">
+                  This action will move the applicant to learner management and remove them from the applicants list.
+                </p>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </AdminLayout>

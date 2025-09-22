@@ -19,9 +19,9 @@ interface PWAConfig {
 }
 
 const defaultPWAConfig: PWAConfig = {
-  name: 'iSpaan - AI-Powered Learning Platform',
+  name: 'iSpaan - AI-Powered Monitoring Platform',
   shortName: 'iSpaan',
-  description: 'A comprehensive AI-powered learning platform for work-integrated learning programs',
+  description: 'A comprehensive AI-powered monitoring platform for work-integrated learning programs',
   themeColor: '#4F46E5',
   backgroundColor: '#FFFFFF',
   display: 'standalone',

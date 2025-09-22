@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { ProgramService } from '@/lib/program-service'
 import { 
   AlertTriangle, 
   Users, 
@@ -41,6 +42,12 @@ export function DropoutRiskAnalyzer({ learners }: DropoutRiskAnalyzerProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [riskAnalysis, setRiskAnalysis] = useState<Learner[]>([])
   const [hasAnalyzed, setHasAnalyzed] = useState(false)
+  
+  const formatProgramName = (programId: string) => {
+    // For now, just return the programId since we don't have program names loaded
+    // In a real implementation, you'd want to load program names
+    return programId || 'Unknown Program'
+  }
 
   const analyzeDropoutRisk = async () => {
     setIsAnalyzing(true)
@@ -173,7 +180,7 @@ export function DropoutRiskAnalyzer({ learners }: DropoutRiskAnalyzerProps) {
                           <h5 className="font-medium text-gray-900">
                             {learner.firstName} {learner.lastName}
                           </h5>
-                          <p className="text-sm text-gray-600">{learner.program}</p>
+                          <p className="text-sm text-gray-600">{formatProgramName(learner.program)}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">

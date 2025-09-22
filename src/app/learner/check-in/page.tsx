@@ -47,7 +47,7 @@ interface LocationOption {
 }
 
 export default function CheckInPage() {
-  const { user, userRole } = useAuth()
+  const { user, userRole, loading: authLoading } = useAuth()
   const [currentStep, setCurrentStep] = useState<CheckInStep>('status')
   const [checkInStatus, setCheckInStatus] = useState<CheckInStatus | null>(null)
   const [locations, setLocations] = useState<LocationOption[]>([])
@@ -55,7 +55,7 @@ export default function CheckInPage() {
   const [selfieData, setSelfieData] = useState<string>('')
   const [qrCodeData, setQrCodeData] = useState<string>('')
   const [pin, setPin] = useState<string>('')
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState<string>('')
 
@@ -75,14 +75,30 @@ export default function CheckInPage() {
   ]
 
   useEffect(() => {
+    if (authLoading) {
+      // Still loading authentication, don't do anything yet
+      return
+    }
+    
+    if (user) {
     loadCheckInStatus()
-  }, [])
+    } else {
+      setLoading(false)
+    }
+  }, [user, authLoading])
 
   const loadCheckInStatus = async () => {
-    if (!user) return
+    if (!user) {
+      console.log('No user available for check-in status')
+      setLoading(false)
+      return
+    }
     
     try {
       setLoading(true)
+      setError('')
+      console.log('Loading check-in status for user:', user.uid)
+      
       const status = await getCheckInStatus(user.uid)
       setCheckInStatus(status)
       
@@ -110,6 +126,8 @@ export default function CheckInPage() {
         
         setLocations(locationOptions)
       }
+      
+      console.log('Check-in status loaded successfully')
     } catch (err) {
       console.error('Error loading check-in status:', err)
       setError('Failed to load check-in status')
@@ -241,7 +259,7 @@ export default function CheckInPage() {
     setError('')
   }
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <AdminLayout userRole="learner">
         <div className="flex items-center justify-center min-h-96">
@@ -251,13 +269,41 @@ export default function CheckInPage() {
     )
   }
 
+  // Check if user is authenticated and has correct role
+  if (!user || userRole !== 'learner') {
+    return (
+      <AdminLayout userRole="learner">
+        <div className="flex items-center justify-center min-h-96">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
+            <p className="text-gray-600">Please log in as a learner to access the check-in page.</p>
+          </div>
+        </div>
+      </AdminLayout>
+    )
+  }
+
   return (
     <AdminLayout userRole="learner">
-      <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 px-4 sm:px-0">
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">WIL Attendance Check-In</h1>
-          <p className="text-sm sm:text-base text-gray-600 px-4">
+      <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #F5F0E1 0%, #F5F0E1 50%, #F5F0E1 100%)' }}>
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-0 right-0 w-96 h-96 rounded-full -translate-y-48 translate-x-48" style={{ background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(147, 51, 234, 0.15) 100%)' }}></div>
+          <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full translate-y-40 -translate-x-40" style={{ background: 'linear-gradient(45deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.15) 100%)' }}></div>
+          <div className="absolute top-1/2 left-1/2 w-64 h-64 rounded-full -translate-x-32 -translate-y-32" style={{ background: 'linear-gradient(90deg, rgba(236, 72, 153, 0.15) 0%, rgba(251, 146, 60, 0.15) 100%)' }}></div>
+        </div>
+        
+        <div className="relative max-w-4xl mx-auto space-y-6 p-6">
+          {/* Enhanced Header */}
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg mb-4">
+              <Shield className="h-5 w-5 mr-2" />
+              <span className="font-semibold">Secure WIL Check-In</span>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent mb-4">
+              Work-Integrated Learning
+            </h1>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
             {currentStep === 'status' 
               ? 'Secure attendance monitoring for Work-Integrated Learning and classroom sessions'
               : 'Complete verification to log your WIL attendance'
@@ -265,64 +311,92 @@ export default function CheckInPage() {
           </p>
         </div>
 
-        {/* Error Alert */}
+          {/* Enhanced Error Alert */}
         {error && (
-          <Alert className="border-red-200 bg-red-50">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+            <div className="relative overflow-hidden bg-gradient-to-r from-red-500 to-pink-600 rounded-2xl p-6 text-white shadow-2xl border border-red-200">
+              <div className="absolute inset-0 bg-gradient-to-r from-red-400/20 to-pink-500/20 backdrop-blur-sm"></div>
+              <div className="relative flex items-center space-x-4">
+                <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
+                  <AlertCircle className="h-6 w-6" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-lg mb-1">Verification Error</h3>
+                  <p className="text-red-100">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
-        {/* Status Card */}
+          {/* Enhanced Status Card */}
         {currentStep === 'status' && checkInStatus && (
-          <Card className="shadow-lg">
-            <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="flex items-center space-x-2 text-sm sm:text-base">
+            <Card className="relative overflow-hidden border-0 shadow-2xl rounded-3xl" style={{ background: 'rgba(245, 240, 225, 0.9)', backdropFilter: 'blur(10px)', borderColor: 'rgba(59, 130, 246, 0.2)' }}>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-indigo-100/30"></div>
+              <CardHeader className="relative pb-6">
+                <CardTitle className="flex items-center space-x-4 text-xl">
+                  <div className={`p-4 rounded-2xl shadow-lg ${
+                    checkInStatus.isCheckedIn 
+                      ? 'bg-gradient-to-br from-green-500 to-emerald-600' 
+                      : 'bg-gradient-to-br from-blue-500 to-indigo-600'
+                  }`}>
                 {checkInStatus.isCheckedIn ? (
-                  <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 flex-shrink-0" />
+                      <CheckCircle className="h-8 w-8 text-white" />
                 ) : (
-                  <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 flex-shrink-0" />
+                      <Clock className="h-8 w-8 text-white" />
                 )}
-                <span className="truncate">
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
                   {checkInStatus.isCheckedIn ? 'WIL Attendance Active' : 'WIL Attendance Inactive'}
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 sm:space-y-4">
-              {checkInStatus.isCheckedIn ? (
-                <div className="text-center space-y-3 sm:space-y-4">
-                  <div className="p-3 sm:p-4 bg-green-50 rounded-lg">
-                    <p className="text-green-800 font-medium text-sm sm:text-base">
-                      WIL attendance is currently active
+                    </h2>
+                    <p className="text-gray-600 font-medium">
+                      {checkInStatus.isCheckedIn ? 'Currently logged in' : 'Ready to check in'}
                     </p>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="relative space-y-6">
+                {checkInStatus.isCheckedIn ? (
+                  <div className="text-center space-y-6">
+                    <div className="relative overflow-hidden bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-8 text-white shadow-lg">
+                      <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-emerald-500/20 backdrop-blur-sm"></div>
+                      <div className="relative">
+                        <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm w-fit mx-auto mb-4">
+                          <CheckCircle className="h-12 w-12 text-white" />
+                        </div>
+                        <h3 className="text-2xl font-bold mb-2">WIL attendance is currently active</h3>
                     {checkInStatus.lastRecord && (
-                      <p className="text-xs sm:text-sm text-green-600 mt-1">
+                          <p className="text-green-100 text-lg">
                         Since {checkInStatus.lastRecord.checkInTime.toLocaleTimeString()}
                       </p>
                     )}
+                      </div>
                   </div>
                   <Button
                     onClick={handleCheckOut}
                     disabled={processing}
-                    className="w-full bg-red-600 hover:bg-red-700 text-sm sm:text-base"
+                      className="w-full bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 rounded-2xl"
                   >
                     {processing ? 'Processing...' : 'Secure Check-Out'}
                   </Button>
                 </div>
               ) : (
-                <div className="text-center space-y-3 sm:space-y-4">
-                  <div className="p-3 sm:p-4 bg-blue-50 rounded-lg">
-                    <p className="text-blue-800 font-medium text-sm sm:text-base">
-                      Ready for WIL attendance
-                    </p>
-                    <p className="text-xs sm:text-sm text-blue-600 mt-1">
+                  <div className="text-center space-y-6">
+                    <div className="relative overflow-hidden bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl p-8 text-white shadow-lg">
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-indigo-500/20 backdrop-blur-sm"></div>
+                      <div className="relative">
+                        <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm w-fit mx-auto mb-4">
+                          <Clock className="h-12 w-12 text-white" />
+                        </div>
+                        <h3 className="text-2xl font-bold mb-2">Ready for WIL attendance</h3>
+                        <p className="text-blue-100 text-lg">
                       Complete verification to start WIL attendance tracking
                     </p>
+                      </div>
                   </div>
                   <Button
                     onClick={handleStartCheckIn}
                     disabled={locations.length === 0}
-                    className="w-full text-sm sm:text-base"
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 rounded-2xl"
                   >
                     {locations.length === 0 ? 'No WIL locations available' : 'Start WIL Attendance'}
                   </Button>
@@ -332,20 +406,29 @@ export default function CheckInPage() {
           </Card>
         )}
 
-        {/* Check-In Flow */}
+          {/* Enhanced Check-In Flow */}
         {currentStep !== 'status' && (
-          <Card className="shadow-lg">
-            <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="flex items-center space-x-2 text-sm sm:text-base">
+            <Card className="relative overflow-hidden border-0 shadow-2xl rounded-3xl" style={{ background: 'rgba(245, 240, 225, 0.9)', backdropFilter: 'blur(10px)', borderColor: 'rgba(245, 240, 225, 0.3)' }}>
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-50/30 to-pink-100/30"></div>
+              <CardHeader className="relative pb-6">
+                <CardTitle className="flex items-center space-x-4 text-xl">
+                  <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl shadow-lg">
                 <ArrowLeft 
-                  className="h-4 w-4 sm:h-5 sm:w-5 cursor-pointer hover:text-blue-600 flex-shrink-0" 
+                      className="h-6 w-6 text-white cursor-pointer hover:scale-110 transition-transform" 
                   onClick={resetFlow}
                 />
-                <span>WIL Attendance Process</span>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                      WIL Attendance Process
+                    </h2>
+                    <p className="text-gray-600 font-medium">Complete verification steps</p>
+                  </div>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 sm:space-y-6">
-              {/* Stepper */}
+              <CardContent className="relative space-y-8">
+                {/* Enhanced Stepper */}
+                <div className="rounded-2xl p-6 border shadow-lg">
               <Stepper
                 currentStep={
                   currentStep === 'location' ? 1 :
@@ -356,115 +439,165 @@ export default function CheckInPage() {
                 totalSteps={3}
                 steps={steps}
               />
+                </div>
 
-              {/* Step 1: Location Selection */}
+                {/* Enhanced Step 1: Location Selection */}
               {currentStep === 'location' && (
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="text-center">
-                    <MapPin className="h-10 w-10 sm:h-12 sm:w-12 text-blue-600 mx-auto mb-3 sm:mb-4" />
-                    <h3 className="text-base sm:text-lg font-semibold mb-2">Select WIL Location</h3>
-                    <p className="text-sm sm:text-base text-gray-600">Choose your work placement or training session location</p>
+                  <div className="space-y-8">
+                    <div className="text-center space-y-4">
+                      <div className="p-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl w-fit mx-auto shadow-lg">
+                        <MapPin className="h-16 w-16 text-white" />
+                      </div>
+                      <h3 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                        Select WIL Location
+                      </h3>
+                      <p className="text-lg text-gray-600 max-w-md mx-auto">
+                        Choose your work placement or training session location
+                      </p>
                   </div>
                   
-                  <RadioGroup value={selectedLocation} onValueChange={setSelectedLocation}>
+                    <div className="rounded-2xl p-6 border shadow-lg">
+                      <RadioGroup value={selectedLocation} onValueChange={setSelectedLocation} className="space-y-4">
                     {locations.map((location) => (
-                      <div key={location.id} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                        <RadioGroupItem value={location.id} id={location.id} className="flex-shrink-0" />
+                          <div key={location.id} className="group relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer">
+                            <div className="flex items-center space-x-4">
+                              <RadioGroupItem value={location.id} id={location.id} className="flex-shrink-0 w-6 h-6" />
                         <Label htmlFor={location.id} className="flex-1 cursor-pointer min-w-0">
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0">
-                            <span className="font-medium text-sm sm:text-base truncate">{location.name}</span>
-                            <Badge variant="outline" className="w-fit text-xs">
-                              {location.type === 'work' ? 'Work' : 'Class'}
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                                  <span className="font-semibold text-lg text-gray-900 truncate">{location.name}</span>
+                                  <Badge 
+                                    className={`w-fit text-sm px-4 py-2 rounded-full font-semibold ${
+                                      location.type === 'work' 
+                                        ? 'bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-800 border-emerald-200' 
+                                        : 'bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border-blue-200'
+                                    }`}
+                                  >
+                                    {location.type === 'work' ? 'Work Placement' : 'Training Session'}
                             </Badge>
                           </div>
                         </Label>
+                            </div>
                       </div>
                     ))}
                   </RadioGroup>
+                    </div>
                   
                   <Button
                     onClick={handleLocationSelect}
                     disabled={!selectedLocation}
-                    className="w-full text-sm sm:text-base"
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 rounded-2xl"
                   >
-                    Continue
+                      Continue to Verification
                   </Button>
                 </div>
               )}
 
-              {/* Step 2: Identity Verification */}
+                {/* Enhanced Step 2: Identity Verification */}
               {currentStep === 'identity' && (
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="text-center">
-                    <Camera className="h-10 w-10 sm:h-12 sm:w-12 text-blue-600 mx-auto mb-3 sm:mb-4" />
-                    <h3 className="text-base sm:text-lg font-semibold mb-2">Identity Verification</h3>
-                    <p className="text-sm sm:text-base text-gray-600">Take a selfie to verify your WIL attendance</p>
+                  <div className="space-y-8">
+                    <div className="text-center space-y-4">
+                      <div className="p-6 bg-gradient-to-br from-purple-500 to-pink-600 rounded-3xl w-fit mx-auto shadow-lg">
+                        <Camera className="h-16 w-16 text-white" />
+                      </div>
+                      <h3 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                        Identity Verification
+                      </h3>
+                      <p className="text-lg text-gray-600 max-w-md mx-auto">
+                        Take a selfie to verify your WIL attendance
+                      </p>
                   </div>
                   
+                    <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 border border-white/50 shadow-lg">
                   <CameraCapture
                     onCapture={handleSelfieCapture}
                     onError={(error) => setError(error)}
                     className="w-full"
                   />
                 </div>
+                </div>
               )}
 
-              {/* Step 3: Location Verification */}
+                {/* Enhanced Step 3: Location Verification */}
               {currentStep === 'location-verify' && (
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="text-center">
-                    <QrCode className="h-10 w-10 sm:h-12 sm:w-12 text-blue-600 mx-auto mb-3 sm:mb-4" />
-                    <h3 className="text-base sm:text-lg font-semibold mb-2">Location Verification</h3>
-                    <p className="text-sm sm:text-base text-gray-600">Scan the QR code at your WIL placement or training venue</p>
+                  <div className="space-y-8">
+                    <div className="text-center space-y-4">
+                      <div className="p-6 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl w-fit mx-auto shadow-lg">
+                        <QrCode className="h-16 w-16 text-white" />
+                      </div>
+                      <h3 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                        Location Verification
+                      </h3>
+                      <p className="text-lg text-gray-600 max-w-md mx-auto">
+                        Scan the QR code at your WIL placement or training venue
+                      </p>
                   </div>
                   
+                    <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 border border-white/50 shadow-lg">
                   <QRScanner
                     onScan={handleQRCodeScan}
                     onError={(error) => setError(error)}
                     className="w-full"
                   />
                 </div>
-              )}
-
-              {/* Step 4: Security Verification */}
-              {currentStep === 'security' && (
-                <div className="space-y-3 sm:space-y-4">
-                  <div className="text-center">
-                    <Key className="h-10 w-10 sm:h-12 sm:w-12 text-blue-600 mx-auto mb-3 sm:mb-4" />
-                    <h3 className="text-base sm:text-lg font-semibold mb-2">Security Verification</h3>
-                    <p className="text-sm sm:text-base text-gray-600">Enter your 6-digit PIN to complete WIL attendance</p>
-                  </div>
-                  
-                  <div className="max-w-xs mx-auto">
-                    <Input
-                      type="password"
-                      placeholder="Enter PIN"
-                      value={pin}
-                      onChange={(e) => setPin(e.target.value)}
-                      maxLength={6}
-                      className="text-center text-base sm:text-lg tracking-widest"
-                    />
-                  </div>
-                  
-                  <Button
-                    onClick={handlePinSubmit}
-                    disabled={pin.length !== 6 || processing}
-                    className="w-full text-sm sm:text-base"
-                  >
-                    {processing ? 'Processing...' : 'Complete Check-In'}
-                  </Button>
                 </div>
               )}
 
-              {/* Completion */}
+                {/* Enhanced Step 4: Security Verification */}
+              {currentStep === 'security' && (
+                  <div className="space-y-8">
+                    <div className="text-center space-y-4">
+                      <div className="p-6 bg-gradient-to-br from-orange-500 to-red-600 rounded-3xl w-fit mx-auto shadow-lg">
+                        <Key className="h-16 w-16 text-white" />
+                      </div>
+                      <h3 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                        Security Verification
+                      </h3>
+                      <p className="text-lg text-gray-600 max-w-md mx-auto">
+                        Enter your 6-digit PIN to complete WIL attendance
+                      </p>
+                  </div>
+                  
+                    <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 border border-white/50 shadow-lg">
+                      <div className="max-w-sm mx-auto space-y-6">
+                    <Input
+                      type="password"
+                          placeholder="Enter your 6-digit PIN"
+                      value={pin}
+                      onChange={(e) => setPin(e.target.value)}
+                      maxLength={6}
+                          className="text-center text-2xl tracking-widest py-4 rounded-2xl border-2 focus:border-blue-500"
+                    />
+                  <Button
+                    onClick={handlePinSubmit}
+                    disabled={pin.length !== 6 || processing}
+                          className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 rounded-2xl"
+                  >
+                    {processing ? 'Processing...' : 'Complete Check-In'}
+                  </Button>
+                      </div>
+                    </div>
+                </div>
+              )}
+
+                {/* Enhanced Completion */}
               {currentStep === 'complete' && (
-                <div className="text-center space-y-3 sm:space-y-4">
-                  <CheckCircle className="h-12 w-12 sm:h-16 sm:w-16 text-green-600 mx-auto" />
-                  <h3 className="text-lg sm:text-xl font-semibold text-green-800">Check-In Complete!</h3>
-                  <p className="text-sm sm:text-base text-gray-600">
-                    You have successfully checked in with full verification.
-                  </p>
-                  <Button onClick={resetFlow} className="w-full text-sm sm:text-base">
+                  <div className="text-center space-y-8">
+                    <div className="relative overflow-hidden bg-gradient-to-r from-green-500 to-emerald-600 rounded-3xl p-12 text-white shadow-2xl">
+                      <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-emerald-500/20 backdrop-blur-sm"></div>
+                      <div className="relative">
+                        <div className="p-6 bg-white/20 rounded-3xl w-fit mx-auto mb-6">
+                          <CheckCircle className="h-20 w-20 text-white" />
+                        </div>
+                        <h3 className="text-4xl font-bold mb-4">Check-In Complete!</h3>
+                        <p className="text-xl text-green-100 max-w-md mx-auto">
+                          You have successfully checked in with full verification. Your WIL attendance is now being tracked.
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={resetFlow} 
+                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 rounded-2xl"
+                    >
                     Back to Status
                   </Button>
                 </div>
@@ -474,8 +607,11 @@ export default function CheckInPage() {
         )}
       </div>
       
-      {/* AI Support Chatbot */}
-      <AiChatbot />
+        {/* AI Floating Chatbot */}
+        <div className="fixed bottom-6 right-6 z-50">
+          <AiChatbot className="shadow-2xl" />
+        </div>
+      </div>
     </AdminLayout>
   )
 }

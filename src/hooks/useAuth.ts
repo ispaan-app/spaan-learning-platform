@@ -5,6 +5,8 @@ import { User, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import { UserDataManagerClient, CompleteUserProfile } from '@/lib/user-data-manager-client'
+import { useUserSync } from '@/lib/user-sync-manager'
 
 interface UserProfileData {
   firstName?: string
@@ -20,6 +22,15 @@ interface AuthState {
   loading: boolean
   role: string | null
   userData: UserProfileData | null
+  completeProfile: CompleteUserProfile | null
+  refreshUserData: () => Promise<void>
+  refreshCompleteProfile: () => Promise<void>
+  syncState: {
+    isOnline: boolean
+    lastSync: Date | null
+    pendingChanges: number
+    syncErrors: string[]
+  }
 }
 
 export function useAuth() {
@@ -27,8 +38,46 @@ export function useAuth() {
     user: null,
     loading: true,
     role: null,
-    userData: null
+    userData: null,
+    completeProfile: null,
+    refreshUserData: async () => {},
+    refreshCompleteProfile: async () => {},
+    syncState: {
+      isOnline: true,
+      lastSync: null,
+      pendingChanges: 0,
+      syncErrors: []
+    }
   })
+
+  // Use the user sync manager
+  const { syncState, clearErrors } = useUserSync(authState.user)
+
+  const refreshUserData = useCallback(async () => {
+    if (authState.user) {
+      const newAuthState = await fetchUserProfileData(authState.user)
+      setAuthState(prev => ({
+        ...prev,
+        ...newAuthState,
+        refreshUserData
+      }))
+    }
+  }, [authState.user])
+
+  const refreshCompleteProfile = useCallback(async () => {
+    if (authState.user) {
+      try {
+        const completeProfile = await UserDataManagerClient.getCompleteUserProfile(authState.user.uid)
+        setAuthState(prev => ({
+          ...prev,
+          completeProfile,
+          refreshCompleteProfile
+        }))
+      } catch (error) {
+        console.error('Error refreshing complete profile:', error)
+      }
+    }
+  }, [authState.user])
 
   const fetchUserProfileData = useCallback(async (user: User) => {
     try {
@@ -61,7 +110,8 @@ export function useAuth() {
           profileImage: profileData?.profileImage || userData?.profileImage || user.photoURL || null,
           avatar: userData?.avatar || null, // For admin users
           email: userData?.email || user.email || ''
-        }
+        },
+        refreshUserData
       }
     } catch (error) {
       console.error('Error fetching user profile data:', error)
@@ -69,7 +119,8 @@ export function useAuth() {
         user,
         loading: false,
         role: null,
-        userData: null
+        userData: null,
+        refreshUserData
       }
     }
   }, [])
@@ -78,19 +129,51 @@ export function useAuth() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const authState = await fetchUserProfileData(user)
-        setAuthState(authState)
+        
+        // Load complete profile
+        let completeProfile = null
+        try {
+          completeProfile = await UserDataManagerClient.getCompleteUserProfile(user.uid)
+        } catch (error) {
+          console.error('Error loading complete profile:', error)
+        }
+        
+        setAuthState(prev => ({
+          ...authState,
+          completeProfile,
+          refreshUserData,
+          refreshCompleteProfile,
+          syncState
+        }))
       } else {
         setAuthState({
           user: null,
           loading: false,
           role: null,
-          userData: null
+          userData: null,
+          completeProfile: null,
+          refreshUserData: async () => {},
+          refreshCompleteProfile: async () => {},
+          syncState: {
+            isOnline: true,
+            lastSync: null,
+            pendingChanges: 0,
+            syncErrors: []
+          }
         })
       }
     })
 
     return () => unsubscribe()
-  }, [fetchUserProfileData])
+  }, [fetchUserProfileData, refreshUserData, refreshCompleteProfile]) // Removed syncState dependency
+
+  // Separate useEffect to update syncState when it changes
+  useEffect(() => {
+    setAuthState(prev => ({
+      ...prev,
+      syncState
+    }))
+  }, [syncState])
 
   const signInWithCustomToken = async (token: string) => {
     try {

@@ -99,19 +99,29 @@ export function AdminSidebarSimple({ userRole, isCollapsed, onToggle }: AdminSid
           const isActive = pathname === item.href
           const IconComponent = item.icon
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-primary-100 text-primary-700"
-                  : "text-text-secondary hover:bg-gray-100 hover:text-text-primary"
+            <div className="relative group">
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-primary-100 text-primary-700"
+                    : "text-text-secondary hover:bg-gray-100 hover:text-text-primary"
+                )}
+              >
+                <IconComponent className="h-5 w-5" />
+                {!isCollapsed && <span>{item.title}</span>}
+              </Link>
+              
+              {/* Tooltip for collapsed state */}
+              {isCollapsed && (
+                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                  {item.title}
+                  <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 rotate-45"></div>
+                </div>
               )}
-            >
-              <IconComponent className="h-5 w-5" />
-              {!isCollapsed && <span>{item.title}</span>}
-            </Link>
+            </div>
           )
         })}
       </nav>
@@ -130,9 +140,14 @@ export function AdminSidebarSimple({ userRole, isCollapsed, onToggle }: AdminSid
           </div>
         )}
         {isCollapsed && user && (
-          <div className="flex justify-center">
+          <div className="flex justify-center relative group">
             <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
               <User className="h-4 w-4 text-gray-600" />
+            </div>
+            {/* Tooltip for user profile */}
+            <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              {userData?.firstName ? `${userData.firstName} ${userData.lastName}` : 'User Profile'}
+              <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 rotate-45"></div>
             </div>
           </div>
         )}

@@ -16,6 +16,13 @@ export class RealtimeDataManager {
           const userDoc = snapshot.docs[0]
           callback({ id: userDoc.id, ...userDoc.data() })
         }
+      },
+      (error) => {
+        console.error('Error in user subscription:', error)
+        // Don't crash on network errors
+        if (error.code !== 'unavailable' && error.code !== 'deadline-exceeded') {
+          throw error
+        }
       }
     )
 

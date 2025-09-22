@@ -55,6 +55,10 @@ export function UserLoginForm() {
       const result = await loginWithPin(data.idNumber, data.pin)
       
       if (result.success && result.customToken) {
+        // Store user role in localStorage BEFORE signing in
+        localStorage.setItem('userRole', result.userRole)
+        localStorage.setItem('userId', result.userId || '')
+        
         // Sign in with custom token
         const signInResult = await signInWithCustomToken(result.customToken)
         
@@ -86,8 +90,20 @@ export function UserLoginForm() {
         setError(result.error || 'Login failed. Please check your credentials.')
       }
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.')
       console.error('Login error:', err)
+      
+      // Provide more specific error messages
+      if (err instanceof Error) {
+        if (err.message.includes('network') || err.message.includes('fetch')) {
+          setError('Network error. Please check your connection and try again.')
+        } else if (err.message.includes('timeout')) {
+          setError('Request timed out. Please try again.')
+        } else {
+          setError('Login failed. Please check your credentials and try again.')
+        }
+      } else {
+        setError('An unexpected error occurred. Please try again.')
+      }
     } finally {
       setIsLoading(false)
     }

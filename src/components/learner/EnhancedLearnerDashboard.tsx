@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { getLearnerDashboardData, LearnerStats, RecentActivity, UpcomingClass } from '@/lib/learner-dashboard-service'
+import { useAuth } from '@/hooks/useAuth'
 import { 
   Clock, 
   BookOpen, 
@@ -37,36 +39,9 @@ import {
 import { cn } from '@/lib/utils'
 import { StatCard, QuickAction, RecentActivityItem } from '@/components/ui/enhanced-dashboard-layout'
 
-interface LearnerStats {
-  workHours: number
-  targetHours: number
-  completedCourses: number
-  certificates: number
-  upcomingClasses: number
-  leaveRequests: number
-  pendingDocuments: number
-  placementStatus: 'active' | 'inactive' | 'pending'
-}
-
-interface RecentActivity {
-  id: string
-  type: 'success' | 'warning' | 'info' | 'error'
-  title: string
-  description: string
-  time: string
-  icon: React.ElementType
-}
-
-interface UpcomingClass {
-  id: string
-  title: string
-  time: string
-  location: string
-  instructor: string
-  type: 'lecture' | 'practical' | 'workshop'
-}
 
 export function EnhancedLearnerDashboard() {
+  const { user } = useAuth()
   const [learnerStats, setLearnerStats] = useState<LearnerStats>({
     workHours: 0,
     targetHours: 160,
@@ -82,90 +57,51 @@ export function EnhancedLearnerDashboard() {
   const [upcomingClasses, setUpcomingClasses] = useState<UpcomingClass[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [error, setError] = useState<string>('')
 
-  // Mock data - replace with real Firebase data
+  // Load real Firebase data
   useEffect(() => {
     const loadData = async () => {
-      setIsLoading(true)
+      if (!user?.uid) return
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      setLearnerStats({
-        workHours: 120,
-        targetHours: 160,
-        completedCourses: 8,
-        certificates: 3,
-        upcomingClasses: 2,
-        leaveRequests: 1,
-        pendingDocuments: 2,
-        placementStatus: 'active'
-      })
-      
-      setRecentActivity([
-        {
-          id: '1',
-          type: 'success',
-          title: 'Check-in completed',
-          description: 'Successfully checked in at 9:00 AM',
-          time: '2 hours ago',
-          icon: CheckCircle
-        },
-        {
-          id: '2',
-          type: 'info',
-          title: 'New course available',
-          description: 'Advanced React Development course is now available',
-          time: '4 hours ago',
-          icon: BookOpen
-        },
-        {
-          id: '3',
-          type: 'warning',
-          title: 'Document pending',
-          description: 'Your ID document needs to be updated',
-          time: '1 day ago',
-          icon: AlertTriangle
-        },
-        {
-          id: '4',
-          type: 'success',
-          title: 'Certificate earned',
-          description: 'You earned a certificate in JavaScript Fundamentals',
-          time: '2 days ago',
-          icon: Award
-        }
-      ])
-      
-      setUpcomingClasses([
-        {
-          id: '1',
-          title: 'React Advanced Patterns',
-          time: 'Tomorrow, 10:00 AM',
-          location: 'Room 201',
-          instructor: 'Dr. Sarah Johnson',
-          type: 'lecture'
-        },
-        {
-          id: '2',
-          title: 'Project Workshop',
-          time: 'Friday, 2:00 PM',
-          location: 'Lab 3',
-          instructor: 'Prof. Mike Chen',
-          type: 'workshop'
-        }
-      ])
-      
-      setIsLoading(false)
+      try {
+        setIsLoading(true)
+        setError('')
+        
+        const data = await getLearnerDashboardData(user.uid)
+        
+        setLearnerStats(data.stats)
+        setRecentActivity(data.recentActivity)
+        setUpcomingClasses(data.upcomingClasses)
+      } catch (err) {
+        console.error('Error loading learner dashboard data:', err)
+        setError('Failed to load dashboard data')
+      } finally {
+        setIsLoading(false)
+      }
     }
     
     loadData()
-  }, [])
+  }, [user])
 
   const handleRefresh = async () => {
-    setIsRefreshing(true)
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setIsRefreshing(false)
+    if (!user?.uid) return
+    
+    try {
+      setIsRefreshing(true)
+      setError('')
+      
+      const data = await getLearnerDashboardData(user.uid)
+      
+      setLearnerStats(data.stats)
+      setRecentActivity(data.recentActivity)
+      setUpcomingClasses(data.upcomingClasses)
+    } catch (err) {
+      console.error('Error refreshing learner dashboard data:', err)
+      setError('Failed to refresh dashboard data')
+    } finally {
+      setIsRefreshing(false)
+    }
   }
 
   const getPlacementStatusColor = (status: string) => {

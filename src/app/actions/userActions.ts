@@ -146,6 +146,114 @@ export async function updateUserStatus(userId: string, status: string, role?: st
   }
 }
 
+export async function approveApplicantAndPromoteToLearner(userId: string, approvedBy: string) {
+  try {
+    // Get the applicant's current data
+    const userDoc = await adminDb.collection('users').doc(userId).get()
+    if (!userDoc.exists) {
+      return { success: false, error: 'User not found' }
+    }
+
+    const userData = userDoc.data()
+    
+    // Check if all required documents are approved
+    const requiredDocuments = ['certifiedId', 'proofOfAddress', 'highestQualification', 'proofOfBanking', 'taxNumber']
+    const documentStatus = userData?.documentStatus || {}
+    
+    const allDocumentsApproved = requiredDocuments.every(docType => 
+      documentStatus[docType] === 'approved'
+    )
+
+    if (!allDocumentsApproved) {
+      return { 
+        success: false, 
+        error: 'Cannot promote to learner: Not all required documents are approved' 
+      }
+    }
+
+    // Update user to learner status
+    const updateData = {
+      role: 'learner',
+      status: 'active',
+      approvedAt: new Date(),
+      updatedAt: new Date(),
+      promotedBy: approvedBy,
+      promotionDate: new Date()
+    }
+
+    await adminDb.collection('users').doc(userId).update(updateData)
+
+    // Create notification for the new learner
+    await adminDb.collection('notifications').add({
+      userId: userId,
+      type: 'application_approved',
+      title: 'Congratulations! You\'ve been approved as a learner',
+      message: `Welcome to iSpaan! Your application has been approved and you are now a learner. You can access your learner dashboard to start your journey.`,
+      read: false,
+      priority: 'high',
+      category: 'applications',
+      createdAt: new Date().toISOString(),
+      data: {
+        newRole: 'learner',
+        program: userData?.program,
+        approvedBy: approvedBy
+      }
+    })
+
+    // Audit log: user promoted to learner
+    await logUserStatusUpdated(userId, 'learner', 'active')
+
+    return { 
+      success: true, 
+      message: 'Applicant successfully promoted to learner' 
+    }
+  } catch (error) {
+    console.error('Error promoting applicant to learner:', error)
+    return { 
+      success: false, 
+      error: 'Failed to promote applicant to learner' 
+    }
+  }
+}
+
+export async function checkDocumentApprovalStatus(userId: string) {
+  try {
+    const userDoc = await adminDb.collection('users').doc(userId).get()
+    if (!userDoc.exists) {
+      return { success: false, error: 'User not found' }
+    }
+
+    const userData = userDoc.data()
+    const documentStatus = userData?.documentStatus || {}
+    
+    const requiredDocuments = ['certifiedId', 'proofOfAddress', 'highestQualification', 'proofOfBanking', 'taxNumber']
+    
+    const documentStatusDetails = requiredDocuments.map(docType => ({
+      type: docType,
+      status: documentStatus[docType] || 'pending',
+      approved: documentStatus[docType] === 'approved'
+    }))
+
+    const allApproved = documentStatusDetails.every(doc => doc.approved)
+    const approvedCount = documentStatusDetails.filter(doc => doc.approved).length
+
+    return {
+      success: true,
+      allApproved,
+      approvedCount,
+      totalRequired: requiredDocuments.length,
+      documentStatus: documentStatusDetails,
+      canPromote: allApproved && userData?.role === 'applicant'
+    }
+  } catch (error) {
+    console.error('Error checking document approval status:', error)
+    return { 
+      success: false, 
+      error: 'Failed to check document approval status' 
+    }
+  }
+}
+
 export async function getUserById(userId: string) {
   try {
     const userDoc = await adminDb.collection('users').doc(userId).get()

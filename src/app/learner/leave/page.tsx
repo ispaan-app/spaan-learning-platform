@@ -16,12 +16,17 @@ import {
   RefreshCw,
   User,
   CalendarDays,
-  FileText
+  FileText,
+  Shield,
+  TrendingUp,
+  Activity,
+  Sparkles
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { getLeaveRequestsAction, LeaveRequest } from '@/app/learner/actions'
 import { toast } from '@/lib/toast'
+import { cn } from '@/lib/utils'
 
 export default function LeavePage() {
   const { user, userRole } = useAuth()
@@ -78,19 +83,29 @@ export default function LeavePage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'approved': return <CheckCircle className="h-4 w-4 text-green-600" />
-      case 'pending': return <Clock className="h-4 w-4 text-yellow-600" />
-      case 'rejected': return <XCircle className="h-4 w-4 text-red-600" />
-      case 'cancelled': return <XCircle className="h-4 w-4 text-gray-600" />
-      default: return <AlertTriangle className="h-4 w-4 text-gray-600" />
+      case 'approved': 
+        return <CheckCircle className="h-4 w-4 text-green-600" />
+      case 'pending': 
+        return <Clock className="h-4 w-4 text-yellow-600" />
+      case 'rejected': 
+        return <XCircle className="h-4 w-4 text-red-600" />
+      case 'cancelled': 
+        return <XCircle className="h-4 w-4 text-gray-600" />
+      default: 
+        return <AlertTriangle className="h-4 w-4 text-gray-600" />
     }
   }
 
   if (isLoading) {
     return (
       <AdminLayout userRole="learner">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
         <div className="flex items-center justify-center min-h-96">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600 mx-auto mb-4"></div>
+              <p className="text-lg font-medium text-gray-700">Loading leave requests...</p>
+            </div>
+          </div>
         </div>
       </AdminLayout>
     )
@@ -98,29 +113,47 @@ export default function LeavePage() {
 
   return (
     <AdminLayout userRole="learner">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Leave Management</h1>
-            <p className="text-gray-600">Request and manage your leave applications</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full -translate-y-48 translate-x-48"></div>
+          <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-emerald-400 to-cyan-600 rounded-full translate-y-40 -translate-x-40"></div>
+          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-gradient-to-r from-pink-400 to-orange-600 rounded-full -translate-x-32 -translate-y-32"></div>
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto space-y-8 p-6">
+          {/* Enhanced Header */}
+          <div className="text-center space-y-6 mb-8">
+            <div className="inline-flex items-center px-6 py-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg mb-4">
+              <Shield className="h-5 w-5 mr-2" />
+              <span className="font-semibold">Leave Management System</span>
           </div>
-          <div className="flex items-center space-x-2">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent mb-4">
+              Leave Management
+            </h1>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              Request and manage your leave applications with ease. Track your leave balance and stay connected with your team.
+            </p>
+            
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
             <Button
               onClick={loadLeaveRequests}
               variant="outline"
-              size="sm"
-              className="flex items-center space-x-2"
+                size="lg"
+                className="flex items-center space-x-2 bg-white/80 backdrop-blur-sm border-2 border-blue-200 hover:border-blue-400 hover:bg-blue-50 transition-all duration-300 shadow-lg hover:shadow-xl"
             >
-              <RefreshCw className="h-4 w-4" />
-              <span>Refresh</span>
+                <RefreshCw className="h-5 w-5" />
+                <span>Refresh Data</span>
             </Button>
             <Button
               onClick={() => setShowForm(!showForm)}
-              className="flex items-center space-x-2"
+                size="lg"
+                className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
             >
-              <Plus className="h-4 w-4" />
-              <span>{showForm ? 'Cancel' : 'New Request'}</span>
+                <Plus className="h-5 w-5" />
+                <span>{showForm ? 'Cancel Request' : 'New Leave Request'}</span>
+                <Sparkles className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -139,179 +172,236 @@ export default function LeavePage() {
           />
         )}
 
-        {/* Leave Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Clock className="h-5 w-5 text-yellow-600" />
+          {/* Enhanced Leave Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {/* Pending Requests */}
+            <Card className="relative overflow-hidden bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 hover:border-yellow-300 transition-all duration-300 shadow-lg hover:shadow-xl group">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-full -translate-y-10 translate-x-10 opacity-20"></div>
+              <CardContent className="p-6 relative">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 shadow-lg">
+                    <Clock className="h-6 w-6 text-white" />
+                  </div>
+                  <TrendingUp className="h-5 w-5 text-yellow-600 group-hover:scale-110 transition-transform duration-300" />
+                </div>
                 <div>
-                  <p className="text-sm text-gray-600">Pending</p>
-                  <p className="text-2xl font-bold text-yellow-600">
+                  <p className="text-sm font-medium text-yellow-700 mb-1">Pending Requests</p>
+                  <p className="text-3xl font-bold text-yellow-800">
                     {leaveRequests.filter(r => r.status === 'pending').length}
                   </p>
-                </div>
+                  <p className="text-xs text-yellow-600 mt-1">Awaiting approval</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
+            {/* Approved Requests */}
+            <Card className="relative overflow-hidden bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 hover:border-green-300 transition-all duration-300 shadow-lg hover:shadow-xl group">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-400 rounded-full -translate-y-10 translate-x-10 opacity-20"></div>
+              <CardContent className="p-6 relative">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 shadow-lg">
+                    <CheckCircle className="h-6 w-6 text-white" />
+                  </div>
+                  <Activity className="h-5 w-5 text-green-600 group-hover:scale-110 transition-transform duration-300" />
+                </div>
                 <div>
-                  <p className="text-sm text-gray-600">Approved</p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-sm font-medium text-green-700 mb-1">Approved Requests</p>
+                  <p className="text-3xl font-bold text-green-800">
                     {leaveRequests.filter(r => r.status === 'approved').length}
                   </p>
-                </div>
+                  <p className="text-xs text-green-600 mt-1">Ready to take</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <XCircle className="h-5 w-5 text-red-600" />
+            {/* Rejected Requests */}
+            <Card className="relative overflow-hidden bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 hover:border-red-300 transition-all duration-300 shadow-lg hover:shadow-xl group">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-red-400 to-pink-400 rounded-full -translate-y-10 translate-x-10 opacity-20"></div>
+              <CardContent className="p-6 relative">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-full bg-gradient-to-r from-red-500 to-pink-500 shadow-lg">
+                    <XCircle className="h-6 w-6 text-white" />
+                  </div>
+                  <AlertTriangle className="h-5 w-5 text-red-600 group-hover:scale-110 transition-transform duration-300" />
+                </div>
                 <div>
-                  <p className="text-sm text-gray-600">Rejected</p>
-                  <p className="text-2xl font-bold text-red-600">
+                  <p className="text-sm font-medium text-red-700 mb-1">Rejected Requests</p>
+                  <p className="text-3xl font-bold text-red-800">
                     {leaveRequests.filter(r => r.status === 'rejected').length}
                   </p>
-                </div>
+                  <p className="text-xs text-red-600 mt-1">Need attention</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5 text-blue-600" />
+            {/* Total Days */}
+            <Card className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 hover:border-blue-300 transition-all duration-300 shadow-lg hover:shadow-xl group">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-400 to-indigo-400 rounded-full -translate-y-10 translate-x-10 opacity-20"></div>
+              <CardContent className="p-6 relative">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 shadow-lg">
+                    <Calendar className="h-6 w-6 text-white" />
+                  </div>
+                  <CalendarDays className="h-5 w-5 text-blue-600 group-hover:scale-110 transition-transform duration-300" />
+                </div>
                 <div>
-                  <p className="text-sm text-gray-600">Total Days</p>
-                  <p className="text-2xl font-bold text-blue-600">
+                  <p className="text-sm font-medium text-blue-700 mb-1">Total Days Taken</p>
+                  <p className="text-3xl font-bold text-blue-800">
                     {leaveRequests
                       .filter(r => r.status === 'approved')
                       .reduce((sum, r) => sum + r.days, 0)}
                   </p>
-                </div>
+                  <p className="text-xs text-blue-600 mt-1">This period</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Leave Requests List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <FileText className="h-5 w-5" />
-              <span>Leave Requests ({leaveRequests.length})</span>
+          {/* Enhanced Leave Requests List */}
+          <Card className="relative overflow-hidden bg-white/80 backdrop-blur-sm border-2 border-gray-200 shadow-2xl">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full -translate-y-16 translate-x-16 opacity-10"></div>
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200">
+              <CardTitle className="flex items-center space-x-3 text-xl">
+                <div className="p-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg">
+                  <FileText className="h-6 w-6 text-white" />
+                </div>
+                <span className="bg-gradient-to-r from-gray-800 to-blue-800 bg-clip-text text-transparent">
+                  Leave Requests ({leaveRequests.length})
+                </span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+            <CardContent className="p-6">
             {leaveRequests.length > 0 ? (
-              <div className="space-y-4">
+                <div className="space-y-6">
                 {leaveRequests.map((request) => (
                   <div
                     key={request.id}
-                    className="p-4 border rounded-lg hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 space-y-3">
+                      className="relative overflow-hidden bg-white/90 backdrop-blur-sm border-2 border-gray-200 rounded-2xl hover:border-blue-300 hover:shadow-xl transition-all duration-300 group"
+                    >
+                      {/* Background Pattern */}
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full -translate-y-12 translate-x-12 opacity-10 group-hover:opacity-20 transition-opacity duration-300"></div>
+                      
+                      <div className="p-6 relative">
+                        <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-lg">{getTypeIcon(request.type)}</span>
+                            <div className="p-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg">
+                              <span className="text-2xl">{getTypeIcon(request.type)}</span>
+                            </div>
                             <div>
-                              <h3 className="font-semibold text-lg">{getTypeLabel(request.type)}</h3>
-                              <p className="text-sm text-gray-600">
+                              <h3 className="text-xl font-bold text-gray-800 mb-1">{getTypeLabel(request.type)}</h3>
+                              <p className="text-sm text-gray-600 font-medium">
                                 {request.startDate} - {request.endDate} ({request.days} day{request.days !== 1 ? 's' : ''})
                               </p>
                             </div>
                           </div>
-                          <Badge className={getStatusColor(request.status)}>
-                            {request.status}
+                          <div className="flex items-center space-x-2">
+                            <Badge className={cn(
+                              "px-4 py-2 text-sm font-semibold rounded-full shadow-lg",
+                              getStatusColor(request.status)
+                            )}>
+                              {getStatusIcon(request.status)}
+                              <span className="ml-2 capitalize">{request.status}</span>
                           </Badge>
+                          </div>
                         </div>
 
-                        <div className="space-y-1">
-                          <p className="text-sm text-gray-700">
-                            <strong>Reason:</strong> {request.reason}
-                          </p>
+                        <div className="space-y-3 mb-4">
+                          <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                            <p className="text-sm text-gray-700 font-medium">
+                              <span className="text-blue-600 font-semibold">Reason:</span> {request.reason}
+                            </p>
+                          </div>
+                          
                           {request.placementInfo && (
-                            <p className="text-sm text-gray-600">
-                              <strong>Placement:</strong> {request.placementInfo.companyName}
+                            <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                              <p className="text-sm text-blue-700 font-medium">
+                                <span className="text-blue-600 font-semibold">Placement:</span> {request.placementInfo.companyName}
                             </p>
+                            </div>
                           )}
+                          
                           {request.emergencyContact && (
-                            <p className="text-sm text-gray-600">
-                              <strong>Emergency Contact:</strong> {request.emergencyContact} ({request.emergencyPhone})
+                            <div className="bg-green-50 p-4 rounded-xl border border-green-200">
+                              <p className="text-sm text-green-700 font-medium">
+                                <span className="text-green-600 font-semibold">Emergency Contact:</span> {request.emergencyContact} ({request.emergencyPhone})
                             </p>
+                            </div>
                           )}
                         </div>
 
-                        <div className="flex items-center space-x-6 text-sm text-gray-500">
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="h-4 w-4" />
-                            <span>Submitted: {request.submittedAt.toLocaleDateString()}</span>
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-4">
+                          <div className="flex items-center space-x-2 bg-white px-3 py-2 rounded-full border border-gray-200">
+                            <Calendar className="h-4 w-4 text-blue-500" />
+                            <span className="font-medium">Submitted: {request.submittedAt.toLocaleDateString()}</span>
                           </div>
                           {request.reviewedAt && (
-                            <div className="flex items-center space-x-1">
-                              <Clock className="h-4 w-4" />
-                              <span>Reviewed: {request.reviewedAt.toLocaleDateString()}</span>
+                            <div className="flex items-center space-x-2 bg-white px-3 py-2 rounded-full border border-gray-200">
+                              <Clock className="h-4 w-4 text-green-500" />
+                              <span className="font-medium">Reviewed: {request.reviewedAt.toLocaleDateString()}</span>
                             </div>
                           )}
                           {request.reviewedBy && (
-                            <div className="flex items-center space-x-1">
-                              <User className="h-4 w-4" />
-                              <span>By: {request.reviewedBy}</span>
+                            <div className="flex items-center space-x-2 bg-white px-3 py-2 rounded-full border border-gray-200">
+                              <User className="h-4 w-4 text-purple-500" />
+                              <span className="font-medium">By: {request.reviewedBy}</span>
                             </div>
                           )}
                         </div>
 
                         {request.adminNotes && (
-                          <div className="bg-gray-50 p-3 rounded-lg">
-                            <p className="text-sm text-gray-700">
-                              <strong>Admin Notes:</strong> {request.adminNotes}
+                          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200 mb-4">
+                            <p className="text-sm text-blue-700 font-medium">
+                              <span className="text-blue-600 font-semibold">Admin Notes:</span> {request.adminNotes}
                             </p>
                           </div>
                         )}
 
                         {request.rejectionReason && (
-                          <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                            <p className="text-sm text-red-700">
-                              <strong>Rejection Reason:</strong> {request.rejectionReason}
+                          <div className="bg-gradient-to-r from-red-50 to-pink-50 p-4 rounded-xl border border-red-200">
+                            <p className="text-sm text-red-700 font-medium">
+                              <span className="text-red-600 font-semibold">Rejection Reason:</span> {request.rejectionReason}
                             </p>
                           </div>
                         )}
-                      </div>
-
-                      <div className="flex items-center space-x-2 ml-4">
-                        {getStatusIcon(request.status)}
-                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg font-medium">No leave requests found</p>
-                <p className="text-sm">Submit your first leave request to get started</p>
+              <div className="text-center py-16">
+                <div className="relative mb-8">
+                  <div className="w-24 h-24 mx-auto bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-2xl">
+                    <Calendar className="h-12 w-12 text-white" />
+                  </div>
+                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center">
+                    <Sparkles className="h-4 w-4 text-white" />
+                  </div>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">No Leave Requests Yet</h3>
+                <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                  Start your leave management journey by submitting your first leave request. 
+                  It's quick, easy, and secure!
+                </p>
                 <Button
                   onClick={() => setShowForm(true)}
-                  className="mt-4"
+                  size="lg"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Submit Leave Request
+                  <Plus className="h-5 w-5 mr-2" />
+                  Submit Your First Request
+                  <Sparkles className="h-4 w-4 ml-2" />
                 </Button>
               </div>
             )}
           </CardContent>
         </Card>
+        
+        {/* AI Floating Chatbot */}
+        <div className="fixed bottom-6 right-6 z-50">
+          <AiChatbot className="shadow-2xl" />
+        </div>
+        </div>
       </div>
-      
-      {/* AI Support Chatbot */}
-      <AiChatbot />
     </AdminLayout>
   )
 }

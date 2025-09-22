@@ -53,7 +53,7 @@ export default function PrivacyPage() {
             <p className="text-gray-600 leading-relaxed mb-4">
               iSpaan Tech Solutions ("we," "our," or "us") is committed to protecting your privacy. 
               This Privacy Policy explains how we collect, use, disclose, and safeguard your information 
-              when you use our learning platform and services.
+              when you use our monitoring platform and services.
             </p>
             <p className="text-gray-600 leading-relaxed">
               By using our platform, you agree to the collection and use of information in accordance 

@@ -123,7 +123,7 @@ export function useRealtimeData<T = DocumentData>(
         unsubscribeRef.current = null
       }
     }
-  }, [collectionName, documentId, enabled, onError, onSuccess])
+  }, [collectionName, documentId, enabled]) // Removed onError and onSuccess to prevent infinite loops
 
   return {
     ...state,

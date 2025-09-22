@@ -22,6 +22,14 @@ export function Navigation() {
           </div>
           
           <div className="flex items-center space-x-4">
+            {/* Development Tools */}
+            <Link href="/mobile-emulator" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+              📱 Mobile Test
+            </Link>
+            <Link href="/onboarding" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+              🎯 Take a Tour
+            </Link>
+            
             {user ? (
               <>
                 <span className="text-sm text-gray-600">

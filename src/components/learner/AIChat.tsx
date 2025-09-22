@@ -60,7 +60,7 @@ export function AIChat() {
         },
         body: JSON.stringify({
           message: input.trim(),
-          context: 'learning platform'
+          context: 'monitoring platform'
         }),
       })
 

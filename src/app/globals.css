@@ -12,6 +12,9 @@
     -moz-osx-font-smoothing: grayscale;
     scroll-behavior: smooth;
   }
+  
+  /* Suppress Grammarly extension hydration warnings */
+  /* Note: suppressHydrationWarning is handled in layout.tsx */
   *, *::before, *::after {
     box-sizing: inherit;
     margin: 0;
@@ -270,5 +273,23 @@
 
   .animate-glow {
     animation: glow 2s ease-in-out infinite;
+  }
+
+  /* Client logos scrolling animation */
+  @keyframes scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-scroll {
+    animation: scroll 30s linear infinite;
+  }
+
+  .animate-scroll:hover {
+    animation-play-state: paused;
   }
 }

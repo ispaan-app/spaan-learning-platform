@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -7,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { WelcomeCard } from '@/components/ui/welcome-card'
+import { PageLoader } from '@/components/ui/loading'
 import { useAuth } from '@/hooks/useAuth'
 import { 
   FileText, 
@@ -24,65 +26,7 @@ import {
   Plus,
   MoreHorizontal
 } from 'lucide-react'
-
-// Mock reports data
-const mockReports = [
-  {
-    id: '1',
-    name: 'Monthly User Analytics',
-    type: 'Analytics',
-    status: 'completed',
-    created: '2024-01-15',
-    lastRun: '2024-01-15 14:30:00',
-    size: '2.4 MB',
-    downloads: 15,
-    description: 'Comprehensive user analytics for the past month'
-  },
-  {
-    id: '2',
-    name: 'Revenue Report Q4 2023',
-    type: 'Financial',
-    status: 'completed',
-    created: '2024-01-10',
-    lastRun: '2024-01-10 09:15:00',
-    size: '1.8 MB',
-    downloads: 8,
-    description: 'Quarterly revenue analysis and financial metrics'
-  },
-  {
-    id: '3',
-    name: 'System Performance Report',
-    type: 'Technical',
-    status: 'running',
-    created: '2024-01-20',
-    lastRun: '2024-01-20 16:45:00',
-    size: '0 MB',
-    downloads: 0,
-    description: 'System performance metrics and health indicators'
-  },
-  {
-    id: '4',
-    name: 'User Engagement Analysis',
-    type: 'Analytics',
-    status: 'failed',
-    created: '2024-01-18',
-    lastRun: '2024-01-18 11:20:00',
-    size: '0 MB',
-    downloads: 0,
-    description: 'Detailed analysis of user engagement patterns'
-  },
-  {
-    id: '5',
-    name: 'Security Audit Report',
-    type: 'Security',
-    status: 'completed',
-    created: '2024-01-12',
-    lastRun: '2024-01-12 13:30:00',
-    size: '3.2 MB',
-    downloads: 22,
-    description: 'Comprehensive security audit and compliance report'
-  }
-]
+import { getReports, generateReport, downloadReport, Report } from '@/lib/reports-service'
 
 const reportTypes = [
   { value: 'all', label: 'All Reports', icon: FileText },
@@ -124,6 +68,83 @@ const getTypeIcon = (type: string) => {
 
 export default function SuperAdminReportsPage() {
   const { user, userData } = useAuth()
+  const [reports, setReports] = useState<Report[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string>('')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState('all')
+  const [generating, setGenerating] = useState<string | null>(null)
+
+  const loadReports = async () => {
+    try {
+      setLoading(true)
+      setError('')
+      const data = await getReports()
+      setReports(data)
+    } catch (err) {
+      console.error('Error loading reports:', err)
+      setError('Failed to load reports')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadReports()
+  }, [])
+
+  const handleGenerateReport = async (reportType: string) => {
+    if (!user?.uid) return
+    
+    try {
+      setGenerating(reportType)
+      const result = await generateReport(reportType, {}, user.uid)
+      
+      if (result.success) {
+        // Refresh reports list
+        await loadReports()
+      } else {
+        setError(result.error || 'Failed to generate report')
+      }
+    } catch (err) {
+      console.error('Error generating report:', err)
+      setError('Failed to generate report')
+    } finally {
+      setGenerating(null)
+    }
+  }
+
+  const handleDownloadReport = async (reportId: string) => {
+    try {
+      const result = await downloadReport(reportId)
+      
+      if (result.success && result.url) {
+        // In a real implementation, this would trigger the download
+        window.open(result.url, '_blank')
+      } else {
+        setError(result.error || 'Failed to download report')
+      }
+    } catch (err) {
+      console.error('Error downloading report:', err)
+      setError('Failed to download report')
+    }
+  }
+
+  const filteredReports = reports.filter(report => {
+    const matchesSearch = searchTerm === '' || 
+                          report.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          report.description.toLowerCase().includes(searchTerm.toLowerCase())
+
+    const matchesStatus = statusFilter === 'all' || report.status === statusFilter
+    const matchesType = typeFilter === 'all' || report.type.toLowerCase() === typeFilter
+
+    return matchesSearch && matchesStatus && matchesType
+  })
+
+  if (loading) {
+    return <PageLoader message="Loading reports..." />
+  }
   
   return (
     <AdminLayout userRole="super-admin">
@@ -279,7 +300,7 @@ export default function SuperAdminReportsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockReports.map((report) => (
+              {filteredReports.map((report) => (
                 <div key={report.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
                   <div className="flex items-center space-x-4">
                     <div className="p-2 bg-gray-100 rounded-lg">
@@ -304,7 +325,11 @@ export default function SuperAdminReportsPage() {
                     <Button variant="ghost" size="sm">
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleDownloadReport(report.id)}
+                    >
                       <Download className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="sm">
@@ -331,14 +356,50 @@ export default function SuperAdminReportsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <Button variant="outline" className="w-full justify-start">
-                  User Growth Report
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => handleGenerateReport('user_analytics')}
+                  disabled={generating === 'user_analytics'}
+                >
+                  {generating === 'user_analytics' ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    'User Growth Report'
+                  )}
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  Engagement Analysis
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => handleGenerateReport('user_engagement')}
+                  disabled={generating === 'user_engagement'}
+                >
+                  {generating === 'user_engagement' ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    'Engagement Analysis'
+                  )}
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  Page Performance
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => handleGenerateReport('system_performance')}
+                  disabled={generating === 'system_performance'}
+                >
+                  {generating === 'system_performance' ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    'Page Performance'
+                  )}
                 </Button>
               </div>
             </CardContent>

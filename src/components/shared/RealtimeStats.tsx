@@ -14,7 +14,7 @@ interface PlatformStats {
 }
 
 interface RealtimeStatsProps {
-  variant?: 'default' | 'hero'
+  variant?: 'default' | 'hero' | 'community' | 'partners' | 'success'
 }
 
 export function RealtimeStats({ variant = 'default' }: RealtimeStatsProps) {
@@ -26,42 +26,59 @@ export function RealtimeStats({ variant = 'default' }: RealtimeStatsProps) {
     completedPlacements: 0,
     averageRating: 0
   })
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        setLoading(true)
+        // Don't show loading state - fetch silently in background
         
-        // Fetch active learners (users with role 'learner' and status 'active')
+        // Fetch all learners (users with role 'learner')
         const learnersQuery = query(
           collection(db, 'users'),
-          where('role', '==', 'learner'),
-          where('status', '==', 'active')
+          where('role', '==', 'learner')
         )
         const learnersSnapshot = await getDocs(learnersQuery)
         const activeLearners = learnersSnapshot.size
 
-        // Fetch total applications
-        const applicationsSnapshot = await getDocs(collection(db, 'applications'))
-        const totalApplications = applicationsSnapshot.size
+        // Fetch total applications (users with role 'applicant')
+        const applicantsQuery = query(
+          collection(db, 'users'),
+          where('role', '==', 'applicant')
+        )
+        const applicantsSnapshot = await getDocs(applicantsQuery)
+        const totalApplications = applicantsSnapshot.size
 
-        // Fetch programs
+        // Fetch programs (industry partners)
         const programsSnapshot = await getDocs(collection(db, 'programs'))
         const totalPrograms = programsSnapshot.size
 
-        // Fetch completed placements
-        const placementsQuery = query(
-          collection(db, 'placements'),
-          where('status', '==', 'completed')
-        )
-        const placementsSnapshot = await getDocs(placementsQuery)
-        const completedPlacements = placementsSnapshot.size
+        // Fetch all placements (companies providing placements)
+        const placementsSnapshot = await getDocs(collection(db, 'placements'))
+        const totalPlacements = placementsSnapshot.size
 
-        // Calculate success rate (completed placements / total applications * 100)
+        // Also check if there are any companies in a separate collection
+        let companiesCount = 0
+        try {
+          const companiesSnapshot = await getDocs(collection(db, 'companies'))
+          companiesCount = companiesSnapshot.size
+        } catch (error) {
+          // Companies collection might not exist, that's okay
+          console.log('Companies collection not found, using placements as industry partners')
+        }
+
+        // Use companies if available, otherwise use placements
+        const industryPartners = companiesCount > 0 ? companiesCount : totalPlacements
+
+        // Calculate success rate based on approved applicants vs total applicants
+        const approvedApplicants = applicantsSnapshot.docs.filter(doc => {
+          const data = doc.data()
+          return data.status === 'approved' || data.status === 'approved'
+        }).length
+
         const successRate = totalApplications > 0 
-          ? Math.round((completedPlacements / totalApplications) * 100)
-          : 0
+          ? Math.round((approvedApplicants / totalApplications) * 100)
+          : 0 // Show 0% if no data
 
         // Calculate average rating from completed placements
         let totalRating = 0
@@ -79,57 +96,45 @@ export function RealtimeStats({ variant = 'default' }: RealtimeStatsProps) {
           ? Math.round((totalRating / ratingCount) * 10) / 10
           : 0
 
+        // Debug logging to see actual data
+        console.log('Real-time stats fetched:', {
+          activeLearners,
+          industryPartners,
+          totalApplications,
+          approvedApplicants,
+          successRate,
+          totalPlacements
+        })
+
         setStats({
           activeLearners,
           successRate,
-          totalPrograms,
+          totalPrograms: industryPartners, // Use industry partners count
           totalApplications,
-          completedPlacements,
+          completedPlacements: totalPlacements,
           averageRating
         })
       } catch (error) {
         console.error('Error fetching platform stats:', error)
-        // Fallback to default values
-        setStats({
-          activeLearners: 0,
-          successRate: 0,
-          totalPrograms: 0,
-          totalApplications: 0,
-          completedPlacements: 0,
-          averageRating: 0
-        })
-      } finally {
-        setLoading(false)
+        // Keep current values on error - don't set false data
+        console.log('Keeping current stats due to error')
       }
     }
 
     fetchStats()
 
-    // Set up real-time updates every 30 seconds
-    const interval = setInterval(fetchStats, 30000)
+    // Set up real-time updates every 10 seconds
+    const interval = setInterval(fetchStats, 10000)
 
     return () => clearInterval(interval)
   }, [])
 
-  if (loading) {
-    const isHero = variant === 'hero'
-    return (
-      <div className={`flex items-center space-x-8 ${isHero ? 'pt-8' : 'grid grid-cols-2 md:grid-cols-4 gap-8'}`}>
-        {[...Array(isHero ? 3 : 4)].map((_, i) => (
-          <div key={i} className="text-center">
-            <div className={`${isHero ? 'text-3xl' : 'text-5xl'} font-bold ${isHero ? 'text-blue-600' : 'text-white'} mb-2 animate-pulse`}>
-              <div className={`h-8 ${isHero ? 'bg-blue-300' : 'bg-blue-300'} rounded`}></div>
-            </div>
-            <div className={`text-sm ${isHero ? 'text-gray-600' : 'text-blue-100 text-lg'} animate-pulse`}>
-              <div className={`h-4 ${isHero ? 'bg-gray-300' : 'bg-blue-200'} rounded`}></div>
-            </div>
-          </div>
-        ))}
-      </div>
-    )
-  }
+  // No loading state - always show current stats
 
   const isHero = variant === 'hero'
+  const isCommunity = variant === 'community'
+  const isPartners = variant === 'partners'
+  const isSuccess = variant === 'success'
   
   if (isHero) {
     return (
@@ -153,6 +158,30 @@ export function RealtimeStats({ variant = 'default' }: RealtimeStatsProps) {
           <div className="text-sm text-gray-600">User Rating</div>
         </div>
       </div>
+    )
+  }
+
+  if (isCommunity) {
+    return (
+      <span className="text-xl sm:text-2xl font-bold text-white">
+        {stats.activeLearners.toLocaleString()}+
+      </span>
+    )
+  }
+
+  if (isPartners) {
+    return (
+      <span className="text-xl sm:text-2xl font-bold text-white">
+        {stats.totalPrograms}+
+      </span>
+    )
+  }
+
+  if (isSuccess) {
+    return (
+      <span className="text-xl sm:text-2xl font-bold text-white">
+        {stats.successRate}%
+      </span>
     )
   }
 

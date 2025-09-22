@@ -71,8 +71,14 @@ class AuditLogger {
       
       entries.forEach(entry => {
         const docRef = adminDb.collection('audit-logs').doc(entry.id || '')
+        
+        // Filter out undefined values to prevent Firestore errors
+        const cleanEntry = Object.fromEntries(
+          Object.entries(entry).filter(([_, value]) => value !== undefined)
+        )
+        
         batch.set(docRef, {
-          ...entry,
+          ...cleanEntry,
           timestamp: entry.timestamp
         })
       })

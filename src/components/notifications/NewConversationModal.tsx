@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { searchUsers } from '@/lib/users-service'
 import { 
   Search, 
   User, 
@@ -48,32 +49,26 @@ export function NewConversationModal({
   const [loading, setLoading] = useState(false)
   const [searching, setSearching] = useState(false)
 
-  // Mock users for demonstration - in real app, fetch from API
-  const mockUsers: User[] = [
-    { id: '1', name: 'John Doe', email: 'john@example.com', role: 'admin' },
-    { id: '2', name: 'Jane Smith', email: 'jane@example.com', role: 'learner' },
-    { id: '3', name: 'Bob Johnson', email: 'bob@example.com', role: 'admin' },
-    { id: '4', name: 'Alice Brown', email: 'alice@example.com', role: 'learner' },
-    { id: '5', name: 'Charlie Wilson', email: 'charlie@example.com', role: 'super-admin' },
-  ]
-
   useEffect(() => {
-    if (searchTerm) {
-      setSearching(true)
-      // Simulate search delay
-      const timer = setTimeout(() => {
-        const filtered = mockUsers.filter(u => 
-          u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          u.email.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-        setUsers(filtered)
-        setSearching(false)
-      }, 300)
-      
-      return () => clearTimeout(timer)
-    } else {
-      setUsers([])
+    const performSearch = async () => {
+      if (searchTerm && searchTerm.length >= 2) {
+        setSearching(true)
+        try {
+          const results = await searchUsers(searchTerm)
+          setUsers(results)
+        } catch (error) {
+          console.error('Error searching users:', error)
+          setUsers([])
+        } finally {
+          setSearching(false)
+        }
+      } else {
+        setUsers([])
+      }
     }
+
+    const timer = setTimeout(performSearch, 300)
+    return () => clearTimeout(timer)
   }, [searchTerm])
 
   const handleUserSelect = (selectedUser: User) => {

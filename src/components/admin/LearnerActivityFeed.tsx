@@ -120,16 +120,25 @@ export function LearnerActivityFeed({ className }: LearnerActivityFeedProps) {
   }, [])
 
   useEffect(() => {
+    let isMounted = true
+
+    const loadData = async () => {
+      if (isMounted) {
+        await loadLearnerActivities()
+      }
+    }
+
     // Initial load
-    loadLearnerActivities()
+    loadData()
 
     // Set up real-time subscription
     const unsubscribe = subscribeToLearnerActivities()
 
     return () => {
+      isMounted = false
       unsubscribe()
     }
-  }, [loadLearnerActivities, subscribeToLearnerActivities])
+  }, []) // Removed dependencies to prevent infinite loops
 
   const getActionIcon = (action: LearnerActionType) => {
     const iconMap: Record<LearnerActionType, React.ReactNode> = {

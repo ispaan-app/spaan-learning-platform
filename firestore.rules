@@ -1,60 +1,91 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to get user role from custom claims or Firestore
+    function getUserRole() {
+      return request.auth.token.role != null ? request.auth.token.role : 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    // Helper function to check if user is admin or super-admin
+    function isAdmin() {
+      return getUserRole() in ['admin', 'super-admin'];
+    }
+
+    // Helper function to check if user is super-admin
+    function isSuperAdmin() {
+      return getUserRole() == 'super-admin';
+    }
+
+    // Only authenticated users can read/write their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Admins can read all user documents
+      allow read: if request.auth != null && isAdmin();
+    }
+
+    // Learner profiles: users can read/write their own, admins can read all
+    match /learnerProfiles/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && isAdmin();
+    }
+
+    // Applications: users can read/write their own, admins can read/write all
+    match /applications/{applicationId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read, write: if request.auth != null && isAdmin();
+    }
+
+    // Only authenticated users can read/write their own documents
+    match /documents/{documentId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
     // Placements: only admin/super-admin can write, learners can read their own
     match /placements/{placementId} {
-      allow read: if request.auth != null && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super-admin'] || resource.data.learnerId == request.auth.uid);
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super-admin'];
+      allow read: if request.auth != null && (isAdmin() || resource.data.learnerId == request.auth.uid);
+      allow write: if request.auth != null && isAdmin();
     }
 
     // Class Sessions: only admin/super-admin can write, all can read
     match /classSessions/{sessionId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super-admin'];
+      allow write: if request.auth != null && isAdmin();
     }
 
     // Reports: only admin/super-admin can write, all can read
     match /reports/{reportId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super-admin'];
+      allow write: if request.auth != null && isAdmin();
     }
 
     // Audit Logs: only admin/super-admin can write/read
     match /auditLogs/{logId} {
-      allow read, write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super-admin'];
-    }
-rules_version = '2';
-
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Only authenticated users can read/write their own user document
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth != null && isAdmin();
     }
 
-    // Only authenticated users can read/write their own documents
-    match /documents/{documentId} {
-      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
-    }
-
-    // Attendance: only learner can write, admin can read for review
+    // Attendance: learners can read their own, admins can read/write all
     match /attendance/{attendanceId} {
-      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super-admin']);
-      allow write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read: if request.auth != null && (isAdmin() || resource.data.userId == request.auth.uid);
+      allow write: if request.auth != null && isAdmin();
     }
 
-    // Leave Requests: only learner can write, admin can read for review
-    match /leaveRequests/{leaveId} {
-      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super-admin']);
-      allow write: if request.auth != null && request.auth.uid == resource.data.userId;
+    // Leave Requests: users can read/write their own, admins can read/write all
+    match /leaveRequests/{requestId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read, write: if request.auth != null && isAdmin();
     }
 
     // Stipend Reports: only learner can write, admin/super-admin can read
     match /stipendReports/{reportId} {
-      allow read: if request.auth != null && (resource.data.learnerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super-admin']);
+      allow read: if request.auth != null && (resource.data.learnerId == request.auth.uid || isAdmin());
       allow write: if request.auth != null && request.auth.uid == resource.data.learnerId;
     }
 
     // Issue Reports: only learner can write, admin/super-admin can read
     match /issueReports/{issueId} {
-      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super-admin']);
+      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
       allow write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 

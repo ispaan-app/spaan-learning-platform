@@ -107,7 +107,6 @@ export function ApplyForm({ programs: initialPrograms }: ApplyFormProps) {
           setProgramsError(null)
           const programsQuery = query(
             collection(db, 'programs'),
-            where('status', '==', 'active'),
             orderBy('name', 'asc')
           )
           const snapshot = await getDocs(programsQuery)

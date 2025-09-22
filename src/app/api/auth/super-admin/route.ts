@@ -19,7 +19,10 @@ export async function POST(request: NextRequest) {
     const user = userCredential.user
     
     // Create custom token with super admin role
-    const customToken = await user.getIdToken(true)
+    const customToken = await user.getIdToken(true).catch((error) => {
+      console.error('Error getting ID token:', error)
+      throw new Error('Failed to generate authentication token')
+    })
     
     return NextResponse.json({
       success: true,
@@ -39,6 +42,12 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+
+
+
+
+
 
 
 

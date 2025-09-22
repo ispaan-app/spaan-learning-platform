@@ -101,9 +101,24 @@ export function AvatarHeader() {
     
     setAvatarUploading(true)
     try {
+      // Validate file type and size
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+      const maxSize = 5 * 1024 * 1024 // 5MB
+      
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Please upload a valid image file (JPEG, PNG, or WebP)')
+        return { success: false, error: 'Invalid file type' }
+      }
+      
+      if (file.size > maxSize) {
+        toast.error('File size must be less than 5MB')
+        return { success: false, error: 'File too large' }
+      }
+      
       const result = await uploadAvatar(file, user.uid)
       
       if (result.success && result.url) {
+        // Update user profile with the uploaded avatar
         await updateDoc(doc(db, 'users', user.uid), { 
           avatar: result.url,
           updatedAt: new Date().toISOString()
@@ -115,7 +130,7 @@ export function AvatarHeader() {
           updatedAt: new Date().toISOString()
         } : null)
         
-        toast.success('Avatar updated successfully')
+        toast.success('Your photo has been uploaded successfully!')
         setShowAvatarUpload(false)
         return { success: true, url: result.url }
       } else {
@@ -124,12 +139,13 @@ export function AvatarHeader() {
       }
     } catch (error: any) {
       console.error('Avatar upload error:', error)
-      toast.error('Failed to upload avatar')
+      toast.error('Failed to upload avatar. Please try again.')
       return { success: false, error: error.message }
     } finally {
       setAvatarUploading(false)
     }
   }
+
 
   const getRoleIcon = (role: string) => {
     switch (role) {
@@ -205,7 +221,10 @@ export function AvatarHeader() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Update Avatar</h3>
+              <div>
+                <h3 className="text-lg font-semibold">{profile.avatar ? 'Change Your Photo' : 'Upload Your Photo'}</h3>
+                <p className="text-sm text-gray-600">{profile.avatar ? 'Update your profile picture' : 'Add your profile picture for a more personal experience'}</p>
+              </div>
               <Button
                 variant="outline"
                 size="sm"
@@ -218,12 +237,24 @@ export function AvatarHeader() {
               onUpload={handleAvatarUpload}
               currentAvatar={profile.avatar}
               disabled={avatarUploading}
-              label="Upload New Avatar"
-              description="Choose a new profile picture (max 5MB)"
+              label={profile.avatar ? "Change Your Photo" : "Upload Your Photo"}
+              description="Choose your profile picture (JPEG, PNG, WebP - max 5MB)"
             />
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+              <div className="flex items-start space-x-2">
+                <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-white text-xs">i</span>
+                </div>
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium">Profile Picture Benefits</p>
+                  <p className="mt-1">Your photo helps build trust and personal connection in the community.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
+
 
       {/* User Info */}
       <div className="hidden md:block text-right">
@@ -242,18 +273,34 @@ export function AvatarHeader() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200 hover:border-gray-300 transition-colors">
-              {profile.avatar ? (
-                <img
-                  src={profile.avatar}
-                  alt={`${profile.firstName} ${profile.lastName}`}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center">
-                  <User className="w-6 h-6 text-white" />
-                </div>
-              )}
+            <div className="relative">
+              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-200 hover:border-gray-300 transition-colors">
+                {profile.avatar ? (
+                  <img
+                    src={profile.avatar}
+                    alt={`${profile.firstName} ${profile.lastName}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // If uploaded avatar fails to load, show initials fallback
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const parent = target.parentElement;
+                      if (parent) {
+                        const fallbackDiv = document.createElement('div');
+                        fallbackDiv.className = 'w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-500';
+                        fallbackDiv.innerHTML = `<span class="text-white text-sm font-bold">${profile.firstName[0]}${profile.lastName[0]}</span>`;
+                        parent.appendChild(fallbackDiv);
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-500">
+                    <span className="text-white text-sm font-bold">
+                      {profile.firstName[0]}{profile.lastName[0]}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
             <ChevronDown className="absolute -bottom-1 -right-1 w-4 h-4 bg-white rounded-full p-0.5" />
           </Button>
@@ -339,11 +386,15 @@ export function AvatarHeader() {
 
           <DropdownMenuSeparator />
           
-          {/* Avatar Upload */}
-          <DropdownMenuItem onClick={() => setShowAvatarUpload(true)}>
+          {/* Avatar Options */}
+          <DropdownMenuItem onClick={() => setShowAvatarUpload(true)} className="text-blue-600">
             <Camera className="mr-2 h-4 w-4" />
-            <span>Update Avatar</span>
+            <div className="flex flex-col">
+              <span className="font-medium">{profile.avatar ? 'Change Photo' : 'Upload Photo'}</span>
+              <span className="text-xs text-gray-500">{profile.avatar ? 'Update your profile picture' : 'Add your profile picture'}</span>
+            </div>
           </DropdownMenuItem>
+          
 
           {/* Settings */}
           <DropdownMenuItem asChild>

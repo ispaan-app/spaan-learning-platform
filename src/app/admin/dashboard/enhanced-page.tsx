@@ -15,6 +15,7 @@ import { StatsCards } from '@/components/admin/StatsCards'
 import { UrgentAlertsPanel, UrgentAlert } from '@/components/admin/UrgentAlertsPanel'
 import { RecentApplicants } from '@/components/admin/RecentApplicants'
 import { BulkApplicantActions } from '@/components/admin/BulkApplicantActions'
+import { ProgramService } from '@/lib/program-service'
 import { PlacementStatusChart } from '@/components/admin/PlacementStatusChart'
 import { OverviewChart } from '@/components/admin/OverviewChart'
 import { LearnerProgramChart } from '@/components/admin/LearnerProgramChart'
@@ -130,26 +131,45 @@ export function EnhancedAdminDashboardContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const [urgentAlerts, setUrgentAlerts] = useState<UrgentAlert[]>([])
+  const [programNames, setProgramNames] = useState<{ [key: string]: string }>({})
 
   // Real-time data fetching
   useEffect(() => {
+    let isMounted = true
+    const unsubscribeFunctions: (() => void)[] = []
+
+    const setupListeners = () => {
     setError(null)
     setLoading(true)
 
+      try {
     // Real-time stats
     const unsubApplicants = collection(db, 'users')
     const unsubPlacements = collection(db, 'placements')
 
     // Pending Applicants
     const qPending = query(unsubApplicants, where('role', '==', 'applicant'), where('status', '==', 'pending-review'))
-    const unsubPending = onSnapshot(qPending, (snapshot) => {
+        const unsubPending = onSnapshot(qPending, 
+          (snapshot) => {
+            if (isMounted) {
       setDashboardStats((prev) => ({ ...prev, pendingApplicants: snapshot.size }))
       setApplicationStatusData((prev) => ({ ...prev, pending: snapshot.size }))
-    }, (err) => setError(err))
+            }
+          }, 
+          (err) => {
+            if (isMounted) {
+              console.error('Error in pending applicants listener:', err)
+              setError(err)
+            }
+          }
+        )
+        unsubscribeFunctions.push(unsubPending)
 
     // Total Learners
     const qLearners = query(unsubApplicants, where('role', '==', 'learner'))
-    const unsubLearners = onSnapshot(qLearners, (snapshot) => {
+        const unsubLearners = onSnapshot(qLearners, 
+          (snapshot) => {
+            if (isMounted) {
       setDashboardStats((prev) => ({ ...prev, totalLearners: snapshot.size }))
       // Learner Program Data
       const programCounts: { [key: string]: number } = {}
@@ -163,41 +183,107 @@ export function EnhancedAdminDashboardContent() {
         program: program.charAt(0).toUpperCase() + program.slice(1).replace('-', ' '),
         count
       })))
-    }, (err) => setError(err))
+            }
+          }, 
+          (err) => {
+            if (isMounted) {
+              console.error('Error in learners listener:', err)
+              setError(err)
+            }
+          }
+        )
+        unsubscribeFunctions.push(unsubLearners)
 
     // Recent Applicants
     const qRecent = query(unsubApplicants, where('role', '==', 'applicant'), orderBy('createdAt', 'desc'), limit(4))
-    const unsubRecent = onSnapshot(qRecent, (snapshot) => {
+        const unsubRecent = onSnapshot(qRecent, 
+          (snapshot) => {
+            if (isMounted) {
       setRecentApplicants(snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })))
-    }, (err) => setError(err))
+            }
+          }, 
+          (err) => {
+            if (isMounted) {
+              console.error('Error in recent applicants listener:', err)
+              setError(err)
+            }
+          }
+        )
+        unsubscribeFunctions.push(unsubRecent)
 
     // Application Status: Approved
     const qApproved = query(unsubApplicants, where('role', '==', 'applicant'), where('status', '==', 'approved'))
-    const unsubApproved = onSnapshot(qApproved, (snapshot) => {
+        const unsubApproved = onSnapshot(qApproved, 
+          (snapshot) => {
+            if (isMounted) {
       setApplicationStatusData((prev) => ({ ...prev, approved: snapshot.size }))
-    }, (err) => setError(err))
+            }
+          }, 
+          (err) => {
+            if (isMounted) {
+              console.error('Error in approved applicants listener:', err)
+              setError(err)
+            }
+          }
+        )
+        unsubscribeFunctions.push(unsubApproved)
 
     // Application Status: Rejected
     const qRejected = query(unsubApplicants, where('role', '==', 'applicant'), where('status', '==', 'rejected'))
-    const unsubRejected = onSnapshot(qRejected, (snapshot) => {
+        const unsubRejected = onSnapshot(qRejected, 
+          (snapshot) => {
+            if (isMounted) {
       setApplicationStatusData((prev) => ({ ...prev, rejected: snapshot.size }))
-    }, (err) => setError(err))
+            }
+          }, 
+          (err) => {
+            if (isMounted) {
+              console.error('Error in rejected applicants listener:', err)
+              setError(err)
+            }
+          }
+        )
+        unsubscribeFunctions.push(unsubRejected)
 
     // Placements: Active
     const qActivePlacements = query(unsubPlacements, where('status', '==', 'active'))
-    const unsubActivePlacements = onSnapshot(qActivePlacements, (snapshot) => {
+        const unsubActivePlacements = onSnapshot(qActivePlacements, 
+          (snapshot) => {
+            if (isMounted) {
       setDashboardStats((prev) => ({ ...prev, activePlacements: snapshot.size }))
-    }, (err) => setError(err))
+            }
+          }, 
+          (err) => {
+            if (isMounted) {
+              console.error('Error in active placements listener:', err)
+              setError(err)
+            }
+          }
+        )
+        unsubscribeFunctions.push(unsubActivePlacements)
 
     // Placements: Assigned
     const qAssignedPlacements = query(unsubPlacements, where('assignedLearnerId', '!=', null))
-    const unsubAssignedPlacements = onSnapshot(qAssignedPlacements, (snapshot) => {
+        const unsubAssignedPlacements = onSnapshot(qAssignedPlacements, 
+          (snapshot) => {
+            if (isMounted) {
       setDashboardStats((prev) => ({ ...prev, assignedLearners: snapshot.size }))
-    }, (err) => setError(err))
+            }
+          }, 
+          (err) => {
+            if (isMounted) {
+              console.error('Error in assigned placements listener:', err)
+              setError(err)
+            }
+          }
+        )
+        unsubscribeFunctions.push(unsubAssignedPlacements)
 
     // Placement Status Data
     const qAllPlacements = query(unsubPlacements)
-    const unsubAllPlacements = onSnapshot(qAllPlacements, (snapshot) => {
+        const unsubAllPlacements = onSnapshot(qAllPlacements, 
+          (snapshot) => {
+            if (isMounted) {
       const statusCounts: { [key: string]: number } = {}
       snapshot.docs.forEach((doc: any) => {
         const status = doc.data().status || 'unknown'
@@ -207,21 +293,87 @@ export function EnhancedAdminDashboardContent() {
         status: status.charAt(0).toUpperCase() + status.slice(1),
         count
       })))
-    }, (err) => setError(err))
+            }
+          }, 
+          (err) => {
+            if (isMounted) {
+              console.error('Error in placement status listener:', err)
+              setError(err)
+            }
+          }
+        )
+        unsubscribeFunctions.push(unsubAllPlacements)
 
+        if (isMounted) {
+          setLoading(false)
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error('Error setting up listeners:', error)
+          setError(error as Error)
     setLoading(false)
+        }
+      }
+    }
+
+    setupListeners()
 
     return () => {
-      unsubPending()
-      unsubLearners()
-      unsubRecent()
-      unsubApproved()
-      unsubRejected()
-      unsubActivePlacements()
-      unsubAssignedPlacements()
-      unsubAllPlacements()
+      isMounted = false
+      unsubscribeFunctions.forEach(unsubscribe => {
+        try {
+          unsubscribe()
+        } catch (error) {
+          console.error('Error unsubscribing from listener:', error)
+        }
+      })
     }
   }, [])
+
+  // Separate useEffect for urgent alerts to avoid circular dependency
+  useEffect(() => {
+    const alerts: UrgentAlert[] = []
+    // Example: Too many pending applicants
+    if (dashboardStats.pendingApplicants > 5) {
+      alerts.push({
+        type: 'applicant',
+        message: `There are ${dashboardStats.pendingApplicants} applicants waiting for review!`,
+        severity: 'warning',
+      })
+    }
+    // Example: Placements at capacity
+    if (dashboardStats.activePlacements > 0 && dashboardStats.activePlacements === dashboardStats.assignedLearners) {
+      alerts.push({
+        type: 'placement',
+        message: 'All active placements are at full capacity!',
+        severity: 'error',
+      })
+    }
+    setUrgentAlerts(alerts)
+  }, [dashboardStats])
+
+  // Load program names for recent applicants
+  useEffect(() => {
+    if (recentApplicants.length > 0) {
+      const uniqueProgramIds = Array.from(new Set(recentApplicants.map(a => a.program).filter(Boolean)))
+      if (uniqueProgramIds.length > 0) {
+        ProgramService.getProgramNames(uniqueProgramIds)
+          .then(setProgramNames)
+          .catch(error => {
+            console.error('Error fetching program names:', error)
+            const fallbackMap: { [key: string]: string } = {}
+            uniqueProgramIds.forEach(id => {
+              fallbackMap[id] = id
+            })
+            setProgramNames(fallbackMap)
+          })
+      }
+    }
+  }, [recentApplicants])
+
+  const getProgramName = (programId: string) => {
+    return programNames[programId] || programId || 'Unknown Program'
+  }
 
   if (loading) {
     return (
@@ -494,7 +646,7 @@ export function EnhancedAdminDashboardContent() {
                         <div>
                           <h4 className="font-semibold" style={{ color: '#1E3D59' }}>{applicant.firstName || 'Unknown'} {applicant.lastName || ''}</h4>
                           <p className="text-sm" style={{ color: '#1E3D59', opacity: 0.7 }}>{applicant.email || 'No email'}</p>
-                          <p className="text-xs" style={{ color: '#1E3D59', opacity: 0.6 }}>{applicant.program || 'Unknown program'}</p>
+                          <p className="text-xs" style={{ color: '#1E3D59', opacity: 0.6 }}>{getProgramName(applicant.program) || 'Unknown program'}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">

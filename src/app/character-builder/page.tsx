@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import { CartoonCharacter } from '@/components/shared/CartoonCharacter'
 import { ArrowLeft, Sparkles, Download, Share2, Heart, Star } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -50,15 +49,6 @@ export default function CharacterBuilderPage() {
 
           {/* Character Builder */}
           <div className="grid lg:grid-cols-2 gap-12">
-            {/* Character Display */}
-            <div className="flex justify-center">
-              <CartoonCharacter 
-                size={400} 
-                interactive={true}
-                showControls={true}
-                className="transform hover:scale-105 transition-transform duration-300"
-              />
-            </div>
 
             {/* Features & Actions */}
             <div className="space-y-8">

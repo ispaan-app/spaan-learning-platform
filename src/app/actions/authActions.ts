@@ -8,6 +8,15 @@ import { getAuth } from 'firebase-admin/auth'
 
 export async function loginWithPin(idNumber: string, pin: string) {
   try {
+    // Check if Firebase Admin SDK is properly initialized
+    if (!adminDb || typeof adminDb.collection !== 'function') {
+      console.error('Firebase Admin SDK not initialized')
+      return {
+        success: false,
+        error: 'Server configuration error. Please contact support.'
+      }
+    }
+
     // Find user by ID number - using direct Firestore query for now
     const usersSnapshot = await adminDb
       .collection('users')
@@ -24,6 +33,14 @@ export async function loginWithPin(idNumber: string, pin: string) {
 
     const userDoc = usersSnapshot.docs[0]
     const userData = userDoc.data()
+
+    // Check if user has a hashed PIN
+    if (!userData.hashedPin) {
+      return {
+        success: false,
+        error: 'Account not properly set up. Please contact support.'
+      }
+    }
 
     // Verify PIN using direct hash comparison
     const crypto = await import('crypto')
@@ -49,9 +66,26 @@ export async function loginWithPin(idNumber: string, pin: string) {
 
   } catch (error) {
     console.error('Login error:', error)
+    
+    // Provide more specific error messages based on the error type
+    if (error instanceof Error) {
+      if (error.message.includes('Firebase Admin SDK')) {
+        return {
+          success: false,
+          error: 'Server configuration error. Please contact support.'
+        }
+      }
+      if (error.message.includes('permission')) {
+        return {
+          success: false,
+          error: 'Access denied. Please contact support.'
+        }
+      }
+    }
+    
     return {
       success: false,
-      error: 'An unexpected error occurred. Please try again.'
+      error: 'Login service temporarily unavailable. Please try again later.'
     }
   }
 }

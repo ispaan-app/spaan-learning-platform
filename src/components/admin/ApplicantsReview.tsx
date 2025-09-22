@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { LoadingSpinner } from '@/components/ui/loading'
 import { Progress } from '@/components/ui/progress'
+import { ProgramService } from '@/lib/program-service'
 
 interface Applicant {
   id: string
@@ -34,6 +35,12 @@ interface Applicant {
 }
 
 export function ApplicantsReview() {
+  const [programNames, setProgramNames] = useState<{ [key: string]: string }>({})
+  
+  const formatProgramName = (programId: string) => {
+    return programNames[programId] || programId || 'Unknown Program'
+  }
+
   // Export applicants to CSV
   const handleExportCSV = () => {
     if (!applicants.length) return;
@@ -88,6 +95,25 @@ export function ApplicantsReview() {
   useEffect(() => {
     fetchApplicants()
   }, [])
+
+  // Load program names for applicants
+  useEffect(() => {
+    if (applicants.length > 0) {
+      const uniqueProgramIds = Array.from(new Set(applicants.map(a => a.program).filter(Boolean)))
+      if (uniqueProgramIds.length > 0) {
+        ProgramService.getProgramNames(uniqueProgramIds)
+          .then(setProgramNames)
+          .catch(error => {
+            console.error('Error fetching program names:', error)
+            const fallbackMap: { [key: string]: string } = {}
+            uniqueProgramIds.forEach(id => {
+              fallbackMap[id] = id
+            })
+            setProgramNames(fallbackMap)
+          })
+      }
+    }
+  }, [applicants])
 
   const fetchApplicants = async () => {
     try {
@@ -261,8 +287,8 @@ export function ApplicantsReview() {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-gray-500">Program:</span>
-                      <span className="ml-2 font-medium capitalize">
-                        {applicant.program.replace('-', ' ')}
+                      <span className="ml-2 font-medium">
+                        {formatProgramName(applicant.program)}
                       </span>
                     </div>
                     <div>

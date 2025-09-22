@@ -51,7 +51,7 @@ interface NotificationBellProps {
 }
 
 export function NotificationBell({ className }: NotificationBellProps) {
-  const { user } = useAuth()
+  const { user, role } = useAuth()
   const router = useRouter()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -126,8 +126,8 @@ export function NotificationBell({ className }: NotificationBellProps) {
     if (notification.actionUrl) {
       router.push(notification.actionUrl)
     } else {
-      // Navigate to inbox
-      router.push('/admin/inbox')
+      // Navigate to inbox based on user role
+      router.push(getInboxUrl())
     }
   }
 
@@ -179,6 +179,18 @@ export function NotificationBell({ className }: NotificationBellProps) {
     if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}d`
     
     return date.toLocaleDateString()
+  }
+
+  const getInboxUrl = () => {
+    switch (role) {
+      case 'learner':
+        return '/learner/inbox'
+      case 'admin':
+      case 'super-admin':
+        return '/admin/inbox'
+      default:
+        return '/admin/inbox'
+    }
   }
 
   const recentNotifications = notifications.slice(0, 5)
@@ -292,7 +304,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
 
         <DropdownMenuSeparator />
         <DropdownMenuItem 
-          onClick={() => router.push('/admin/inbox')}
+          onClick={() => router.push(getInboxUrl())}
           className="text-center justify-center"
         >
           <ExternalLink className="w-4 h-4 mr-2" />

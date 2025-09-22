@@ -3,15 +3,17 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { AdminLayout } from '@/components/admin/AdminLayout'
-import { AiChatbot } from '@/components/ai-chatbot'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { WelcomeCard } from '@/components/ui/welcome-card'
 import { useAuth } from '@/hooks/useAuth'
+import { PageLoader } from '@/components/ui/loading'
 import { db } from '@/lib/firebase'
-import { doc, getDoc, updateDoc, collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore'
+import { doc, getDoc, getDocs, collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore'
+import { toast } from 'sonner'
+import { ProgramService } from '@/lib/program-service'
+import { ApplicationTimelineService, ApplicationTimeline } from '@/lib/application-timeline-service'
 import { 
   FileText, 
   Upload, 
@@ -120,11 +122,14 @@ import {
 } from 'lucide-react'
 
 interface Document {
+  id: string
   name: string
-  status: 'uploaded' | 'pending' | 'rejected' | 'approved'
-  required: boolean
-  uploadedAt?: string
+  type: 'certifiedId' | 'proofOfAddress' | 'highestQualification' | 'proofOfBanking' | 'taxNumber'
+  status: 'pending' | 'approved' | 'rejected'
   url?: string
+  uploadedAt: string
+  size?: string
+  fileType?: string
   rejectionReason?: string
 }
 
@@ -141,454 +146,579 @@ interface TimelineStep {
   status: 'completed' | 'in-progress' | 'upcoming' | 'pending'
 }
 
+interface ApplicantData {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  program: string
+  status: 'pending-review' | 'document-review' | 'approved' | 'rejected' | 'waitlisted'
+  documentStatus?: {
+    certifiedId: 'pending' | 'approved' | 'rejected'
+    proofOfAddress: 'pending' | 'approved' | 'rejected'
+    highestQualification: 'pending' | 'approved' | 'rejected'
+    proofOfBanking: 'pending' | 'approved' | 'rejected'
+    taxNumber: 'pending' | 'approved' | 'rejected'
+  }
+  createdAt: string
+  updatedAt: string
+}
+
+// Document types mapping (matching admin system)
+const documentTypes = {
+  certifiedId: {
+    name: 'Certified ID Copy',
+    description: 'Government-issued ID with certification stamp',
+    icon: User,
+    color: 'bg-blue-100 text-blue-600'
+  },
+  proofOfAddress: {
+    name: 'Proof of Address',
+    description: 'Utility bill or bank statement (not older than 3 months)',
+    icon: MapPin,
+    color: 'bg-green-100 text-green-600'
+  },
+  highestQualification: {
+    name: 'Educational Qualifications',
+    description: 'Certificates and transcripts',
+    icon: GraduationCap,
+    color: 'bg-purple-100 text-purple-600'
+  },
+  proofOfBanking: {
+    name: 'Proof of Banking',
+    description: 'Bank statement or letter from bank',
+    icon: Building2,
+    color: 'bg-orange-100 text-orange-600'
+  },
+  taxNumber: {
+    name: 'Tax Number',
+    description: 'SARS tax number certificate',
+    icon: FileText,
+    color: 'bg-red-100 text-red-600'
+  }
+}
+
 export default function ApplicantDashboardPage() {
-  const { user, userData, loading: authLoading } = useAuth()
   const router = useRouter()
-  
-  // State management
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [userApplication, setUserApplication] = useState<any>(null)
+  const { user, loading, role, userData } = useAuth()
+  const [applicantData, setApplicantData] = useState<ApplicantData | null>(null)
   const [documents, setDocuments] = useState<Document[]>([])
-  const [recentActivity, setRecentActivity] = useState<Activity[]>([])
-  const [timeline, setTimeline] = useState<TimelineStep[]>([])
-  const [applicantStats, setApplicantStats] = useState({
-    applicationProgress: 0,
-    documentsUploaded: 0,
-    totalDocuments: 0,
-    daysSinceApplication: 0,
-    nextStep: 'Application Submitted'
-  })
-  // Notifications state
-  const [notifications, setNotifications] = useState<any[]>([])
-  const [showNotifications, setShowNotifications] = useState(false)
+  const [activities, setActivities] = useState<Activity[]>([])
+  const [isLoadingData, setIsLoadingData] = useState(true)
+  const [programName, setProgramName] = useState<string>('')
+  const [timeline, setTimeline] = useState<ApplicationTimeline | null>(null)
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login/user')
+  // Helper: format date
+  function formatDate(date: string | Date) {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleDateString();
+  }
+
+  // Helper: get document status icon
+  function getDocumentStatusIcon(status: string) {
+    switch (status) {
+      case 'approved': return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'rejected': return <AlertCircle className="h-4 w-4 text-red-600" />;
+      case 'pending': return <Clock className="h-4 w-4 text-yellow-600" />;
+      default: return <Clock className="h-4 w-4 text-gray-400" />;
     }
-  }, [user, authLoading, router])
+  }
 
-  // Fetch user application data
-  useEffect(() => {
+  // Helper: get status badge
+  function getStatusBadge(status: string) {
+    // Normalize status to handle both underscore and hyphen formats
+    const normalizedStatus = status.replace(/_/g, '-')
+    
+    switch (normalizedStatus) {
+      case 'approved':
+        return <Badge className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200 px-4 py-2 rounded-full font-semibold shadow-sm">Approved</Badge>
+      case 'rejected':
+        return <Badge className="bg-gradient-to-r from-red-100 to-rose-100 text-red-800 border border-red-200 px-4 py-2 rounded-full font-semibold shadow-sm">Rejected</Badge>
+      case 'pending-review':
+        return <Badge className="bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-800 border border-yellow-200 px-4 py-2 rounded-full font-semibold shadow-sm">Pending Review</Badge>
+      case 'document-review':
+        return <Badge className="bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 border border-blue-200 px-4 py-2 rounded-full font-semibold shadow-sm">Document Review</Badge>
+      case 'waitlisted':
+        return <Badge className="bg-gradient-to-r from-purple-100 to-violet-100 text-purple-800 border border-purple-200 px-4 py-2 rounded-full font-semibold shadow-sm">Waitlisted</Badge>
+      case 'pending':
+        return <Badge className="bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-800 border border-yellow-200 px-4 py-2 rounded-full font-semibold shadow-sm">Pending</Badge>
+      default:
+        console.log('Unknown status:', status, 'normalized to:', normalizedStatus)
+        return <Badge className="bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-800 border border-yellow-200 px-4 py-2 rounded-full font-semibold shadow-sm">Pending Review</Badge>
+    }
+  }
+
+  // Fetch applicant data
+  const fetchApplicantData = async () => {
     if (!user) return
 
-    const fetchApplicationData = async () => {
-      try {
-        setLoading(true)
-        
-        // Fetch user application data
-        const userDoc = await getDoc(doc(db, 'users', user.uid))
-        if (userDoc.exists()) {
-          const userData = userDoc.data()
-          setUserApplication(userData)
-          
-          // Calculate application progress
-          const requiredDocs = ['certifiedId', 'proofOfAddress', 'highestQualification', 'proofOfBanking', 'taxNumber']
-          const uploadedDocs = Object.keys(userData.documents || {}).filter(
-            key => userData.documents[key]?.status === 'uploaded'
-          ).length
-          let progress = 0;
-          if (requiredDocs.length > 0) {
-            progress = Math.round((uploadedDocs / requiredDocs.length) * 100)
-            if (!isFinite(progress) || isNaN(progress)) progress = 0;
-            if (progress < 0) progress = 0;
-            if (progress > 100) progress = 100;
-          }
-          
-          // Calculate days since application
-          const applicationDate = userData.createdAt?.toDate() || new Date()
-          const daysSince = Math.floor((new Date().getTime() - applicationDate.getTime()) / (1000 * 60 * 60 * 24))
-          
-          setApplicantStats({
-            applicationProgress: progress,
-            documentsUploaded: uploadedDocs,
-            totalDocuments: requiredDocs.length,
-            daysSinceApplication: daysSince,
-            nextStep: getNextStep(userData.status, progress)
-          })
-          
-          // Set up documents
-          const docs: Document[] = [
-            { 
-              name: 'Certified ID', 
-              status: userData.documents?.certifiedId?.status || 'pending', 
-              required: true,
-              uploadedAt: userData.documents?.certifiedId?.uploadedAt,
-              url: userData.documents?.certifiedId?.url,
-              rejectionReason: userData.documents?.certifiedId?.rejectionReason
-            },
-            { 
-              name: 'Proof of Address', 
-              status: userData.documents?.proofOfAddress?.status || 'pending', 
-              required: true,
-              uploadedAt: userData.documents?.proofOfAddress?.uploadedAt,
-              url: userData.documents?.proofOfAddress?.url,
-              rejectionReason: userData.documents?.proofOfAddress?.rejectionReason
-            },
-            { 
-              name: 'Highest Qualification Certificate', 
-              status: userData.documents?.highestQualification?.status || 'pending', 
-              required: true,
-              uploadedAt: userData.documents?.highestQualification?.uploadedAt,
-              url: userData.documents?.highestQualification?.url,
-              rejectionReason: userData.documents?.highestQualification?.rejectionReason
-            },
-            { 
-              name: 'Proof of Banking', 
-              status: userData.documents?.proofOfBanking?.status || 'pending', 
-              required: true,
-              uploadedAt: userData.documents?.proofOfBanking?.uploadedAt,
-              url: userData.documents?.proofOfBanking?.url,
-              rejectionReason: userData.documents?.proofOfBanking?.rejectionReason
-            },
-            { 
-              name: 'Tax Number', 
-              status: userData.documents?.taxNumber?.status || 'pending', 
-              required: true,
-              uploadedAt: userData.documents?.taxNumber?.uploadedAt,
-              url: userData.documents?.taxNumber?.url,
-              rejectionReason: userData.documents?.taxNumber?.rejectionReason
-            }
-          ]
-          setDocuments(docs)
-          
-          // Set up timeline
-          const timelineSteps: TimelineStep[] = [
-            { step: 'Application Submitted', date: applicationDate.toLocaleDateString(), status: 'completed' },
-            { step: 'Documents Under Review', date: '', status: progress > 0 ? 'in-progress' : 'upcoming' },
-            { step: 'Document Verification', date: '', status: 'upcoming' },
-            { step: 'Final Decision', date: '', status: 'pending' }
-          ]
-          setTimeline(timelineSteps)
-        }
-      } catch (error) {
-        console.error('Error fetching application data:', error)
-      } finally {
-        setLoading(false)
+    try {
+      console.log('🔄 Starting to fetch applicant data for user:', user.uid)
+      setIsLoadingData(true)
+      
+      // Fetch applicant data from users collection
+      console.log('📋 Fetching user document...')
+      const userDoc = await getDoc(doc(db, 'users', user.uid))
+      let applicantProgram = ''
+      if (userDoc.exists()) {
+        const data = userDoc.data()
+        applicantProgram = data.program || ''
+        console.log('✅ User data found:', { 
+          firstName: data.firstName, 
+          lastName: data.lastName, 
+          program: data.program, 
+          status: data.status 
+        })
+        setApplicantData({
+          id: userDoc.id,
+          firstName: data.firstName || '',
+          lastName: data.lastName || '',
+          email: data.email || '',
+          program: data.program || '',
+          status: data.status || 'pending-review',
+          documentStatus: data.documentStatus || {},
+          createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+          updatedAt: data.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString()
+        })
+      } else {
+        console.log('❌ User document not found')
       }
-    }
 
-    fetchApplicationData()
-  }, [user])
-
-  // Set up real-time activity and notifications updates
-  useEffect(() => {
-    if (!user) return
-
-    // Activities
-    const activitiesQuery = query(
-      collection(db, 'activities'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    )
-    const unsubscribeActivities = onSnapshot(activitiesQuery, (snapshot) => {
-      const activities: Activity[] = snapshot.docs.map(doc => ({
+      // Fetch documents from documents collection
+      console.log('📄 Fetching documents...')
+      const documentsQuery = query(
+        collection(db, 'documents'),
+        where('userId', '==', user.uid),
+        orderBy('uploadedAt', 'desc')
+      )
+      
+      const documentsSnapshot = await getDocs(documentsQuery)
+      console.log('📄 Documents found:', documentsSnapshot.size)
+      const docs = documentsSnapshot.docs.map((doc: any) => ({
         id: doc.id,
-        ...doc.data()
+        name: doc.data().fileName || '',
+        type: doc.data().documentType || '',
+        status: doc.data().status || 'pending',
+        url: doc.data().downloadUrl || '',
+        uploadedAt: doc.data().uploadedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+        size: doc.data().fileSize ? `${Math.round(doc.data().fileSize / 1024)} KB` : '',
+        fileType: doc.data().fileType || '',
+        rejectionReason: doc.data().rejectionReason || ''
+      })) as Document[]
+      
+      setDocuments(docs)
+
+      // Fetch recent activities/notifications
+      console.log('🔔 Fetching activities...')
+      const activitiesQuery = query(
+        collection(db, 'notifications'),
+        where('userId', '==', user.uid),
+        orderBy('createdAt', 'desc'),
+        limit(5)
+      )
+      
+      const activitiesSnapshot = await getDocs(activitiesQuery)
+      console.log('🔔 Activities found:', activitiesSnapshot.size)
+      const activities = activitiesSnapshot.docs.map((doc: any) => ({
+        id: doc.id,
+        action: doc.data().message || '',
+        timestamp: doc.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+        type: doc.data().type || 'notification'
       })) as Activity[]
-      setRecentActivity(activities)
-    })
+      
+      setActivities(activities)
 
-    // Notifications
-    const notificationsQuery = query(
-      collection(db, 'notifications'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    )
-    const unsubscribeNotifications = onSnapshot(notificationsQuery, (snapshot) => {
-      setNotifications(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
-    })
+      // Fetch program name if applicant has a program
+      if (applicantProgram) {
+        console.log('🎓 Fetching program name for:', applicantProgram)
+        try {
+          const programName = await ProgramService.getProgramName(applicantProgram)
+          console.log('✅ Program name fetched:', programName)
+          setProgramName(programName)
+        } catch (error) {
+          console.error('❌ Error fetching program name:', error)
+          setProgramName(applicantProgram) // Fallback to ID if name fetch fails
+        }
+      } else {
+        console.log('ℹ️ No program assigned to applicant')
+        // If no program, set empty string
+        setProgramName('')
+      }
+      
+      // Generate timeline based on application status and document status
+      if (applicantData) {
+        console.log('📅 Generating application timeline...')
+        const applicationDate = new Date(applicantData.createdAt)
+        const lastUpdate = new Date(applicantData.updatedAt)
+        
+        const generatedTimeline = ApplicationTimelineService.generateTimeline(
+          applicantData.status,
+          applicantData.documentStatus || {},
+          applicationDate,
+          lastUpdate
+        )
+        
+        console.log('📅 Timeline generated:', generatedTimeline)
+        setTimeline(generatedTimeline)
+      }
 
-    return () => {
-      unsubscribeActivities()
-      unsubscribeNotifications()
+      console.log('✅ Dashboard data loaded successfully')
+
+    } catch (error) {
+      console.error('Error fetching applicant data:', error)
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        userId: user?.uid
+      })
+      toast.error('Failed to load dashboard data')
+    } finally {
+      setIsLoadingData(false)
     }
-  }, [user])
-  // Mark notifications as read
-  const markNotificationsRead = async () => {
-    if (!user) return
-    const unread = notifications.filter(n => !n.read)
-    for (const n of unread) {
-      await updateDoc(doc(db, 'notifications', n.id), { read: true })
-    }
   }
 
-  // Helper function to safely calculate progress percentage
-  const calculateProgress = (uploaded: number, total: number) => {
-    if (total <= 0) return 0;
-    const progress = Math.round((uploaded / total) * 100);
-    return isFinite(progress) && !isNaN(progress) ? Math.min(Math.max(progress, 0), 100) : 0;
+  // Handle document upload
+  function handleDocumentUpload(type: string) {
+    router.push(`/applicant/upload?type=${type}`)
   }
 
-  const getNextStep = (status: string, progress: number) => {
-    if (progress < 100) return 'Complete Document Upload'
-    if (status === 'pending_review') return 'Document Review'
-    if (status === 'under_review') return 'Document Verification'
-    if (status === 'approved') return 'Application Approved'
-    if (status === 'rejected') return 'Application Rejected'
-    return 'Document Review'
-  }
-
-  const handleRefresh = async () => {
-    setRefreshing(true)
-    // Refresh logic will be handled by the useEffect
-    setTimeout(() => setRefreshing(false), 1000)
-  }
-
-  const handleDocumentUpload = (documentType: string) => {
-    // Navigate to document upload page
-    router.push(`/applicant/upload?type=${documentType}`)
-  }
-
-  const handleViewApplication = () => {
+  // Handle view application
+  function handleViewApplication() {
     router.push('/applicant/application')
   }
 
-  // Profile functionality removed
+  // Handle refresh
+  function handleRefresh() {
+    fetchApplicantData()
+    toast.success('Dashboard refreshed')
+  }
 
-  // Helper function to safely convert dates
-  const formatDate = (dateValue: any): string => {
-    if (!dateValue) return 'Not uploaded'
+  // Calculate application progress
+  const calculateProgress = () => {
+    if (!applicantData?.documentStatus) return 0
     
-    try {
-      // If it's a Firestore Timestamp, convert it
-      if (dateValue.toDate && typeof dateValue.toDate === 'function') {
-        return dateValue.toDate().toLocaleDateString()
+    const totalDocs = 5
+    const approvedDocs = Object.values(applicantData.documentStatus).filter(status => status === 'approved').length
+    return Math.round((approvedDocs / totalDocs) * 100)
+  }
+
+  // Get required documents with current status
+  const getRequiredDocuments = () => {
+    const requiredDocTypes = ['certifiedId', 'proofOfAddress', 'highestQualification', 'proofOfBanking', 'taxNumber']
+    
+    return requiredDocTypes.map(docType => {
+      const docTypeInfo = documentTypes[docType as keyof typeof documentTypes]
+      const uploadedDoc = documents.find(doc => doc.type === docType)
+      const status = applicantData?.documentStatus?.[docType as keyof typeof applicantData.documentStatus] || 'pending'
+      
+      return {
+        type: docType,
+        name: docTypeInfo.name,
+        description: docTypeInfo.description,
+        icon: docTypeInfo.icon,
+        color: docTypeInfo.color,
+        status: uploadedDoc ? status : 'pending',
+        uploadedAt: uploadedDoc?.uploadedAt,
+        url: uploadedDoc?.url,
+        rejectionReason: uploadedDoc?.rejectionReason
       }
-      // If it's already a Date object or valid date string
-      return new Date(dateValue).toLocaleDateString()
-    } catch (error) {
-      console.error('Error formatting date:', error)
-      return 'Invalid Date'
+    })
+  }
+
+  // Redirect if not authenticated or not an applicant
+  useEffect(() => {
+    if (!loading && (!user || role !== 'applicant')) {
+      router.push('/login')
     }
-  }
+  }, [user, loading, role, router])
 
-  const handleDocumentStatusUpdate = async (documentType: string, status: string, rejectionReason?: string) => {
-    if (!user) return
-
-    try {
-      const userRef = doc(db, 'users', user.uid)
-      const updateData: any = {
-        [`documents.${documentType}.status`]: status,
-        [`documents.${documentType}.updatedAt`]: new Date().toISOString(),
-        updatedAt: new Date()
-      }
-
-      if (rejectionReason) {
-        updateData[`documents.${documentType}.rejectionReason`] = rejectionReason
-      }
-
-      await updateDoc(userRef, updateData)
-
-      // Add activity log
-      const activityRef = doc(collection(db, 'activities'))
-      await updateDoc(activityRef, {
-        userId: user.uid,
-        action: `Document ${documentType} status updated to ${status}`,
-        type: 'status',
-        timestamp: new Date().toISOString(),
-        createdAt: new Date()
-      })
-
-      // Refresh the page data
-      handleRefresh()
-    } catch (error) {
-      console.error('Error updating document status:', error)
+  // Fetch data when component mounts
+  useEffect(() => {
+    if (user && role === 'applicant') {
+      fetchApplicantData()
     }
+  }, [user, role])
+
+  if (loading || isLoadingData) {
+    return <PageLoader message="Loading your dashboard..." />
   }
 
-  const getDocumentStatusColor = (status: string) => {
-    switch (status) {
-      case 'uploaded': return 'text-green-600'
-      case 'rejected': return 'text-red-600'
-      case 'approved': return 'text-blue-600'
-      case 'under_review': return 'text-yellow-600'
-      default: return 'text-gray-600'
-    }
+  if (!user || role !== 'applicant') {
+    return null
   }
 
-  const getDocumentStatusIcon = (status: string) => {
-    switch (status) {
-      case 'uploaded': return <CheckCircle className="h-5 w-5 text-green-600" />
-      case 'rejected': return <AlertCircle className="h-5 w-5 text-red-600" />
-      case 'approved': return <CheckCircle className="h-5 w-5 text-blue-600" />
-      case 'under_review': return <Clock className="h-5 w-5 text-yellow-600" />
-      default: return <Clock className="h-5 w-5 text-gray-600" />
-    }
-  }
-
-  if (authLoading || loading) {
-    return (
-      <AdminLayout userRole="applicant">
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="flex items-center space-x-2">
-            <RefreshCw className="h-6 w-6 animate-spin text-blue-600" />
-            <span className="text-lg text-gray-600">Loading your dashboard...</span>
-          </div>
-        </div>
-      </AdminLayout>
-    )
-  }
-
-  if (!user) {
-    return null // Will redirect to login
-  }
+  const progress = calculateProgress()
+  const requiredDocuments = getRequiredDocuments()
 
   return (
     <AdminLayout userRole="applicant">
-      <div className="space-y-6 animate-in fade-in duration-500">
-        {/* Header with Refresh Button */}
-        <div className="flex justify-between items-center">
-        <WelcomeCard 
-          userName={user?.displayName || userData?.firstName || "Applicant"} 
-          userRole="applicant" 
-            className="animate-in slide-in-from-bottom duration-700 delay-300"
-          />
-          <Button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            variant="outline"
-            size="sm"
-            className="animate-in slide-in-from-right duration-700 delay-300"
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+        <div className="space-y-8 p-6">
+          {/* Welcome Section - Keep as requested */}
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 text-white shadow-2xl">
+            <h1 className="text-3xl font-bold mb-2">Welcome back, {applicantData?.firstName || userData?.firstName || 'Applicant'}!</h1>
+            <p className="text-blue-100">Track your application progress and manage your documents</p>
+          </div>
 
-        {/* Key Performance Indicators */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in slide-in-from-bottom duration-700 delay-300">
-          <Card className="shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <FileText className="h-6 w-6 text-blue-600" />
+          {/* Application Status - Enhanced AppEver Design */}
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl rounded-3xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6">
+              <CardTitle className="flex items-center text-xl font-bold">
+                <div className="p-2 bg-white/20 rounded-xl mr-3">
+                  <FileText className="w-6 h-6" />
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Application Progress</p>
-                  <p className="text-2xl font-bold text-blue-600">{applicantStats.applicationProgress}%</p>
-                  <p className="text-xs text-gray-500">Complete</p>
+                Application Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-8">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-2xl">
+                  <span className="font-semibold text-slate-700">Current Status</span>
+                  {applicantData?.status && getStatusBadge(applicantData.status)}
                 </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm font-medium text-slate-600">
+                    <span>Application Progress</span>
+                    <span className="text-indigo-600">{progress}%</span>
+                  </div>
+                  <div className="relative">
+                    <Progress value={progress} className="h-3 bg-slate-200 rounded-full" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full opacity-20"></div>
+                  </div>
+                </div>
+                {applicantData?.program && (
+                  <div className="p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl border border-emerald-200">
+                    <div className="text-sm text-slate-700">
+                      <span className="font-semibold text-emerald-700">Program:</span> 
+                      <span className="ml-2 text-slate-600">{programName || 'Loading...'}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
+          {/* Required Documents - Enhanced AppEver Design */}
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl rounded-3xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white p-6">
+              <CardTitle className="flex items-center text-xl font-bold">
+                <div className="p-2 bg-white/20 rounded-xl mr-3">
+                  <Upload className="w-6 h-6" />
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">Documents Uploaded</p>
-                  <p className="text-2xl font-bold text-green-600">{applicantStats.documentsUploaded}/{applicantStats.totalDocuments}</p>
-                  <p className="text-xs text-gray-500">Required docs</p>
-                </div>
+                Required Documents
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-8">
+              <div className="space-y-4">
+                {requiredDocuments.map((doc, index) => {
+                  const IconComponent = doc.icon
+                  return (
+                    <div key={index} className="group relative overflow-hidden bg-gradient-to-r from-white to-slate-50 border border-slate-200 rounded-2xl p-6 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className={`p-3 rounded-2xl ${doc.color} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                            <IconComponent className="w-6 h-6" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              {getDocumentStatusIcon(doc.status)}
+                              <span className="font-semibold text-slate-800 text-lg">{doc.name}</span>
+                              <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                doc.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                doc.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                'bg-yellow-100 text-yellow-700'
+                              }`}>
+                                {doc.status.charAt(0).toUpperCase() + doc.status.slice(1)}
+                              </div>
+                            </div>
+                            <p className="text-sm text-slate-600 mb-2">{doc.description}</p>
+                            {doc.rejectionReason && (
+                              <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
+                                <p className="text-sm text-red-700">
+                                  <strong>Rejection reason:</strong> {doc.rejectionReason}
+                                </p>
+                              </div>
+                            )}
+                            {doc.uploadedAt && (
+                              <p className="text-xs text-slate-500">
+                                Uploaded: {formatDate(doc.uploadedAt)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {doc.status === 'approved' ? (
+                            <Button size="sm" variant="outline" disabled className="bg-green-50 border-green-200 text-green-700 hover:bg-green-50">
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Approved
+                            </Button>
+                          ) : doc.url ? (
+                            <div className="flex space-x-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => window.open(doc.url, '_blank')}
+                                className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                View
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                onClick={() => handleDocumentUpload(doc.type)}
+                                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white"
+                              >
+                                <Upload className="w-4 h-4 mr-2" />
+                                Replace
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleDocumentUpload(doc.type)}
+                              className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white"
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              Upload
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Calendar className="h-6 w-6 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Days Since Application</p>
-                  <p className="text-2xl font-bold text-purple-600">{applicantStats.daysSinceApplication}</p>
-                  <p className="text-xs text-gray-500">Days ago</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <Award className="h-6 w-6 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Next Step</p>
-                  <p className="text-sm font-bold text-orange-600">Induction</p>
-                  <p className="text-xs text-gray-500">Scheduled</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom duration-700 delay-500">
-          {/* Left Column - Application Progress and Recent Activity */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Application Progress */}
-            <Card className="animate-in slide-in-from-left duration-700 delay-600">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5 text-blue-600" />
-                  <span>Application Progress</span>
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+          {/* Quick Actions - Enhanced AppEver Design */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Application Timeline */}
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl rounded-3xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-6">
+                <CardTitle className="flex items-center text-xl font-bold">
+                  <div className="p-2 bg-white/20 rounded-xl mr-3">
+                    <Calendar className="w-6 h-6" />
+                  </div>
+                  Application Timeline
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Overall Progress</span>
-                    <span className="font-semibold">{applicantStats.applicationProgress}%</span>
-                  </div>
-                  <Progress value={applicantStats.applicationProgress} className="h-3" />
-                </div>
+              <CardContent className="p-8">
+                <div className="space-y-6">
+                  {timeline ? (
+                    <>
+                      {/* Timeline Progress */}
+                      <div className="mb-6">
+                        <div className="flex justify-between text-sm mb-3 font-semibold text-slate-700">
+                          <span>Application Progress</span>
+                          <span className="text-purple-600">{timeline.progress}%</span>
+                        </div>
+                        <div className="relative">
+                          <Progress value={timeline.progress} className="h-4 bg-slate-200 rounded-full" />
+                          <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full opacity-30"></div>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-2 text-center">
+                          Step {timeline.currentStep} of {timeline.totalSteps}
+                        </p>
+                      </div>
 
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <h3 className="font-semibold text-blue-900">Next Step: {applicantStats.nextStep}</h3>
-                  <p className="text-sm text-blue-700">Your documents are being reviewed by our team. You'll be notified once the review is complete.</p>
-                </div>
+                      {/* Timeline Events */}
+                      <div className="space-y-4">
+                        {timeline.events.map((event, index) => (
+                          <div key={event.id} className="group relative">
+                            <div className="flex items-start space-x-4">
+                              <div className={`w-4 h-4 rounded-full mt-2 shadow-lg ${
+                                event.status === 'completed' ? 'bg-green-500 ring-4 ring-green-200' :
+                                event.status === 'in-progress' ? 'bg-blue-500 ring-4 ring-blue-200' :
+                                event.status === 'upcoming' ? 'bg-yellow-500 ring-4 ring-yellow-200' :
+                                'bg-gray-300 ring-4 ring-gray-200'
+                              }`} />
+                              <div className="flex-1 min-w-0 bg-gradient-to-r from-white to-slate-50 rounded-2xl p-4 border border-slate-200 group-hover:shadow-md transition-all duration-300">
+                                <div className="flex items-center space-x-3 mb-2">
+                                  <span className="text-2xl">
+                                    {ApplicationTimelineService.getTimelineIcon(event.type)}
+                                  </span>
+                                  <span className="font-semibold text-slate-800">{event.title}</span>
+                                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${ApplicationTimelineService.getTimelineColor(event.status)}`}>
+                                    {event.status.replace('-', ' ')}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-slate-600 mb-2">{event.description}</p>
+                                <p className="text-xs text-slate-500">
+                                  {formatDate(event.timestamp)}
+                                </p>
+                                {event.metadata?.notes && (
+                                  <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-xl">
+                                    <p className="text-xs text-blue-700 italic">
+                                      Note: {event.metadata.notes}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
 
-                <Button 
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                  onClick={() => router.push('/applicant/upload')}
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload Documents
-                </Button>
+                      {/* Next Step */}
+                      {timeline.nextStep && (
+                        <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
+                          <div className="flex items-center space-x-3">
+                            <Clock className="w-5 h-5 text-blue-600" />
+                            <span className="font-semibold text-blue-900">Next Step</span>
+                          </div>
+                          <p className="text-sm text-blue-800 mt-2 font-medium">{timeline.nextStep.title}</p>
+                          <p className="text-xs text-blue-600 mt-1">{timeline.nextStep.description}</p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Clock className="w-8 h-8 text-purple-600" />
+                      </div>
+                      <p className="text-sm text-slate-500">Loading timeline...</p>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
             {/* Recent Activity */}
-            <Card className="animate-in slide-in-from-left duration-700 delay-700">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <TrendingUp className="h-5 w-5 text-green-600" />
-                  <span>Recent Activity</span>
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl rounded-3xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-orange-500 to-red-600 text-white p-6">
+                <CardTitle className="flex items-center text-xl font-bold">
+                  <div className="p-2 bg-white/20 rounded-xl mr-3">
+                    <Bell className="w-6 h-6" />
+                  </div>
+                  Recent Activity
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-8">
                 <div className="space-y-4">
-                  {recentActivity.length > 0 ? (
-                    recentActivity.slice(0, 5).map((activity) => (
-                      <div key={activity.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                        <div className={`w-2 h-2 rounded-full ${
-                          activity.type === 'document' ? 'bg-green-500' :
-                          activity.type === 'status' ? 'bg-blue-500' :
-                          activity.type === 'review' ? 'bg-yellow-500' :
-                          'bg-purple-500'
-                        }`}></div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(activity.timestamp).toLocaleDateString()} at {new Date(activity.timestamp).toLocaleTimeString()}
-                          </p>
+                  {activities.length > 0 ? (
+                    activities.map((activity, index) => (
+                      <div key={activity.id || index} className="group relative">
+                        <div className="flex items-start space-x-4">
+                          <div className={`w-3 h-3 rounded-full mt-2 shadow-lg ${
+                            activity.type === 'document' ? 'bg-green-500 ring-4 ring-green-200' :
+                            activity.type === 'status' ? 'bg-blue-500 ring-4 ring-blue-200' :
+                            activity.type === 'review' ? 'bg-purple-500 ring-4 ring-purple-200' :
+                            'bg-gray-500 ring-4 ring-gray-200'
+                          }`} />
+                          <div className="flex-1 bg-gradient-to-r from-white to-slate-50 rounded-2xl p-4 border border-slate-200 group-hover:shadow-md transition-all duration-300">
+                            <p className="text-sm font-semibold text-slate-800 mb-1">{activity.action}</p>
+                            <p className="text-xs text-slate-500">{formatDate(activity.timestamp)}</p>
+                          </div>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <Clock className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                      <p className="text-sm">No recent activity</p>
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 bg-gradient-to-r from-orange-100 to-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Bell className="w-8 h-8 text-orange-600" />
+                      </div>
+                      <p className="text-sm text-slate-500">No recent activity</p>
                     </div>
                   )}
                 </div>
@@ -596,382 +726,26 @@ export default function ApplicantDashboardPage() {
             </Card>
           </div>
 
-          {/* Right Column - Documents and Quick Actions */}
-          <div className="space-y-6">
-            {/* Enhanced Document Status */}
-            <Card className="bg-white/90 backdrop-blur-md shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 animate-in slide-in-from-right duration-700 delay-600">
-              <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-t-lg">
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
-                      <FileText className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                        Document Status
-                      </span>
-                      <p className="text-sm text-gray-600">Track your document uploads</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-green-600">
-                      {applicantStats.documentsUploaded}/{applicantStats.totalDocuments}
-                    </div>
-                    <div className="text-sm text-gray-500">uploaded</div>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6 p-6">
-                {/* Enhanced Progress Bar */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
-                      <Target className="h-4 w-4 text-green-600" />
-                      <span>Document Progress</span>
-                    </span>
-                    <span className="text-lg font-bold text-green-600">
-                      {calculateProgress(applicantStats.documentsUploaded, applicantStats.totalDocuments)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div 
-                      className="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-1000 ease-out relative"
-                      style={{ 
-                        width: `${calculateProgress(applicantStats.documentsUploaded, applicantStats.totalDocuments)}%` 
-                      }}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
-                    </div>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>{applicantStats.documentsUploaded} uploaded</span>
-                    <span>{Math.max(0, applicantStats.totalDocuments - applicantStats.documentsUploaded)} remaining</span>
-                  </div>
-                </div>
-
-                {/* Enhanced Documents List */}
-                <div className="space-y-4">
-                  {documents.map((doc, index) => (
-                    <div key={index} className={`group relative p-4 border-2 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02] ${
-                      doc.status === 'uploaded' ? 'border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 shadow-green-100' :
-                      doc.status === 'rejected' ? 'border-red-200 bg-gradient-to-r from-red-50 to-pink-50 shadow-red-100' :
-                      doc.status === 'approved' ? 'border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50 shadow-blue-100' :
-                      'border-yellow-200 bg-gradient-to-r from-yellow-50 to-orange-50 shadow-yellow-100'
-                    }`}>
-                      {/* Status Indicator */}
-                      <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
-                        {doc.status === 'uploaded' && <CheckCircle className="h-4 w-4 text-green-600" />}
-                        {doc.status === 'rejected' && <AlertCircle className="h-4 w-4 text-red-600" />}
-                        {doc.status === 'approved' && <Award className="h-4 w-4 text-blue-600" />}
-                        {doc.status === 'pending' && <Clock className="h-4 w-4 text-yellow-600" />}
-                      </div>
-                      
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-4 flex-1">
-                          <div className="flex-shrink-0 mt-1">
-                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                              doc.status === 'uploaded' ? 'bg-green-100' :
-                              doc.status === 'rejected' ? 'bg-red-100' :
-                              doc.status === 'approved' ? 'bg-blue-100' :
-                              'bg-yellow-100'
-                            }`}>
-                              {getDocumentStatusIcon(doc.status)}
-                            </div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <p className="text-sm font-semibold text-gray-900">{doc.name}</p>
-                              {doc.required && (
-                                <Badge variant="outline" className="text-xs px-2 py-1 bg-orange-100 text-orange-800 border-orange-200">
-                                  Required
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="space-y-2">
-                              <p className="text-xs text-gray-500 flex items-center space-x-1">
-                                <Calendar className="h-3 w-3" />
-                                <span>
-                                  {doc.uploadedAt ? `Uploaded ${formatDate(doc.uploadedAt)}` : 'Not uploaded'}
-                                </span>
-                              </p>
-                              {doc.rejectionReason && (
-                                <div className="p-3 bg-red-100 rounded-lg border border-red-200">
-                                  <div className="flex items-start space-x-2">
-                                    <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
-                                    <div>
-                                      <p className="text-xs font-semibold text-red-800">Rejection Reason:</p>
-                                      <p className="text-xs text-red-700">{doc.rejectionReason}</p>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex flex-col items-end space-y-2">
-                          {/* Status Badge */}
-                          <Badge 
-                            className={`px-3 py-1 text-xs font-semibold shadow-sm ${
-                              doc.status === 'uploaded' ? 'bg-green-100 text-green-800 border-green-200' :
-                              doc.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-200' :
-                              doc.status === 'approved' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                              'bg-yellow-100 text-yellow-800 border-yellow-200'
-                            }`}
-                          >
-                            {doc.status === 'uploaded' ? 'Uploaded' : 
-                             doc.status === 'rejected' ? 'Rejected' : 
-                             doc.status === 'approved' ? 'Approved' : 'Pending'}
-                          </Badge>
-                          
-                          {/* Action Buttons */}
-                          <div className="flex items-center space-x-1">
-                            {doc.status === 'uploaded' && doc.url && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => window.open(doc.url, '_blank')}
-                                  className="h-8 w-8 p-0 hover:bg-green-100 hover:text-green-700 transition-colors"
-                                  title="View document"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    const link = document.createElement('a')
-                                    link.href = doc.url!
-                                    link.download = `${doc.name}.pdf`
-                                    link.click()
-                                  }}
-                                  className="h-8 w-8 p-0 hover:bg-green-100 hover:text-green-700 transition-colors"
-                                  title="Download document"
-                                >
-                                  <Download className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
-                            
-                            {doc.status !== 'uploaded' && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  const documentTypeMap = {
-                                    'Certified ID': 'certifiedid',
-                                    'Proof of Address': 'proofofaddress',
-                                    'Highest Qualification Certificate': 'highestqualification',
-                                    'Proof of Banking': 'proofofbanking',
-                                    'Tax Number': 'taxnumber'
-                                  }
-                                  handleDocumentUpload(documentTypeMap[doc.name as keyof typeof documentTypeMap] || 'certifiedid')
-                                }}
-                                className={`h-8 text-xs transition-all duration-200 hover:scale-105 ${
-                                  doc.status === 'rejected' 
-                                    ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' 
-                                    : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
-                                }`}
-                              >
-                                <Upload className="h-3 w-3 mr-1" />
-                                {doc.status === 'rejected' ? 'Re-upload' : 'Upload'}
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Enhanced Document Statistics */}
-                <div className="mt-6 p-6 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 rounded-xl border border-blue-200 shadow-lg">
-                  <div className="flex items-center space-x-2 mb-4">
-                    <BarChart3 className="h-5 w-5 text-blue-600" />
-                    <h4 className="text-lg font-bold text-blue-900">Document Summary</h4>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-                      <div className="text-2xl font-bold text-blue-900">{applicantStats.totalDocuments}</div>
-                      <div className="text-sm text-blue-700">Total Required</div>
-                    </div>
-                    <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-                      <div className="text-2xl font-bold text-green-600">{applicantStats.documentsUploaded}</div>
-                      <div className="text-sm text-green-700">Uploaded</div>
-                    </div>
-                    <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-                      <div className="text-2xl font-bold text-yellow-600">
-                        {Math.max(0, applicantStats.totalDocuments - applicantStats.documentsUploaded)}
-                      </div>
-                      <div className="text-sm text-yellow-700">Pending</div>
-                    </div>
-                    <div className="text-center p-3 bg-white rounded-lg shadow-sm">
-                      <div className="text-2xl font-bold text-purple-600">
-                        {calculateProgress(applicantStats.documentsUploaded, applicantStats.totalDocuments)}%
-                      </div>
-                      <div className="text-sm text-purple-700">Progress</div>
-                    </div>
-                  </div>
-                  
-                  {/* Status Messages */}
-                  {applicantStats.documentsUploaded < applicantStats.totalDocuments && (
-                    <div className="p-4 bg-gradient-to-r from-amber-100 to-orange-100 rounded-lg border border-amber-200">
-                      <div className="flex items-start space-x-3">
-                        <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="font-semibold text-amber-800">Action Required</p>
-                          <p className="text-sm text-amber-700">
-                            Upload all required documents to complete your application and proceed to the next stage.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {applicantStats.documentsUploaded === applicantStats.totalDocuments && (
-                    <div className="p-4 bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg border border-green-200">
-                      <div className="flex items-start space-x-3">
-                        <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="font-semibold text-green-800">Complete</p>
-                          <p className="text-sm text-green-700">
-                            All required documents have been uploaded. Your application is ready for review.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Enhanced Quick Actions */}
-                <div className="mt-6 space-y-3">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <Zap className="h-4 w-4 text-purple-600" />
-                    <span className="text-sm font-semibold text-gray-700">Quick Actions</span>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 gap-3">
-                    <Button
-                      onClick={() => router.push('/applicant/upload')}
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Documents
-                    </Button>
-                    
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => router.push('/applicant/status')}
-                        className="text-xs hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
-                      >
-                        <FileText className="h-3 w-3 mr-1" />
-                        View Status
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => router.push('/applicant/profile')}
-                        className="text-xs hover:bg-green-50 hover:border-green-300 transition-all duration-200"
-                      >
-                        <User className="h-3 w-3 mr-1" />
-                        Profile
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card className="animate-in slide-in-from-right duration-700 delay-700">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <User className="h-5 w-5 text-purple-600" />
-                  <span>Quick Actions</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={handleViewApplication}
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  View Application
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => router.push('/applicant/status')}
-                >
-                  <TrendingUp className="mr-2 h-4 w-4" />
-                  Application Status
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => router.push('/applicant/support')}
-                >
-                  <AlertCircle className="mr-2 h-4 w-4" />
-                  Get Support
-                </Button>
-              </CardContent>
-            </Card>
+          {/* Action Buttons - Enhanced AppEver Design */}
+          <div className="flex flex-col sm:flex-row gap-6">
+            <Button 
+              onClick={handleViewApplication} 
+              className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-semibold py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            >
+              <FileText className="w-5 h-5 mr-3" />
+              View Full Application
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleRefresh} 
+              className="flex-1 bg-white/80 backdrop-blur-sm border-2 border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-700 font-semibold py-4 px-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            >
+              <RefreshCw className="w-5 h-5 mr-3" />
+              Refresh Status
+            </Button>
           </div>
         </div>
-
-        {/* Application Timeline */}
-        <Card className="animate-in slide-in-from-bottom duration-700 delay-800">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Calendar className="h-5 w-5 text-purple-600" />
-              <span>Application Timeline</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {timeline.map((item, index) => (
-                <div key={index} className="flex items-center space-x-4">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    item.status === 'completed' ? 'bg-green-100 text-green-600' :
-                    item.status === 'in-progress' ? 'bg-yellow-100 text-yellow-600' :
-                    item.status === 'upcoming' ? 'bg-blue-100 text-blue-600' :
-                    'bg-gray-100 text-gray-600'
-                  }`}>
-                    {item.status === 'completed' ? (
-                      <CheckCircle className="h-4 w-4" />
-                    ) : item.status === 'in-progress' ? (
-                      <Clock className="h-4 w-4" />
-                    ) : (
-                      <Clock className="h-4 w-4" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium">{item.step}</p>
-                    <p className="text-sm text-gray-600">{item.date}</p>
-                  </div>
-                  <Badge 
-                    variant="outline"
-                    className={
-                      item.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      item.status === 'in-progress' ? 'bg-yellow-100 text-yellow-800' :
-                      item.status === 'upcoming' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-                    }
-                  >
-                    {item.status === 'in-progress' ? 'In Progress' : item.status}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
-      
-      {/* AI Support Chatbot */}
-      <AiChatbot />
     </AdminLayout>
   )
 }

@@ -6,7 +6,6 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import Avatar from 'react-nice-avatar'
 import { 
   ArrowRight, 
   ArrowLeft, 
@@ -28,171 +27,118 @@ import {
   Pause,
   RotateCcw
 } from 'lucide-react'
+import { db } from '@/lib/firebase'
+import { collection, getDocs, orderBy, query, where } from 'firebase/firestore'
 
 interface OnboardingStep {
   id: string
   title: string
   subtitle: string
   description: string
-  avatarConfig: {
-    sex: 'man' | 'woman'
-    faceColor: string
-    earSize: 'small' | 'big'
-    eyeStyle: 'circle' | 'oval' | 'smile'
-    noseStyle: 'short' | 'long' | 'round'
-    mouthStyle: 'laugh' | 'smile' | 'peace'
-    shirtStyle: 'hoody' | 'short' | 'polo'
-    glassesStyle: 'none' | 'round' | 'square'
-    hairColor: string
-    hairStyle: 'normal' | 'thick' | 'mohawk' | 'womanLong' | 'womanShort'
-    hatStyle: 'none' | 'beanie' | 'turban'
-    shirtColor: string
-    bgColor: string
-  }
   features: string[]
   color: string
   icon: React.ComponentType<any>
 }
 
-const onboardingSteps: OnboardingStep[] = [
+const defaultSteps: OnboardingStep[] = [
   {
     id: 'welcome',
     title: 'Welcome to iSpaan!',
     subtitle: 'Your Learning Journey Starts Here',
     description: 'We\'re excited to have you join our community of learners and innovators.',
-    avatarConfig: {
-      sex: 'man' as const,
-      faceColor: '#F9C9B6',
-      earSize: 'small' as const,
-      eyeStyle: 'smile' as const,
-      noseStyle: 'short' as const,
-      mouthStyle: 'smile' as const,
-      shirtStyle: 'hoody' as const,
-      glassesStyle: 'none' as const,
-      hairColor: '#8B4513',
-      hairStyle: 'normal' as const,
-      hatStyle: 'none' as const,
-      shirtColor: '#4A90E2',
-      bgColor: '#E8F4FD'
-    },
-    features: [
-      'Personalized learning paths',
-      'Expert mentorship',
-      'Real-world projects',
-      'Career guidance'
-    ],
-    color: 'blue',
-    icon: Heart
-  },
-  {
-    id: 'discover',
-    title: 'Discover Your Path',
-    subtitle: 'Find the Perfect Program',
-    description: 'Explore our diverse range of programs designed to match your interests and career goals.',
-    avatarConfig: {
-      sex: 'woman' as const,
-      faceColor: '#F9C9B6',
-      earSize: 'small' as const,
-      eyeStyle: 'circle' as const,
-      noseStyle: 'short' as const,
-      mouthStyle: 'smile' as const,
-      shirtStyle: 'polo' as const,
-      glassesStyle: 'none' as const,
-      hairColor: '#D4AF37',
-      hairStyle: 'womanLong' as const,
-      hatStyle: 'none' as const,
-      shirtColor: '#2E8B57',
-      bgColor: '#F0F8F0'
-    },
-    features: [
-      'Computer Science',
-      'Data Science',
-      'Web Development',
-      'Digital Marketing'
-    ],
-    color: 'purple',
-    icon: Target
-  },
-  {
-    id: 'learn',
-    title: 'Learn & Grow',
-    subtitle: 'Interactive Learning Experience',
-    description: 'Engage with hands-on projects, peer collaboration, and expert guidance.',
-    avatarConfig: {
-      sex: 'man' as const,
-      faceColor: '#F9C9B6',
-      earSize: 'small' as const,
-      eyeStyle: 'smile' as const,
-      noseStyle: 'short' as const,
-      mouthStyle: 'smile' as const,
-      shirtStyle: 'short' as const,
-      glassesStyle: 'none' as const,
-      hairColor: '#000000',
-      hairStyle: 'normal' as const,
-      hatStyle: 'none' as const,
-      shirtColor: '#FF6B6B',
-      bgColor: '#FFF0F0'
-    },
-    features: [
-      'Interactive lessons',
-      'Project-based learning',
-      'Peer collaboration',
-      'Expert mentorship'
-    ],
-    color: 'green',
-    icon: Brain
-  },
-  {
-    id: 'succeed',
-    title: 'Achieve Success',
-    subtitle: 'Transform Your Career',
-    description: 'Graduate with industry-ready skills and a portfolio that opens doors.',
-    avatarConfig: {
-      sex: 'woman' as const,
-      faceColor: '#F9C9B6',
-      earSize: 'small' as const,
-      eyeStyle: 'smile' as const,
-      noseStyle: 'short' as const,
-      mouthStyle: 'laugh' as const,
-      shirtStyle: 'polo' as const,
-      glassesStyle: 'none' as const,
-      hairColor: '#8B4513',
-      hairStyle: 'womanLong' as const,
-      hatStyle: 'none' as const,
-      shirtColor: '#9B59B6',
-      bgColor: '#F3E5F5'
-    },
-    features: [
-      'Industry certifications',
-      'Portfolio development',
-      'Job placement support',
-      'Lifetime access'
-    ],
-    color: 'orange',
-    icon: Award
+    features: ['AI-Powered Learning', 'Real-time Progress Tracking', 'Industry Connections'],
+    color: '#4A90E2',
+    icon: Users
   }
 ]
 
-export function MobileOnboardingFlow() {
-  const [currentStep, setCurrentStep] = useState(0)
-  const [isAnimating, setIsAnimating] = useState(false)
-  const [showFeatures, setShowFeatures] = useState(false)
+export default function MobileOnboardingFlow() {
   const router = useRouter()
-
-  const step = onboardingSteps[currentStep]
-  const progress = ((currentStep + 1) / onboardingSteps.length) * 100
+  const [currentStep, setCurrentStep] = useState(0)
+  const [showFeatures, setShowFeatures] = useState(false)
+  const [isAnimating, setIsAnimating] = useState(false)
+  const [steps, setSteps] = useState<OnboardingStep[]>(defaultSteps)
+  const [realData, setRealData] = useState({
+    activeLearners: 0,
+    industryPartners: 0,
+    successRate: 0,
+    totalPrograms: 0
+  })
+  const [isLoadingData, setIsLoadingData] = useState(true)
 
   useEffect(() => {
     setIsAnimating(true)
-    const timer = setTimeout(() => {
-      setIsAnimating(false)
-      setShowFeatures(true)
-    }, 500)
-    return () => clearTimeout(timer)
-  }, [currentStep])
+  }, [])
+
+  // Fetch real data from Firebase
+  const fetchRealData = async () => {
+    try {
+      setIsLoadingData(true)
+      
+      // Fetch active learners
+      const learnersQuery = query(
+        collection(db, 'users'),
+        where('role', '==', 'learner'),
+        where('status', '==', 'active')
+      )
+      const learnersSnapshot = await getDocs(learnersQuery)
+      const activeLearners = learnersSnapshot.size
+
+      // Fetch total applications
+      const applicationsSnapshot = await getDocs(collection(db, 'applications'))
+      const totalApplications = applicationsSnapshot.size
+
+      // Fetch programs (industry partners)
+      const programsSnapshot = await getDocs(collection(db, 'programs'))
+      const totalPrograms = programsSnapshot.size
+
+      // Fetch completed placements
+      const placementsQuery = query(
+        collection(db, 'placements'),
+        where('status', '==', 'completed')
+      )
+      const placementsSnapshot = await getDocs(placementsQuery)
+      const completedPlacements = placementsSnapshot.size
+
+      // Calculate success rate
+      const successRate = totalApplications > 0 
+        ? Math.round((completedPlacements / totalApplications) * 100)
+        : 0
+
+      setRealData({
+        activeLearners,
+        industryPartners: totalPrograms,
+        successRate,
+        totalPrograms
+      })
+
+      // Update steps with real data
+      const updatedSteps = [
+        {
+          ...defaultSteps[0],
+          features: [
+            `${activeLearners.toLocaleString()}+ Active Learners`,
+            'AI-Powered Learning',
+            'Real-time Progress Tracking'
+          ]
+        }
+      ]
+      
+      setSteps(updatedSteps)
+    } catch (error) {
+      console.error('Error fetching real data:', error)
+      // Keep default steps if data fetch fails
+    } finally {
+      setIsLoadingData(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchRealData()
+  }, [])
 
   const handleNext = () => {
-    if (currentStep < onboardingSteps.length - 1) {
+    if (currentStep < steps.length - 1) {
       setShowFeatures(false)
       setCurrentStep(prev => prev + 1)
     } else {
@@ -231,10 +177,13 @@ export function MobileOnboardingFlow() {
     return colors[color as keyof typeof colors] || colors.blue
   }
 
+  const step = steps[currentStep]
+  const progress = ((currentStep + 1) / steps.length) * 100
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
       {/* Animated Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-cyan-400/10 to-blue-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
@@ -264,7 +213,7 @@ export function MobileOnboardingFlow() {
         {/* Progress Bar */}
         <div className="px-4 mb-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">Step {currentStep + 1} of {onboardingSteps.length}</span>
+            <span className="text-sm font-medium text-gray-600">Step {currentStep + 1} of {steps.length}</span>
             <span className="text-sm font-medium text-gray-600">{Math.round(progress)}%</span>
           </div>
           <Progress value={progress} className="h-2 bg-gray-200" />
@@ -276,76 +225,56 @@ export function MobileOnboardingFlow() {
           <div className="relative mb-8">
             <div className={`w-32 h-32 rounded-full bg-gradient-to-r ${getColorClasses(step.color)} p-1 shadow-2xl transform transition-all duration-500 ${isAnimating ? 'scale-110 rotate-6' : 'scale-100 rotate-0'}`}>
               <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-                <Avatar
-                  style={{ width: 120, height: 120 }}
-                  {...step.avatarConfig}
-                />
+                <step.icon className="w-16 h-16 text-blue-600" />
               </div>
             </div>
-            
             {/* Floating Icons */}
             <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center animate-bounce">
               <Star className="w-4 h-4 text-white" />
             </div>
-            <div className="absolute -bottom-2 -left-2 w-8 h-8 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full flex items-center justify-center animate-bounce delay-300">
-              <Heart className="w-4 h-4 text-white" />
-            </div>
-            <div className="absolute top-1/2 -right-6 w-6 h-6 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center animate-pulse">
-              <Zap className="w-3 h-3 text-white" />
+            <div className="absolute -bottom-1 -left-1 w-6 h-6 bg-gradient-to-r from-pink-400 to-red-400 rounded-full flex items-center justify-center animate-pulse">
+              <Heart className="w-3 h-3 text-white" />
             </div>
           </div>
 
-          {/* Content Card */}
-          <Card className="w-full max-w-sm bg-white/90 backdrop-blur-sm border-0 shadow-2xl">
-            <CardContent className="p-6">
-              {/* Step Icon */}
-              <div className="flex justify-center mb-4">
-                <div className={`w-12 h-12 bg-gradient-to-r ${getColorClasses(step.color)} rounded-xl flex items-center justify-center shadow-lg`}>
-                  <step.icon className={`w-6 h-6 ${getIconColor(step.color)}`} />
-                </div>
-              </div>
-
-              {/* Title */}
-              <h1 className="text-2xl font-bold text-center text-gray-900 mb-2">
+          {/* Content */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 {step.title}
               </h1>
-
-              {/* Subtitle */}
-              <h2 className="text-lg font-semibold text-center text-gray-600 mb-4">
+            <h2 className="text-xl text-gray-600 mb-4">
                 {step.subtitle}
               </h2>
-
-              {/* Description */}
-              <p className="text-center text-gray-600 mb-6 leading-relaxed">
+            <p className="text-gray-500 leading-relaxed max-w-sm">
                 {step.description}
               </p>
+          </div>
 
               {/* Features */}
-              <div className={`space-y-3 transition-all duration-500 ${showFeatures ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          {step.features && step.features.length > 0 && (
+            <div className="w-full max-w-sm mb-8">
+              <div className="grid grid-cols-1 gap-3">
                 {step.features.map((feature, index) => (
                   <div 
                     key={index}
-                    className="flex items-center space-x-3 group"
-                    style={{ transitionDelay: `${index * 100}ms` }}
+                    className="flex items-center space-x-3 p-3 bg-white/80 backdrop-blur-sm rounded-lg shadow-sm border border-gray-200"
                   >
-                    <div className={`w-6 h-6 bg-gradient-to-r ${getColorClasses(step.color)} rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
-                      <CheckCircle className="w-3 h-3 text-white" />
+                    <div className="w-6 h-6 bg-gradient-to-r from-green-400 to-green-500 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-4 h-4 text-white" />
                     </div>
-                    <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
-                      {feature}
-                    </span>
+                    <span className="text-sm font-medium text-gray-700">{feature}</span>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          )}
 
           {/* Step Indicators */}
-          <div className="flex space-x-2 mt-8">
-            {onboardingSteps.map((_, index) => (
+          <div className="flex space-x-2 mb-8">
+            {steps.map((_, index) => (
               <div
                 key={index}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${
                   index === currentStep 
                     ? `bg-gradient-to-r ${getColorClasses(step.color)} w-8` 
                     : 'bg-gray-300'
@@ -361,27 +290,21 @@ export function MobileOnboardingFlow() {
             <Button
               variant="outline"
               size="lg"
-              onClick={handlePrevious}
               disabled={currentStep === 0}
               className="flex items-center space-x-2 px-6 py-3 rounded-full border-2 hover:border-gray-400 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handlePrevious}
             >
               <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Back</span>
+              <span>Previous</span>
             </Button>
 
             <Button
-              onClick={handleNext}
               size="lg"
-              className={`flex items-center space-x-2 px-8 py-3 bg-gradient-to-r ${getColorClasses(step.color)} text-white rounded-full font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-300`}
+              className={`flex items-center space-x-2 px-6 py-3 rounded-full text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 bg-gradient-to-r ${getColorClasses(step.color)}`}
+              onClick={handleNext}
             >
-              <span>
-                {currentStep === onboardingSteps.length - 1 ? 'Get Started' : 'Next'}
-              </span>
-              {currentStep === onboardingSteps.length - 1 ? (
-                <Play className="w-4 h-4" />
-              ) : (
+              <span>{currentStep === steps.length - 1 ? 'Get Started' : 'Next'}</span>
                 <ArrowRight className="w-4 h-4" />
-              )}
             </Button>
           </div>
         </div>

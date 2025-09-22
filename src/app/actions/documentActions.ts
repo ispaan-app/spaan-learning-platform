@@ -1,6 +1,7 @@
 'use server'
 
 import { logDocumentUploaded, logDocumentReviewed } from './auditLogActions'
+import { createDocumentStatusTimelineEvent } from './timeline-actions'
 
 import { adminDb, adminStorage } from '@/lib/firebase-admin'
 import { z } from 'zod'
@@ -172,6 +173,16 @@ export async function reviewDocument(documentId: string, status: 'approved' | 'r
 
     // Audit log: document reviewed
     await logDocumentReviewed(document.userId, 'admin', document.documentType, status, { documentId, reviewedBy, rejectionReason })
+    
+    // Create timeline event
+    await createDocumentStatusTimelineEvent(
+      document.userId,
+      document.documentType,
+      status,
+      reviewedBy,
+      rejectionReason
+    )
+    
     return { success: true }
   } catch (error) {
     return { success: false, error: 'Failed to review document' }
@@ -213,6 +224,33 @@ export async function getAllPendingDocuments() {
     return { success: true, documents }
   } catch (error) {
     return { success: false, error: 'Failed to fetch pending documents' }
+  }
+}
+
+export async function getApplicantDocumentsAction(userId: string) {
+  try {
+    const documentsSnapshot = await adminDb
+      .collection('documents')
+      .where('userId', '==', userId)
+      .orderBy('uploadedAt', 'desc')
+      .get()
+
+    const documents = documentsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      name: doc.data().fileName || '',
+      type: doc.data().documentType || '',
+      status: doc.data().status || 'pending',
+      url: doc.data().downloadUrl || '',
+      uploadedAt: doc.data().uploadedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+      fileSize: doc.data().fileSize || 0,
+      fileType: doc.data().fileType || '',
+      description: doc.data().description || ''
+    }))
+
+    return { success: true, documents }
+  } catch (error) {
+    console.error('Error fetching applicant documents:', error)
+    return { success: false, error: 'Failed to fetch documents' }
   }
 }
 

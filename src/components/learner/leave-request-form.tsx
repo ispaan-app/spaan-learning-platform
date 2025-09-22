@@ -18,10 +18,14 @@ import {
   CheckCircle, 
   AlertTriangle,
   User,
-  CalendarDays
+  CalendarDays,
+  Sparkles,
+  Shield,
+  Zap
 } from 'lucide-react'
 import { submitLeaveRequestAction } from '@/app/learner/actions'
 import { toast } from '@/lib/toast'
+import { cn } from '@/lib/utils'
 
 interface LeaveRequestFormProps {
   userId: string
@@ -218,122 +222,208 @@ export function LeaveRequestForm({
   const selectedLeaveType = formData.type ? leaveTypes[formData.type as keyof typeof leaveTypes] : null
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Calendar className="h-5 w-5 text-blue-600" />
-          <span>Submit Leave Request</span>
+    <Card className={cn(
+      "relative overflow-hidden bg-white/90 backdrop-blur-sm border-2 border-gray-200 shadow-2xl",
+      className
+    )}>
+      {/* Background Pattern */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full -translate-y-16 translate-x-16 opacity-10"></div>
+      
+      <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200">
+        <CardTitle className="flex items-center space-x-3 text-xl">
+          <div className="p-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg">
+            <Calendar className="h-6 w-6 text-white" />
+          </div>
+          <span className="bg-gradient-to-r from-gray-800 to-blue-800 bg-clip-text text-transparent">
+            Submit Leave Request
+          </span>
+          <Sparkles className="h-5 w-5 text-purple-500" />
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-6">
         {isSubmitted ? (
-          <div className="text-center py-8">
-            <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-green-600 mb-2">Leave Request Submitted!</h3>
-            <p className="text-gray-600 mb-4">
+          <div className="text-center py-12">
+            <div className="relative mb-6">
+              <div className="w-20 h-20 mx-auto bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center shadow-2xl">
+                <CheckCircle className="h-10 w-10 text-white" />
+              </div>
+              <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center">
+                <Sparkles className="h-3 w-3 text-white" />
+              </div>
+            </div>
+            <h3 className="text-2xl font-bold text-green-600 mb-3">Leave Request Submitted!</h3>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto leading-relaxed">
               Your leave request has been submitted for review. You will be notified of the decision within 24-48 hours.
             </p>
-            <div className="text-sm text-gray-500">
-              <p>Reference ID: {Date.now().toString(36).toUpperCase()}</p>
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border border-green-200 max-w-sm mx-auto">
+              <div className="text-sm text-green-700 space-y-1">
+                <p className="font-semibold">Reference ID: {Date.now().toString(36).toUpperCase()}</p>
               <p>Expected response time: 24-48 hours</p>
+              </div>
             </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* User Info */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-sm text-gray-700 mb-2">Requesting as:</h4>
-              <div className="flex items-center space-x-4 text-sm">
-                <div className="flex items-center space-x-1">
-                  <User className="h-4 w-4 text-gray-500" />
-                  <span>{userName}</span>
+            {/* Enhanced User Info */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
+              <div className="flex items-center space-x-2 mb-4">
+                <Shield className="h-5 w-5 text-blue-600" />
+                <h4 className="font-bold text-lg text-blue-800">Requesting as:</h4>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center space-x-3 bg-white p-3 rounded-lg border border-blue-200">
+                  <div className="p-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500">
+                    <User className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Learner Name</p>
+                    <p className="font-semibold text-gray-800">{userName}</p>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-1">
-                  <CalendarDays className="h-4 w-4 text-gray-500" />
-                  <span className="text-gray-600">{placementInfo?.companyName || 'No placement assigned'}</span>
+                <div className="flex items-center space-x-3 bg-white p-3 rounded-lg border border-blue-200">
+                  <div className="p-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-500">
+                    <CalendarDays className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Placement</p>
+                    <p className="font-semibold text-gray-800">{placementInfo?.companyName || 'No placement assigned'}</p>
+                </div>
                 </div>
               </div>
             </div>
 
-            {/* Leave Type */}
-            <div className="space-y-3">
-              <Label className="text-sm font-semibold">Leave Type *</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Enhanced Leave Type */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Zap className="h-5 w-5 text-purple-600" />
+                <Label className="text-lg font-bold text-gray-800">Leave Type *</Label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {Object.entries(leaveTypes).map(([key, leaveType]) => (
                   <button
                     key={key}
                     type="button"
                     onClick={() => handleInputChange('type', key)}
-                    className={`p-3 rounded-lg border-2 text-left transition-all ${
+                    className={cn(
+                      "p-4 rounded-xl border-2 text-left transition-all duration-300 transform hover:scale-105 group",
                       formData.type === key
-                        ? `${leaveType.borderColor} ${leaveType.bgColor}`
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                        ? `${leaveType.borderColor} ${leaveType.bgColor} shadow-lg`
+                        : 'border-gray-200 hover:border-gray-300 bg-white hover:shadow-md'
+                    )}
                   >
-                    <div className="flex items-center space-x-2">
-                      <span className="text-lg">{leaveType.icon}</span>
-                      <div>
-                        <p className={`font-medium ${formData.type === key ? leaveType.color : 'text-gray-700'}`}>
+                    <div className="flex items-center space-x-3">
+                      <div className={cn(
+                        "p-2 rounded-full transition-all duration-300",
+                        formData.type === key 
+                          ? 'bg-white shadow-md' 
+                          : 'bg-gray-100 group-hover:bg-gray-200'
+                      )}>
+                        <span className="text-xl">{leaveType.icon}</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className={cn(
+                          "font-bold text-sm mb-1 transition-colors duration-300",
+                          formData.type === key ? leaveType.color : 'text-gray-700'
+                        )}>
                           {leaveType.label}
                         </p>
-                        <p className="text-xs text-gray-500">{leaveType.description}</p>
-                        <p className="text-xs text-gray-400">Max {leaveType.maxDays} days</p>
+                        <p className="text-xs text-gray-500 mb-1">{leaveType.description}</p>
+                        <div className="flex items-center space-x-2">
+                          <Badge className={cn(
+                            "text-xs px-2 py-1",
+                            formData.type === key 
+                              ? 'bg-white text-gray-600' 
+                              : 'bg-gray-200 text-gray-600'
+                          )}>
+                            Max {leaveType.maxDays} days
+                          </Badge>
                       </div>
+                      </div>
+                      {formData.type === key && (
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      )}
                     </div>
                   </button>
                 ))}
               </div>
               {errors.type && (
-                <p className="text-sm text-red-600">{errors.type}</p>
+                <div className="flex items-center space-x-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>{errors.type}</span>
+                </div>
               )}
             </div>
 
-            {/* Date Range */}
+            {/* Enhanced Date Range */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-5 w-5 text-blue-600" />
+                <Label className="text-lg font-bold text-gray-800">Date Range</Label>
+              </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="startDate" className="text-sm font-semibold">Start Date *</Label>
+                  <Label htmlFor="startDate" className="text-sm font-semibold text-gray-700">Start Date *</Label>
                 <Input
                   id="startDate"
                   type="date"
                   value={formData.startDate}
                   onChange={(e) => handleInputChange('startDate', e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
-                  className={errors.startDate ? 'border-red-500' : ''}
+                    className={cn(
+                      "h-12 text-lg border-2 rounded-xl transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
+                      errors.startDate ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-gray-300'
+                    )}
                 />
                 {errors.startDate && (
-                  <p className="text-sm text-red-600">{errors.startDate}</p>
+                    <div className="flex items-center space-x-2 text-sm text-red-600">
+                      <AlertTriangle className="h-4 w-4" />
+                      <span>{errors.startDate}</span>
+                    </div>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="endDate" className="text-sm font-semibold">End Date *</Label>
+                  <Label htmlFor="endDate" className="text-sm font-semibold text-gray-700">End Date *</Label>
                 <Input
                   id="endDate"
                   type="date"
                   value={formData.endDate}
                   onChange={(e) => handleInputChange('endDate', e.target.value)}
                   min={formData.startDate || new Date().toISOString().split('T')[0]}
-                  className={errors.endDate ? 'border-red-500' : ''}
+                    className={cn(
+                      "h-12 text-lg border-2 rounded-xl transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
+                      errors.endDate ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-gray-300'
+                    )}
                 />
                 {errors.endDate && (
-                  <p className="text-sm text-red-600">{errors.endDate}</p>
+                    <div className="flex items-center space-x-2 text-sm text-red-600">
+                      <AlertTriangle className="h-4 w-4" />
+                      <span>{errors.endDate}</span>
+                    </div>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="days" className="text-sm font-semibold">Duration (Days)</Label>
+                  <Label htmlFor="days" className="text-sm font-semibold text-gray-700">Duration (Days)</Label>
                 <Input
                   id="days"
                   type="number"
                   min="1"
                   value={formData.days}
                   onChange={(e) => handleInputChange('days', e.target.value)}
-                  className={errors.days ? 'border-red-500' : ''}
+                    className={cn(
+                      "h-12 text-lg border-2 rounded-xl transition-all duration-300 bg-gray-50",
+                      errors.days ? 'border-red-500 bg-red-50' : 'border-gray-200'
+                    )}
                   readOnly
                 />
                 {errors.days && (
-                  <p className="text-sm text-red-600">{errors.days}</p>
+                    <div className="flex items-center space-x-2 text-sm text-red-600">
+                      <AlertTriangle className="h-4 w-4" />
+                      <span>{errors.days}</span>
+                    </div>
                 )}
+                </div>
               </div>
             </div>
 
@@ -418,19 +508,21 @@ export function LeaveRequestForm({
               </Alert>
             )}
 
-            {/* Submit Button */}
-            <div className="flex justify-end pt-4 border-t">
+            {/* Enhanced Submit Button */}
+            <div className="flex justify-center pt-6 border-t border-gray-200">
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex items-center space-x-2"
+                size="lg"
+                className="flex items-center space-x-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 px-8 py-4 text-lg font-semibold"
               >
                 {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <Send className="h-4 w-4" />
+                  <Send className="h-5 w-5" />
                 )}
-                <span>Submit Leave Request</span>
+                <span>{isSubmitting ? 'Submitting...' : 'Submit Leave Request'}</span>
+                {!isSubmitting && <Sparkles className="h-4 w-4" />}
               </Button>
             </div>
           </form>
@@ -439,6 +531,10 @@ export function LeaveRequestForm({
     </Card>
   )
 }
+
+
+
+
 
 
 

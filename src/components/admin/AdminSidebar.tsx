@@ -23,6 +23,7 @@ import {
   Activity,
   UserCheck,
   Timer,
+  Clock,
   Calendar,
   AlertCircle,
   DollarSign,
@@ -51,6 +52,30 @@ const navigationItems = {
       href: '/super-admin/users',
       icon: Users,
       description: 'Manage all users'
+    },
+    {
+      title: 'Learner Management',
+      href: '/super-admin/learners',
+      icon: UserCheck,
+      description: 'Comprehensive learner oversight'
+    },
+    {
+      title: 'Programs',
+      href: '/super-admin/programs',
+      icon: BookOpen,
+      description: 'Manage programs & courses'
+    },
+    {
+      title: 'Attendance Overview',
+      href: '/super-admin/attendance',
+      icon: Clock,
+      description: 'Platform-wide attendance analytics'
+    },
+    {
+      title: 'Leave Management',
+      href: '/super-admin/leave-requests',
+      icon: Calendar,
+      description: 'Oversee all leave requests'
     },
     {
       title: 'Stipend Reports',
@@ -91,10 +116,22 @@ const navigationItems = {
       description: 'Admin overview'
     },
     {
+      title: 'Learners',
+      href: '/admin/learners',
+      icon: Users,
+      description: 'Manage learner profiles & progress'
+    },
+    {
       title: 'Work Placements',
       href: '/admin/placements',
       icon: Building2,
       description: 'Manage WIL placements'
+    },
+    {
+      title: 'Attendance',
+      href: '/admin/attendance',
+      icon: Clock,
+      description: 'Manage learner attendance'
     },
     {
       title: 'Leave Requests',
@@ -155,10 +192,28 @@ const navigationItems = {
       description: 'Log work hours'
     },
     {
+      title: 'Attendance History',
+      href: '/learner/attendance',
+      icon: Clock,
+      description: 'View your attendance records'
+    },
+    {
       title: 'Leave',
       href: '/learner/leave',
       icon: Calendar,
       description: 'Apply for leave'
+    },
+    {
+      title: 'Documents',
+      href: '/learner/documents',
+      icon: FileText,
+      description: 'Manage your documents'
+    },
+    {
+      title: 'Mentor',
+      href: '/learner/mentor',
+      icon: Activity,
+      description: 'AI career guidance'
     },
     {
       title: 'Profile',
@@ -225,31 +280,41 @@ export function AdminSidebar({ userRole, isCollapsed = false, onToggle }: AdminS
           const isActive = pathname === item.href
 
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors group",
-                isActive
-                  ? "bg-coral text-white shadow-sm"
-                  : "text-slate-300 hover:bg-slate-700 hover:text-white"
-              )}
-            >
-              <IconComponent className={cn(
-                "h-5 w-5 flex-shrink-0",
-                isActive ? "text-white" : "text-slate-400 group-hover:text-coral"
-              )} />
-              {!collapsed && (
-                <div className="flex-1 min-w-0">
-                  <div className="truncate">{item.title}</div>
-                  {!collapsed && (
-                    <div className="text-xs text-slate-400 truncate">
-                      {item.description}
-                    </div>
-                  )}
+            <div className="relative group">
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors group",
+                  isActive
+                    ? "bg-coral text-white shadow-sm"
+                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                )}
+              >
+                <IconComponent className={cn(
+                  "h-5 w-5 flex-shrink-0",
+                  isActive ? "text-white" : "text-slate-400 group-hover:text-coral"
+                )} />
+                {!collapsed && (
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate">{item.title}</div>
+                    {!collapsed && (
+                      <div className="text-xs text-slate-400 truncate">
+                        {item.description}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </Link>
+              
+              {/* Tooltip for collapsed state */}
+              {collapsed && (
+                <div className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                  {item.title}
+                  <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-slate-900 rotate-45"></div>
                 </div>
               )}
-            </Link>
+            </div>
           )
         })}
       </nav>
@@ -264,9 +329,14 @@ export function AdminSidebar({ userRole, isCollapsed = false, onToggle }: AdminS
           />
         )}
         {collapsed && user && (
-          <div className="flex justify-center">
+          <div className="flex justify-center relative group">
             <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center">
               <User className="h-4 w-4 text-slate-300" />
+            </div>
+            {/* Tooltip for user profile */}
+            <div className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+              {userData?.firstName ? `${userData.firstName} ${userData.lastName}` : 'User Profile'}
+              <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-slate-900 rotate-45"></div>
             </div>
           </div>
         )}

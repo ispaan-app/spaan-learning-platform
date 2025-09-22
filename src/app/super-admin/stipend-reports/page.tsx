@@ -11,7 +11,6 @@ import {
   DollarSign, 
   Clock, 
   CheckCircle, 
-  AlertCircle,
   RefreshCw,
   Wifi,
   WifiOff,

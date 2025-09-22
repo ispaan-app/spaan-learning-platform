@@ -25,12 +25,18 @@ import {
   Plus,
   Trash2,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Shield,
+  Sparkles,
+  Zap,
+  TrendingUp,
+  Activity
 } from 'lucide-react'
 import { LearnerProfile, updateLearnerProfileAction, uploadProfileImageAction } from '@/app/learner/profile/actions'
 import { uploadAvatar } from '@/lib/fileUpload'
 import { AvatarUpload } from '@/components/ui/file-upload'
 import { toast } from '@/lib/toast'
+import { useAuth } from '@/hooks/useAuth'
 
 interface ProfileFormProps {
   profile: LearnerProfile | null
@@ -54,17 +60,15 @@ const provinces = [
 
 const genders = [
   { value: 'male', label: 'Male' },
-  { value: 'female', label: 'Female' },
-  { value: 'other', label: 'Other' },
-  { value: 'prefer-not-to-say', label: 'Prefer not to say' }
+  { value: 'female', label: 'Female' }
 ]
 
 const relationships = [
   'Parent',
   'Guardian',
-  'Sibling',
   'Spouse',
-  'Partner',
+  'Sibling',
+  'Relative',
   'Friend',
   'Other'
 ]
@@ -73,38 +77,42 @@ export function ProfileForm({
   profile, 
   onSuccess, 
   onCancel, 
-  isEditing = true,
+  isEditing = false,
   className 
 }: ProfileFormProps) {
-  const [formData, setFormData] = useState<Partial<LearnerProfile>>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    province: '',
-    postalCode: '',
-    dateOfBirth: '',
-    gender: 'prefer-not-to-say',
-    idNumber: '',
-    nationality: 'South African',
-    program: '',
-    programStartDate: '',
-    programEndDate: '',
-    studentNumber: '',
-    emergencyContact: {
+  const [formData, setFormData] = useState<LearnerProfile>({
+    userId: profile?.userId || '',
+    firstName: profile?.firstName || '',
+    lastName: profile?.lastName || '',
+    email: profile?.email || '',
+    phone: profile?.phone || '',
+    address: profile?.address || '',
+    suburb: profile?.suburb || '',
+    city: profile?.city || '',
+    province: profile?.province || '',
+    postalCode: profile?.postalCode || '',
+    dateOfBirth: profile?.dateOfBirth || '',
+    gender: profile?.gender || 'male',
+    idNumber: profile?.idNumber || '',
+    nationality: profile?.nationality || 'South African',
+    program: profile?.program || '',
+    programStartDate: profile?.programStartDate || '',
+    programEndDate: profile?.programEndDate || '',
+    studentNumber: profile?.studentNumber || '',
+    profileImage: profile?.profileImage,
+    emergencyContact: profile?.emergencyContact || {
       name: '',
       phone: '',
       relationship: '',
       email: ''
     },
-    skills: [],
-    interests: [],
-    languages: [],
-    workExperience: [],
-    education: [],
-    preferences: {
+    skills: profile?.skills || [],
+    interests: profile?.interests || [],
+    languages: profile?.languages || [],
+    workExperience: profile?.workExperience || [],
+    education: profile?.education || [],
+    currentPlacement: profile?.currentPlacement,
+    preferences: profile?.preferences || {
       notifications: {
         email: true,
         sms: false,
@@ -115,36 +123,45 @@ export function ProfileForm({
         showContact: false,
         showSkills: true
       }
-    }
+    },
+    createdAt: profile?.createdAt || new Date(),
+    updatedAt: new Date()
   })
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [newSkill, setNewSkill] = useState('')
   const [newInterest, setNewInterest] = useState('')
   const [newLanguage, setNewLanguage] = useState('')
   const [profileImage, setProfileImage] = useState<string | null>(null)
-  const [avatarUploading, setAvatarUploading] = useState(false)
+  const { refreshUserData } = useAuth()
 
   useEffect(() => {
-    if (profile) {
-      setFormData(profile)
-      setProfileImage(profile.profileImage || null)
+    if (profile?.profileImage) {
+      setProfileImage(profile.profileImage)
     }
   }, [profile])
 
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+    
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }))
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }))
     }
   }
 
-  const handleNestedInputChange = (parent: string, field: string, value: any) => {
+  const handleNestedInputChange = (parentField: string, childField: string, value: any) => {
     setFormData(prev => ({
       ...prev,
-      [parent]: {
-        ...prev[parent as keyof LearnerProfile] as any,
-        [field]: value
+      [parentField]: {
+        ...prev[parentField as keyof LearnerProfile] as any,
+        [childField]: value
       }
     }))
   }
@@ -161,32 +178,8 @@ export function ProfileForm({
   const handleArrayRemove = (field: string, index: number) => {
     setFormData(prev => ({
       ...prev,
-      [field]: (prev[field as keyof LearnerProfile] as string[]).filter((_, i) => i !== index)
+      [field]: (prev[field as keyof LearnerProfile] as string[] || []).filter((_, i) => i !== index)
     }))
-  }
-
-  const handleAvatarUpload = async (file: File): Promise<{ success: boolean; url?: string; error?: string }> => {
-    if (!profile?.userId) return { success: false, error: 'User not authenticated' }
-    
-    setAvatarUploading(true)
-    try {
-      const result = await uploadAvatar(file, profile.userId)
-      
-      if (result.success && result.url) {
-        setProfileImage(result.url)
-        toast.success('Avatar updated successfully')
-        return { success: true, url: result.url }
-      } else {
-        toast.error(result.error || 'Failed to upload avatar')
-        return { success: false, error: result.error }
-      }
-    } catch (error: any) {
-      console.error('Avatar upload error:', error)
-      toast.error('Failed to upload avatar')
-      return { success: false, error: error.message }
-    } finally {
-      setAvatarUploading(false)
-    }
   }
 
   const validateForm = () => {
@@ -208,6 +201,9 @@ export function ProfileForm({
     }
     if (!formData.address?.trim()) {
       newErrors.address = 'Address is required'
+    }
+    if (!formData.suburb?.trim()) {
+      newErrors.suburb = 'Suburb/Township is required'
     }
     if (!formData.city?.trim()) {
       newErrors.city = 'City is required'
@@ -243,18 +239,17 @@ export function ProfileForm({
       if (profileImage && profileImage !== profile?.profileImage) {
         const imageResult = await uploadProfileImageAction(profile?.userId || '', profileImage)
         if (!imageResult.success) {
-          toast.error(imageResult.error || 'Failed to upload image')
-          return
+          throw new Error(imageResult.error || 'Failed to upload image')
         }
+        formData.profileImage = imageResult.imageUrl
       }
 
-      const result = await updateLearnerProfileAction(profile?.userId || '', formData)
-      
+      const result = await updateLearnerProfileAction(formData.userId, formData)
       if (result.success) {
         toast.success('Profile updated successfully!')
         onSuccess?.()
       } else {
-        toast.error(result.error || 'Failed to update profile')
+        throw new Error(result.error || 'Failed to update profile')
       }
     } catch (error) {
       console.error('Error updating profile:', error)
@@ -269,10 +264,25 @@ export function ProfileForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className={className}>
-      <div className="space-y-6">
-        {/* Profile Image */}
-        <Card>
+    <div className="relative overflow-hidden bg-white/90 backdrop-blur-sm border-2 border-gray-200 rounded-2xl shadow-2xl">
+      {/* Background Pattern */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full -translate-y-16 translate-x-16 opacity-10"></div>
+      
+      <form onSubmit={handleSubmit} className="p-6">
+        <div className="space-y-8">
+          {/* Enhanced Profile Image */}
+          <Card className="relative overflow-hidden bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-xl">
+            <CardHeader className="bg-gradient-to-r from-blue-100 to-indigo-100 border-b border-blue-200">
+              <CardTitle className="flex items-center space-x-3 text-xl">
+                <div className="p-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg">
+                  <Camera className="h-6 w-6 text-white" />
+                </div>
+                <span className="bg-gradient-to-r from-gray-800 to-blue-800 bg-clip-text text-transparent">
+                  Profile Photo
+                </span>
+                <Sparkles className="h-5 w-5 text-purple-500" />
+              </CardTitle>
+            </CardHeader>
           <CardContent className="p-6">
             <div className="text-center">
               <div className="relative inline-block mb-4">
@@ -283,19 +293,33 @@ export function ProfileForm({
                   </AvatarFallback>
                 </Avatar>
               </div>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">
-                {formData.firstName} {formData.lastName}
-              </h2>
-              <p className="text-gray-600 mb-4">{formData.program}</p>
-              {isEditing && (
+                
                 <AvatarUpload
-                  onUpload={handleAvatarUpload}
+                  onUpload={async (file: File) => {
+                    try {
+                      const result = await uploadAvatar(file, profile?.userId || '')
+                      if (result.success && result.url) {
+                        setProfileImage(result.url)
+                        // Update the profile data in the form
+                        setFormData(prev => ({
+                          ...prev,
+                          profileImage: result.url
+                        }))
+                        // Refresh user data to update header avatar
+                        await refreshUserData()
+                        // Show success message
+                        toast.success('Avatar updated successfully!')
+                        return { success: true, url: result.url }
+                      } else {
+                        return { success: false, error: result.error || 'Failed to upload image' }
+                      }
+                    } catch (error) {
+                      return { success: false, error: 'Failed to upload image' }
+                    }
+                  }}
                   currentAvatar={profileImage || undefined}
-                  disabled={avatarUploading}
-                  label="Profile Picture"
-                  description="Upload a profile picture (max 5MB)"
+                  className="mb-4"
                 />
-              )}
             </div>
           </CardContent>
         </Card>
@@ -303,10 +327,7 @@ export function ProfileForm({
         {/* Personal Information */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <User className="h-5 w-5" />
-              <span>Personal Information</span>
-            </CardTitle>
+              <CardTitle>Personal Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -339,7 +360,7 @@ export function ProfileForm({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="email">Email Address *</Label>
+                  <Label htmlFor="email">Email *</Label>
                 <Input
                   id="email"
                   type="email"
@@ -353,7 +374,7 @@ export function ProfileForm({
               </div>
 
               <div>
-                <Label htmlFor="phone">Phone Number *</Label>
+                  <Label htmlFor="phone">Phone *</Label>
                 <Input
                   id="phone"
                   type="tel"
@@ -377,6 +398,19 @@ export function ProfileForm({
               />
               {errors.address && (
                 <p className="text-sm text-red-600 mt-1">{errors.address}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="suburb">Suburb/Township *</Label>
+              <Input
+                id="suburb"
+                value={formData.suburb || ''}
+                onChange={(e) => handleInputChange('suburb', e.target.value)}
+                className={errors.suburb ? 'border-red-500' : ''}
+              />
+              {errors.suburb && (
+                <p className="text-sm text-red-600 mt-1">{errors.suburb}</p>
               )}
             </div>
 
@@ -774,22 +808,21 @@ export function ProfileForm({
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="bg-blue-600 hover:bg-blue-700"
+                size="lg"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 px-8 py-4"
             >
               {isSubmitting ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2" />
               ) : (
-                <Save className="h-4 w-4 mr-2" />
+                  <Save className="h-5 w-5 mr-2" />
               )}
-              Save Changes
+                {isSubmitting ? 'Saving Changes...' : 'Save Changes'}
+                {!isSubmitting && <Sparkles className="h-4 w-4 ml-2" />}
             </Button>
           </div>
         )}
       </div>
     </form>
+    </div>
   )
 }
-
-
-
-

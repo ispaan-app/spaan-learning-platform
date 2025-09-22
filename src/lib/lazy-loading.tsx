@@ -1,7 +1,7 @@
 'use client'
 
 import { ComponentType, lazy, Suspense } from 'react'
-import { LoadingSpinner } from '@/components/ui/loading'
+import { PageLoader } from '@/components/ui/loading'
 
 // Lazy loading wrapper with error boundary
 export function createLazyComponent<T extends ComponentType<any>>(
@@ -27,7 +27,7 @@ export function createLazyComponent<T extends ComponentType<any>>(
   })
   
   return function LazyWrapper(props: any) {
-    const FallbackComponent = fallback || LoadingSpinner
+    const FallbackComponent = fallback || PageLoader
     return (
       <Suspense fallback={<FallbackComponent />}>
         <LazyComponent {...props} />

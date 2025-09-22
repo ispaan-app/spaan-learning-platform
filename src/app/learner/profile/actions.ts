@@ -1,7 +1,6 @@
 'use server'
 
 import { adminDb as db } from '@/lib/firebase-admin'
-import { collection, doc, getDoc, updateDoc, addDoc, query, where, getDocs } from 'firebase/firestore'
 import { revalidatePath } from 'next/cache'
 
 export interface LearnerProfile {
@@ -12,11 +11,12 @@ export interface LearnerProfile {
   email: string
   phone: string
   address: string
+  suburb: string
   city: string
   province: string
   postalCode: string
   dateOfBirth: string
-  gender: 'male' | 'female' | 'other' | 'prefer-not-to-say'
+  gender: 'male' | 'female'
   idNumber: string
   nationality: string
   program: string
@@ -78,19 +78,21 @@ export interface LearnerProfile {
 
 export async function getLearnerProfileAction(userId: string): Promise<LearnerProfile | null> {
   try {
-    const profileRef = doc(db as any, 'learnerProfiles', userId)
-    const profileDoc = await getDoc(profileRef)
+    const profileDoc = await db.collection('learnerProfiles').doc(userId).get()
     
-    if (!profileDoc.exists()) {
+    if (!profileDoc.exists) {
       return null
     }
 
     const data = profileDoc.data()
+    if (!data) {
+      return null
+    }
     return {
       id: profileDoc.id,
       ...data,
-      createdAt: data.createdAt.toDate(),
-      updatedAt: data.updatedAt.toDate()
+      createdAt: data.createdAt?.toDate() || new Date(),
+      updatedAt: data.updatedAt?.toDate() || new Date()
     } as LearnerProfile
   } catch (error) {
     console.error('Error fetching learner profile:', error)
@@ -100,12 +102,10 @@ export async function getLearnerProfileAction(userId: string): Promise<LearnerPr
 
 export async function updateLearnerProfileAction(userId: string, profileData: Partial<LearnerProfile>) {
   try {
-    const profileRef = doc(db as any, 'learnerProfiles', userId)
-    
     // Check if profile exists
-    const profileDoc = await getDoc(profileRef)
+    const profileDoc = await db.collection('learnerProfiles').doc(userId).get()
     
-    if (!profileDoc.exists()) {
+    if (!profileDoc.exists) {
       // Create new profile
       const newProfile: Omit<LearnerProfile, 'id'> = {
         userId,
@@ -114,11 +114,12 @@ export async function updateLearnerProfileAction(userId: string, profileData: Pa
         email: profileData.email || '',
         phone: profileData.phone || '',
         address: profileData.address || '',
+        suburb: profileData.suburb || '',
         city: profileData.city || '',
         province: profileData.province || '',
         postalCode: profileData.postalCode || '',
         dateOfBirth: profileData.dateOfBirth || '',
-        gender: profileData.gender || 'prefer-not-to-say',
+        gender: profileData.gender || 'male',
         idNumber: profileData.idNumber || '',
         nationality: profileData.nationality || '',
         program: profileData.program || '',
@@ -153,7 +154,7 @@ export async function updateLearnerProfileAction(userId: string, profileData: Pa
         updatedAt: new Date()
       }
 
-      await addDoc(collection(db as any, 'learnerProfiles'), newProfile)
+      await db.collection('learnerProfiles').doc(userId).set(newProfile)
     } else {
       // Update existing profile
       const updateData = {
@@ -161,7 +162,7 @@ export async function updateLearnerProfileAction(userId: string, profileData: Pa
         updatedAt: new Date()
       }
 
-      await updateDoc(profileRef, updateData)
+      await db.collection('learnerProfiles').doc(userId).update(updateData)
     }
 
     revalidatePath('/learner/profile')
@@ -176,8 +177,7 @@ export async function uploadProfileImageAction(userId: string, imageData: string
   try {
     // In a real implementation, you would upload to Firebase Storage
     // For now, we'll just update the profile with the image data
-    const profileRef = doc(db as any, 'learnerProfiles', userId)
-    await updateDoc(profileRef, {
+    await db.collection('learnerProfiles').doc(userId).update({
       profileImage: imageData,
       updatedAt: new Date()
     })
@@ -193,12 +193,11 @@ export async function uploadProfileImageAction(userId: string, imageData: string
 export async function getLearnerPlacementInfoAction(userId: string) {
   try {
     // Get placement info from the placements collection
-    const placementsRef = collection(db as any, 'placements')
-    const placementsQuery = query(
-      placementsRef,
-      where('assignedLearners', 'array-contains', userId)
-    )
-    const placementsSnapshot = await getDocs(placementsQuery)
+    const placementsSnapshot = await db
+      .collection('placements')
+      .where('assignedLearners', 'array-contains', userId)
+      .limit(1)
+      .get()
     
     if (placementsSnapshot.empty) {
       return null
@@ -221,8 +220,7 @@ export async function getLearnerPlacementInfoAction(userId: string) {
 
 export async function updateLearnerPreferencesAction(userId: string, preferences: LearnerProfile['preferences']) {
   try {
-    const profileRef = doc(db as any, 'learnerProfiles', userId)
-    await updateDoc(profileRef, {
+    await db.collection('learnerProfiles').doc(userId).update({
       preferences,
       updatedAt: new Date()
     })

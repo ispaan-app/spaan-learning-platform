@@ -4,7 +4,6 @@ import React from 'react'
 import Link from 'next/link'
 import { ArrowRight, Users, Shield, Brain, CheckCircle, Star, Play, Smartphone, Laptop, Tablet, Zap, Globe, Award, Target, MessageCircle, Sparkles, BarChart3 } from 'lucide-react'
 import { RealtimeStats } from './RealtimeStats'
-import { CharacterShowcase } from './CartoonCharacter'
 
 interface HomePageContentProps {
   heroImageUrl: string
@@ -76,7 +75,7 @@ export function HomePageContent({
               providing personalized career guidance and practical skills for today's job market.
             </p>
             
-            <div className="flex justify-center lg:justify-start">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Link 
                 href="/apply"
                 className="group inline-flex items-center px-6 py-3 sm:px-8 sm:py-4 text-white rounded-full font-semibold text-base sm:text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
@@ -84,6 +83,16 @@ export function HomePageContent({
               >
                 <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3" />
                 Start Learning
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2 sm:ml-3 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              
+              <Link 
+                href="/onboarding"
+                className="group inline-flex items-center px-6 py-3 sm:px-8 sm:py-4 border-2 text-gray-700 rounded-full font-semibold text-base sm:text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+                style={{ borderColor: '#1E3D59', color: '#1E3D59' }}
+              >
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3" />
+                Take a Tour
                 <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2 sm:ml-3 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
@@ -166,7 +175,7 @@ export function HomePageContent({
               <div className="absolute -bottom-2 -left-2 sm:-bottom-4 sm:-left-4 w-10 h-10 sm:w-16 sm:h-16 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full blur-xl animate-pulse delay-500"></div>
               
               {/* Secondary Phone Screen - Hidden on mobile */}
-              <div className="hidden sm:block absolute -top-8 -right-8 w-32 h-56 bg-gradient-to-br from-gray-800 to-gray-700 rounded-2xl p-1 shadow-xl transform -rotate-12 hover:rotate-0 transition-transform duration-500">
+              <div className="hidden sm:block absolute -top-16 -right-16 w-32 h-56 bg-gradient-to-br from-gray-800 to-gray-700 rounded-2xl p-1 shadow-xl transform -rotate-12 hover:rotate-0 transition-transform duration-500">
                 <div className="w-full h-full bg-white rounded-xl overflow-hidden">
                   <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-3 text-white text-center">
                     <div className="text-xs font-bold">Learning Path</div>
@@ -180,7 +189,7 @@ export function HomePageContent({
               </div>
               
               {/* Tablet Screen - Hidden on mobile */}
-              <div className="hidden sm:block absolute -bottom-8 -left-8 w-48 h-32 bg-gradient-to-br from-gray-800 to-gray-700 rounded-xl p-1 shadow-xl transform rotate-6 hover:rotate-0 transition-transform duration-500">
+              <div className="hidden sm:block absolute -bottom-16 -left-16 w-48 h-32 bg-gradient-to-br from-gray-800 to-gray-700 rounded-xl p-1 shadow-xl transform rotate-6 hover:rotate-0 transition-transform duration-500">
                 <div className="w-full h-full bg-white rounded-lg overflow-hidden">
                   <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-2 text-white text-center">
                     <div className="text-xs font-bold">Dashboard</div>
@@ -206,7 +215,7 @@ export function HomePageContent({
               <span className="font-semibold text-sm sm:text-base" style={{ color: '#1E3D59' }}>Powerful Features</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold mb-2" style={{ color: '#1E3D59' }}>
-              Complete Work-Integrated Learning Platform
+              Complete Work-Integrated Monitoring Platform
             </h2>
             <p className="text-base sm:text-lg max-w-3xl mx-auto" style={{ color: '#1E3D59', opacity: 0.7 }}>
               Everything South African students need to bridge academic education with real-world industry experience
@@ -221,13 +230,9 @@ export function HomePageContent({
                   <Smartphone className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3" style={{ color: '#1E3D59' }}>Real-Time Attendance</h3>
-                <p className="leading-relaxed mb-3 sm:mb-4 text-xs sm:text-sm" style={{ color: '#1E3D59', opacity: 0.8 }}>
+                <p className="leading-relaxed text-xs sm:text-sm" style={{ color: '#1E3D59', opacity: 0.8 }}>
                   GPS-based check-in/out system with QR code scanning for accurate work hour tracking and placement monitoring across South African workplaces.
                 </p>
-                <div className="flex items-center font-semibold text-sm sm:text-base" style={{ color: '#FF6E40' }}>
-                  <span>Learn More</span>
-                  <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2 group-hover:translate-x-1 transition-transform" />
-                </div>
               </div>
             </div>
 
@@ -238,13 +243,9 @@ export function HomePageContent({
                   <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3" style={{ color: '#1E3D59' }}>AI Career Mentor</h3>
-                <p className="leading-relaxed mb-3 sm:mb-4 text-xs sm:text-sm" style={{ color: '#1E3D59', opacity: 0.8 }}>
+                <p className="leading-relaxed text-xs sm:text-sm" style={{ color: '#1E3D59', opacity: 0.8 }}>
                   Personalized career guidance and learning recommendations powered by advanced AI technology for intelligent career development and growth.
                 </p>
-                <div className="flex items-center font-semibold text-sm sm:text-base" style={{ color: '#FF6E40' }}>
-                  <span>Learn More</span>
-                  <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2 group-hover:translate-x-1 transition-transform" />
-                </div>
               </div>
             </div>
 
@@ -255,13 +256,9 @@ export function HomePageContent({
                   <Globe className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3" style={{ color: '#1E3D59' }}>Industry Placements</h3>
-                <p className="leading-relaxed mb-3 sm:mb-4 text-xs sm:text-sm" style={{ color: '#1E3D59', opacity: 0.8 }}>
+                <p className="leading-relaxed text-xs sm:text-sm" style={{ color: '#1E3D59', opacity: 0.8 }}>
                   Connect with South African industry partners for meaningful work-integrated learning experiences and real work opportunities that build practical skills.
                 </p>
-                <div className="flex items-center font-semibold text-sm sm:text-base" style={{ color: '#FF6E40' }}>
-                  <span>Learn More</span>
-                  <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2 group-hover:translate-x-1 transition-transform" />
-                </div>
               </div>
             </div>
           </div>
@@ -360,54 +357,79 @@ export function HomePageContent({
         </div>
       </section>
 
-      {/* Mobile-First Stats Section */}
-      <section className="py-12 sm:py-20" style={{ backgroundColor: '#1E3D59' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Platform Statistics</h2>
-            <p className="text-base sm:text-lg max-w-2xl mx-auto" style={{ color: '#F5F0E1', opacity: 0.8 }}>
-              Join thousands of learners who have transformed their careers with <span className="font-bold">iSpaan</span>
-            </p>
-          </div>
-          
-          <RealtimeStats />
-        </div>
-      </section>
 
-      {/* Mobile-First Character Showcase Section */}
-      <section className="py-12 sm:py-20 relative overflow-hidden" style={{ backgroundColor: '#F5F0E1' }}>
+      {/* Mobile-First Community Section with Background Image */}
+      <section className="py-12 sm:py-20 relative overflow-hidden">
+        {/* Background Image - Two women using smartphone with Check In app */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: 'url("/images/ai-generated-branding-image.png")'
+          }}
+        >
+          {/* Overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-900/70 via-purple-900/60 to-orange-900/70"></div>
+        </div>
+        
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-8 sm:mb-12">
-            <div className="inline-flex items-center px-4 py-2 sm:px-6 sm:py-3 rounded-full mb-4 shadow-lg" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}>
-              <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2" style={{ color: '#FF6E40' }} />
-              <span className="font-semibold text-sm sm:text-base" style={{ color: '#1E3D59' }}>Meet Our Community</span>
+            <div className="inline-flex items-center px-4 py-2 sm:px-6 sm:py-3 rounded-full mb-4 shadow-lg bg-white/20 backdrop-blur-sm">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-white" />
+              <span className="font-semibold text-sm sm:text-base text-white">Meet Our Community</span>
             </div>
-            
-            <h2 className="text-2xl sm:text-3xl font-bold mb-2 leading-tight">
-              <span className="block" style={{ color: '#1E3D59' }}>Join South African</span>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2 leading-tight text-white">
+              <span className="block">Join South African</span>
               <span className="block" style={{ color: '#FF6E40' }}>
                 Learners & Mentors
               </span>
             </h2>
-            
-            <p className="text-base sm:text-lg max-w-2xl mx-auto leading-relaxed mb-4 sm:mb-6" style={{ color: '#1E3D59', opacity: 0.7 }}>
+            <p className="text-base sm:text-lg max-w-2xl mx-auto leading-relaxed mb-4 sm:mb-6 text-white/90">
               Connect with fellow South African learners, mentors, and administrators who are transforming their communities through work-integrated learning.
             </p>
-            
-            <Link 
-              href="/apply"
-              className="group inline-flex items-center px-6 py-3 sm:px-8 sm:py-4 text-white rounded-full font-semibold text-base sm:text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
-              style={{ backgroundColor: '#FF6E40' }}
-            >
-              <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3" />
-              Join Our Community
-              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2 sm:ml-3 group-hover:translate-x-1 transition-transform" />
-            </Link>
+            <div className="flex justify-center">
+              <Link 
+                href="/apply"
+                className="group inline-flex items-center px-6 py-3 sm:px-8 sm:py-4 text-white rounded-full font-semibold text-base sm:text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl"
+                style={{ backgroundColor: '#FF6E40' }}
+              >
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3" />
+                Join Our Community
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2 sm:ml-3 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
           </div>
           
-          {/* Character Showcase */}
-          <div className="flex justify-center">
-            <CharacterShowcase />
+          {/* Community Stats with Real Data */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mt-12">
+            <div className="text-center bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <Users className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold mb-2 text-white">
+                <RealtimeStats variant="community" />
+              </h3>
+              <p className="text-sm sm:text-base text-white/80">Active Learners</p>
+            </div>
+            
+            <div className="text-center bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <Shield className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold mb-2 text-white">
+                <RealtimeStats variant="partners" />
+              </h3>
+              <p className="text-sm sm:text-base text-white/80">Industry Partners</p>
+            </div>
+            
+            <div className="text-center bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <Award className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold mb-2 text-white">
+                <RealtimeStats variant="success" />
+              </h3>
+              <p className="text-sm sm:text-base text-white/80">Success Rate</p>
+            </div>
           </div>
         </div>
       </section>
@@ -476,7 +498,7 @@ export function HomePageContent({
                 &copy; 2025 <span className="font-bold">iSpaan</span> Tech Solutions. All rights reserved.
               </p>
               <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6 text-xs sm:text-sm" style={{ color: '#F5F0E1', opacity: 0.8 }}>
-                <span>Made with ❤️ for learners worldwide</span>
+                <span>Made with ❤️ for learners nationwide</span>
                 <div className="flex items-center space-x-2">
                   <Star className="w-3 h-3 sm:w-4 sm:h-4" style={{ color: '#FFC13B' }} />
                   <span>4.9/5 Rating</span>

@@ -1,5 +1,5 @@
-import { MobileOnboardingFlow } from '@/components/onboarding/MobileOnboardingFlow'
+import ResponsiveOnboardingFlow from '@/components/onboarding/ResponsiveOnboardingFlow'
 
 export default function OnboardingPage() {
-  return <MobileOnboardingFlow />
+  return <ResponsiveOnboardingFlow />
 }

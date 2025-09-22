@@ -1,10 +1,12 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { WelcomeCard } from '@/components/ui/welcome-card'
+import { PageLoader } from '@/components/ui/loading'
 import { useAuth } from '@/hooks/useAuth'
 import { 
   BarChart3, 
@@ -22,45 +24,7 @@ import {
   Target,
   Award
 } from 'lucide-react'
-
-// Mock analytics data
-const mockAnalytics = {
-  overview: {
-    totalUsers: 1247,
-    newUsers: 89,
-    activeUsers: 892,
-    totalRevenue: 45678,
-    conversionRate: 12.5,
-    bounceRate: 34.2
-  },
-  userGrowth: [
-    { month: 'Jan', users: 120, revenue: 12000 },
-    { month: 'Feb', users: 150, revenue: 15000 },
-    { month: 'Mar', users: 180, revenue: 18000 },
-    { month: 'Apr', users: 200, revenue: 20000 },
-    { month: 'May', users: 250, revenue: 25000 },
-    { month: 'Jun', users: 300, revenue: 30000 }
-  ],
-  topPages: [
-    { page: '/dashboard', views: 15420, unique: 8920, bounce: 23.4 },
-    { page: '/courses', views: 12350, unique: 7890, bounce: 31.2 },
-    { page: '/profile', views: 9870, unique: 6540, bounce: 18.7 },
-    { page: '/settings', views: 5430, unique: 3210, bounce: 45.6 }
-  ],
-  userRoles: [
-    { role: 'Learners', count: 892, percentage: 71.5, color: 'bg-blue-500' },
-    { role: 'Applicants', count: 234, percentage: 18.8, color: 'bg-green-500' },
-    { role: 'Admins', count: 89, percentage: 7.1, color: 'bg-purple-500' },
-    { role: 'Super Admins', count: 32, percentage: 2.6, color: 'bg-coral' }
-  ],
-  recentActivity: [
-    { action: 'New user registered', user: 'john.doe@example.com', time: '2 minutes ago', type: 'success' },
-    { action: 'Course completed', user: 'jane.smith@example.com', time: '5 minutes ago', type: 'info' },
-    { action: 'Application submitted', user: 'bob.wilson@example.com', time: '12 minutes ago', type: 'warning' },
-    { action: 'Admin login', user: 'admin@ispaan.com', time: '1 hour ago', type: 'info' },
-    { action: 'System backup', user: 'System', time: '2 hours ago', type: 'success' }
-  ]
-}
+import { getAnalyticsData, AnalyticsData } from '@/lib/analytics-service'
 
 const getActivityIcon = (type: string) => {
   switch (type) {
@@ -77,6 +41,83 @@ const getActivityIcon = (type: string) => {
 
 export default function SuperAdminAnalyticsPage() {
   const { user, userData } = useAuth()
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string>('')
+  const [dateRange, setDateRange] = useState({
+    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+    end: new Date()
+  })
+
+  const loadAnalytics = async () => {
+    try {
+      setLoading(true)
+      setError('')
+      const data = await getAnalyticsData(dateRange)
+      setAnalytics(data)
+    } catch (err) {
+      console.error('Error loading analytics:', err)
+      setError('Failed to load analytics data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadAnalytics()
+  }, [dateRange])
+
+  const handleRefresh = () => {
+    loadAnalytics()
+  }
+
+  const handleExport = () => {
+    if (!analytics) return
+    
+    const csvContent = [
+      ['Metric', 'Value'].join(','),
+      ['Total Users', analytics.overview.totalUsers].join(','),
+      ['New Users', analytics.overview.newUsers].join(','),
+      ['Active Users', analytics.overview.activeUsers].join(','),
+      ['Total Revenue', analytics.overview.totalRevenue].join(','),
+      ['Conversion Rate', analytics.overview.conversionRate + '%'].join(','),
+      ['Bounce Rate', analytics.overview.bounceRate + '%'].join(',')
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `analytics-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    window.URL.revokeObjectURL(url)
+  }
+
+  if (loading) {
+    return <PageLoader message="Loading analytics data..." />
+  }
+
+  if (error) {
+    return (
+      <AdminLayout userRole="super-admin">
+        <div className="flex flex-col items-center justify-center min-h-96 space-y-4">
+          <div className="text-red-500 text-xl">Error: {error}</div>
+          <Button onClick={handleRefresh}>Try Again</Button>
+        </div>
+      </AdminLayout>
+    )
+  }
+
+  if (!analytics) {
+    return (
+      <AdminLayout userRole="super-admin">
+        <div className="flex flex-col items-center justify-center min-h-96 space-y-4">
+          <div className="text-gray-500 text-xl">No analytics data available</div>
+          <Button onClick={handleRefresh}>Refresh</Button>
+        </div>
+      </AdminLayout>
+    )
+  }
   
   return (
     <AdminLayout userRole="super-admin">
@@ -92,11 +133,11 @@ export default function SuperAdminAnalyticsPage() {
               <Filter className="mr-2 h-4 w-4" />
               Filter
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleExport}>
               <Download className="mr-2 h-4 w-4" />
               Export
             </Button>
-            <Button className="bg-coral hover:bg-coral/90">
+            <Button className="bg-coral hover:bg-coral/90" onClick={handleRefresh}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
@@ -119,7 +160,7 @@ export default function SuperAdminAnalyticsPage() {
                   <Users className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-dark-blue">{mockAnalytics.overview.totalUsers.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-dark-blue">{analytics.overview.totalUsers.toLocaleString()}</p>
                   <p className="text-muted-foreground">Total Users</p>
                   <div className="flex items-center space-x-1 mt-1">
                     <ArrowUpRight className="h-3 w-3 text-green-500" />
@@ -137,7 +178,7 @@ export default function SuperAdminAnalyticsPage() {
                   <UserPlus className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-dark-blue">{mockAnalytics.overview.newUsers}</p>
+                  <p className="text-2xl font-bold text-dark-blue">{analytics.overview.newUsers}</p>
                   <p className="text-muted-foreground">New Users</p>
                   <div className="flex items-center space-x-1 mt-1">
                     <ArrowUpRight className="h-3 w-3 text-green-500" />
@@ -155,7 +196,7 @@ export default function SuperAdminAnalyticsPage() {
                   <Activity className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-dark-blue">{mockAnalytics.overview.activeUsers}</p>
+                  <p className="text-2xl font-bold text-dark-blue">{analytics.overview.activeUsers}</p>
                   <p className="text-muted-foreground">Active Users</p>
                   <div className="flex items-center space-x-1 mt-1">
                     <ArrowUpRight className="h-3 w-3 text-green-500" />
@@ -173,7 +214,7 @@ export default function SuperAdminAnalyticsPage() {
                   <TrendingUp className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-dark-blue">${mockAnalytics.overview.totalRevenue.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-dark-blue">${analytics.overview.totalRevenue.toLocaleString()}</p>
                   <p className="text-muted-foreground">Revenue</p>
                   <div className="flex items-center space-x-1 mt-1">
                     <ArrowUpRight className="h-3 w-3 text-green-500" />
@@ -191,7 +232,7 @@ export default function SuperAdminAnalyticsPage() {
                   <Target className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-dark-blue">{mockAnalytics.overview.conversionRate}%</p>
+                  <p className="text-2xl font-bold text-dark-blue">{analytics.overview.conversionRate}%</p>
                   <p className="text-muted-foreground">Conversion</p>
                   <div className="flex items-center space-x-1 mt-1">
                     <ArrowUpRight className="h-3 w-3 text-green-500" />
@@ -209,7 +250,7 @@ export default function SuperAdminAnalyticsPage() {
                   <Eye className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-dark-blue">{mockAnalytics.overview.bounceRate}%</p>
+                  <p className="text-2xl font-bold text-dark-blue">{analytics.overview.bounceRate}%</p>
                   <p className="text-muted-foreground">Bounce Rate</p>
                   <div className="flex items-center space-x-1 mt-1">
                     <ArrowDownRight className="h-3 w-3 text-red-500" />
@@ -257,7 +298,7 @@ export default function SuperAdminAnalyticsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {mockAnalytics.userRoles.map((role, index) => (
+              {analytics.userRoles.map((role, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className={`w-4 h-4 rounded-full ${role.color}`}></div>
@@ -288,7 +329,7 @@ export default function SuperAdminAnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockAnalytics.topPages.map((page, index) => (
+                {analytics.topPages.map((page, index) => (
                   <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                     <div className="flex-1">
                       <h3 className="font-medium text-dark-blue">{page.page}</h3>
@@ -325,7 +366,7 @@ export default function SuperAdminAnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {mockAnalytics.recentActivity.map((activity, index) => (
+                {analytics.recentActivity.map((activity, index) => (
                   <div key={index} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                     <div className="mt-1">
                       {getActivityIcon(activity.type)}

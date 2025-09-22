@@ -343,7 +343,7 @@ export default function ContactPage() {
                 </h2>
                 
                 <p className="text-2xl text-blue-100 mb-12 max-w-3xl mx-auto leading-relaxed">
-                  Transform your career with our innovative work-integrated learning platform
+                  Transform your career with our innovative work-integrated monitoring platform
                 </p>
                 
                 <div className="flex flex-col sm:flex-row gap-6 justify-center">

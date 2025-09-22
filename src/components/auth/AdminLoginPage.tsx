@@ -83,38 +83,39 @@ export function AdminLoginPage() {
                   <p style={{ color: '#1E3D59', opacity: 0.7 }}>Sign in to access administrative functions</p>
                 </div>
 
-                {/* Role Tabs */}
-                <div className="flex rounded-xl p-1 mb-6" style={{ backgroundColor: 'rgba(30, 61, 89, 0.1)' }}>
-                  <button
-                    onClick={() => setSelectedRole('admin')}
-                    className={`flex-1 flex items-center justify-center px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-300 ${
-                      selectedRole === 'admin'
-                        ? 'text-white shadow-lg transform scale-105'
-                        : 'hover:opacity-80'
-                    }`}
-                    style={{ 
-                      backgroundColor: selectedRole === 'admin' ? '#FF6E40' : 'transparent',
-                      color: selectedRole === 'admin' ? 'white' : '#1E3D59'
-                    }}
-                  >
-                    <Shield className="w-4 h-4 mr-2" />
-                    Admin
-                  </button>
-                  <button
-                    onClick={() => setSelectedRole('super-admin')}
-                    className={`flex-1 flex items-center justify-center px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-300 ${
-                      selectedRole === 'super-admin'
-                        ? 'text-white shadow-lg transform scale-105'
-                        : 'hover:opacity-80'
-                    }`}
-                    style={{ 
-                      backgroundColor: selectedRole === 'super-admin' ? '#FFC13B' : 'transparent',
-                      color: selectedRole === 'super-admin' ? 'white' : '#1E3D59'
-                    }}
-                  >
-                    <Crown className="w-4 h-4 mr-2" />
-                    Super Admin
-                  </button>
+                {/* Role Selection - Simple Design */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium mb-3" style={{ color: '#1E3D59' }}>
+                    Select Role
+                  </label>
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors" style={{ borderColor: 'rgba(30, 61, 89, 0.2)' }}>
+                      <input
+                        type="radio"
+                        name="role"
+                        value="admin"
+                        checked={selectedRole === 'admin'}
+                        onChange={() => setSelectedRole('admin')}
+                        className="w-4 h-4"
+                        style={{ accentColor: '#FF6E40' }}
+                      />
+                      <Shield className="w-4 h-4" style={{ color: '#FF6E40' }} />
+                      <span className="font-medium" style={{ color: '#1E3D59' }}>Admin</span>
+                    </label>
+                    <label className="flex items-center space-x-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors" style={{ borderColor: 'rgba(30, 61, 89, 0.2)' }}>
+                      <input
+                        type="radio"
+                        name="role"
+                        value="super-admin"
+                        checked={selectedRole === 'super-admin'}
+                        onChange={() => setSelectedRole('super-admin')}
+                        className="w-4 h-4"
+                        style={{ accentColor: '#FFC13B' }}
+                      />
+                      <Crown className="w-4 h-4" style={{ color: '#FFC13B' }} />
+                      <span className="font-medium" style={{ color: '#1E3D59' }}>Super Admin</span>
+                    </label>
+                  </div>
                 </div>
                 
                 <AdminLoginForm selectedRole={selectedRole} />

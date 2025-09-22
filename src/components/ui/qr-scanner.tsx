@@ -91,7 +91,7 @@ export function QRScanner({ onScan, onError, className }: QRScannerProps) {
       const interval = setInterval(scanQRCode, 100)
       return () => clearInterval(interval)
     }
-  }, [isScanning])
+  }, [isScanning, scanQRCode]) // Added scanQRCode dependency
 
   useEffect(() => {
     return () => {

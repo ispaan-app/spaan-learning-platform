@@ -20,7 +20,12 @@ import {
   ZoomOut,
   RotateCw,
   Maximize2,
-  Minimize2
+  Minimize2,
+  CreditCard,
+  Home,
+  GraduationCap,
+  Building,
+  Receipt
 } from 'lucide-react'
 
 interface Document {
@@ -32,6 +37,7 @@ interface Document {
   uploadedAt: string
   size?: string
   description?: string
+  fileType?: string
 }
 
 interface DocumentViewerProps {
@@ -42,151 +48,91 @@ interface DocumentViewerProps {
     firstName: string
     lastName: string
     email: string
-    documents?: {
-      certifiedId: boolean
-      proofOfAddress: boolean
-      highestQualification: boolean
-      proofOfBanking: boolean
-      taxNumber: boolean
-    }
   }
+  documents: Document[]
   onApprove: (documentType: string) => void
   onReject: (documentType: string, reason: string) => void
+  loading?: boolean
 }
 
-const documentTypes = {
+// Document types configuration
+const documentTypes: { [key: string]: { name: string; description: string; icon: any; color: string } } = {
   certifiedId: {
     name: 'Certified ID Copy',
-    description: 'Government-issued identification document',
-    icon: FileText,
-    color: 'bg-blue-100 text-blue-800'
+    description: 'Government issued ID document',
+    icon: CreditCard,
+    color: 'bg-blue-100 text-blue-600'
   },
   proofOfAddress: {
     name: 'Proof of Address',
-    description: 'Utility bill or bank statement showing current address',
-    icon: FileText,
-    color: 'bg-green-100 text-green-800'
+    description: 'Utility bill or bank statement',
+    icon: Home,
+    color: 'bg-green-100 text-green-600'
   },
   highestQualification: {
     name: 'Highest Qualification',
     description: 'Educational certificates or diplomas',
-    icon: FileText,
-    color: 'bg-purple-100 text-purple-800'
+    icon: GraduationCap,
+    color: 'bg-purple-100 text-purple-600'
   },
   proofOfBanking: {
     name: 'Proof of Banking',
-    description: 'Bank statement or account verification',
-    icon: FileText,
-    color: 'bg-orange-100 text-orange-800'
+    description: 'Bank account details or statement',
+    icon: Building,
+    color: 'bg-orange-100 text-orange-600'
   },
   taxNumber: {
     name: 'Tax Number',
-    description: 'Tax identification number document',
-    icon: FileText,
-    color: 'bg-red-100 text-red-800'
+    description: 'SARS tax number certificate',
+    icon: Receipt,
+    color: 'bg-red-100 text-red-600'
   }
-}
+};
 
-export default function DocumentViewer({ 
-  isOpen, 
-  onClose, 
-  applicant, 
-  onApprove, 
-  onReject 
-}: DocumentViewerProps) {
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null)
-  const [rejectionReason, setRejectionReason] = useState('')
-  const [showRejectionForm, setShowRejectionForm] = useState<string | null>(null)
-  const [zoom, setZoom] = useState(100)
+
+export default function DocumentViewer(props: DocumentViewerProps) {
+  const { isOpen, onClose, applicant, documents, onApprove, onReject, loading = false } = props;
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [showRejectionForm, setShowRejectionForm] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(100);
 
   const handleApprove = (documentType: string) => {
-    onApprove(documentType)
-    setShowRejectionForm(null)
-  }
+    onApprove(documentType);
+    setShowRejectionForm(null);
+  };
 
   const handleReject = (documentType: string) => {
     if (rejectionReason.trim()) {
-      onReject(documentType, rejectionReason)
-      setRejectionReason('')
-      setShowRejectionForm(null)
+      onReject(documentType, rejectionReason);
+      setRejectionReason('');
+      setShowRejectionForm(null);
     }
-  }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved':
-        return <CheckCircle className="w-4 h-4 text-green-600" />
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
       case 'rejected':
-        return <XCircle className="w-4 h-4 text-red-600" />
+        return <XCircle className="w-4 h-4 text-red-600" />;
       default:
-        return <Clock className="w-4 h-4 text-yellow-600" />
+        return <Clock className="w-4 h-4 text-yellow-600" />;
     }
-  }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
-        return <Badge className="bg-green-100 text-green-800">Approved</Badge>
+        return <Badge className="bg-green-100 text-green-800">Approved</Badge>;
       case 'rejected':
-        return <Badge className="bg-red-100 text-red-800">Rejected</Badge>
+        return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
       default:
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
+        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
     }
-  }
+  };
 
-  const mockDocuments: Document[] = [
-    {
-      id: '1',
-      name: 'ID_Copy_2024.pdf',
-      type: 'certifiedId',
-      status: 'pending',
-      url: '/api/documents/sample-id.pdf',
-      uploadedAt: '2024-01-15T10:30:00Z',
-      size: '2.3 MB',
-      description: 'Government-issued ID document'
-    },
-    {
-      id: '2',
-      name: 'Utility_Bill_Jan_2024.pdf',
-      type: 'proofOfAddress',
-      status: 'pending',
-      url: '/api/documents/sample-address.pdf',
-      uploadedAt: '2024-01-15T10:35:00Z',
-      size: '1.8 MB',
-      description: 'Electricity bill showing current address'
-    },
-    {
-      id: '3',
-      name: 'Degree_Certificate.pdf',
-      type: 'highestQualification',
-      status: 'pending',
-      url: '/api/documents/sample-degree.pdf',
-      uploadedAt: '2024-01-15T10:40:00Z',
-      size: '3.1 MB',
-      description: 'Bachelor of Science degree certificate'
-    },
-    {
-      id: '4',
-      name: 'Bank_Statement_Jan_2024.pdf',
-      type: 'proofOfBanking',
-      status: 'pending',
-      url: '/api/documents/sample-bank.pdf',
-      uploadedAt: '2024-01-15T10:45:00Z',
-      size: '2.7 MB',
-      description: 'Bank statement for account verification'
-    },
-    {
-      id: '5',
-      name: 'Tax_Number_Certificate.pdf',
-      type: 'taxNumber',
-      status: 'pending',
-      url: '/api/documents/sample-tax.pdf',
-      uploadedAt: '2024-01-15T10:50:00Z',
-      size: '1.5 MB',
-      description: 'Tax identification number certificate'
-    }
-  ]
-
+  // Use real documents passed as prop (no useMemo needed)
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
@@ -211,8 +157,24 @@ export default function DocumentViewer({
               Uploaded Documents
             </h3>
             <div className="space-y-3 overflow-y-auto max-h-[60vh]">
-              {mockDocuments.map((doc) => {
-                const docType = documentTypes[doc.type]
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading documents...</p>
+                </div>
+              ) : documents.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">No documents uploaded</p>
+                </div>
+              ) : (
+                documents.map((doc) => {
+                const docType = documentTypes[doc.type] || {
+                  name: doc.type.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+                  description: 'Document',
+                  icon: FileText,
+                  color: 'bg-gray-100 text-gray-600'
+                }
                 const IconComponent = docType.icon
                 
                 return (
@@ -243,7 +205,7 @@ export default function DocumentViewer({
                     </CardContent>
                   </Card>
                 )
-              })}
+              }))}
             </div>
           </div>
 
@@ -254,17 +216,50 @@ export default function DocumentViewer({
                 {/* Document Header */}
                 <div className="flex items-center justify-between mb-4 p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-lg ${documentTypes[selectedDocument.type].color}`}>
-                      {React.createElement(documentTypes[selectedDocument.type].icon, { className: "w-5 h-5" })}
+                    <div className={`p-2 rounded-lg ${(documentTypes[selectedDocument.type] || documentTypes.certifiedId).color}`}>
+                      {React.createElement((documentTypes[selectedDocument.type] || documentTypes.certifiedId).icon, { className: "w-5 h-5" })}
                     </div>
                     <div>
-                      <h3 className="font-semibold">{documentTypes[selectedDocument.type].name}</h3>
+                      <h3 className="font-semibold">{(documentTypes[selectedDocument.type] || documentTypes.certifiedId).name}</h3>
                       <p className="text-sm text-gray-600">{selectedDocument.name}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     {getStatusBadge(selectedDocument.status)}
-                    <Button variant="outline" size="sm">
+                    <div className="flex items-center space-x-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setZoom(Math.max(50, zoom - 25))}
+                        disabled={zoom <= 50}
+                      >
+                        <ZoomOut className="w-4 h-4" />
+                      </Button>
+                      <span className="text-sm text-gray-600 px-2">{zoom}%</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setZoom(Math.min(200, zoom + 25))}
+                        disabled={zoom >= 200}
+                      >
+                        <ZoomIn className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (selectedDocument.url) {
+                          const link = document.createElement('a')
+                          link.href = selectedDocument.url
+                          link.download = selectedDocument.name
+                          link.target = '_blank'
+                          document.body.appendChild(link)
+                          link.click()
+                          document.body.removeChild(link)
+                        }
+                      }}
+                    >
                       <Download className="w-4 h-4 mr-2" />
                       Download
                     </Button>
@@ -272,28 +267,48 @@ export default function DocumentViewer({
                 </div>
 
                 {/* Document Preview */}
-                <div className="flex-1 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
-                  <div className="text-center">
-                    <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 mb-2">Document Preview</p>
-                    <p className="text-sm text-gray-500">
-                      {selectedDocument.description || 'Click to view document details'}
-                    </p>
-                    <div className="mt-4 flex justify-center space-x-2">
-                      <Button variant="outline" size="sm">
-                        <ZoomIn className="w-4 h-4 mr-2" />
-                        Zoom In
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <ZoomOut className="w-4 h-4 mr-2" />
-                        Zoom Out
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <RotateCw className="w-4 h-4 mr-2" />
-                        Rotate
-                      </Button>
+                <div className="flex-1 bg-gray-100 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
+                  {selectedDocument.url ? (
+                    <div className="w-full h-full relative">
+                      {selectedDocument?.fileType?.includes('image') ? (
+                        <img
+                          src={selectedDocument.url}
+                          alt={selectedDocument.name}
+                          className="w-full h-full object-contain"
+                          style={{ transform: `scale(${zoom / 100})` }}
+                        />
+                      ) : selectedDocument?.fileType === 'application/pdf' ? (
+                        <iframe
+                          src={selectedDocument.url}
+                          className="w-full h-full border-0"
+                          title={selectedDocument.name}
+                        />
+                      ) : (
+                        <div className="text-center">
+                          <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-600 mb-2">Document Preview Not Available</p>
+                          <p className="text-sm text-gray-500 mb-4">
+                            This file type cannot be previewed in the browser
+                          </p>
+                          <Button
+                            onClick={() => window.open(selectedDocument.url, '_blank')}
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            Open in New Tab
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  ) : (
+                    <div className="text-center">
+                      <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600 mb-2">No Document URL Available</p>
+                      <p className="text-sm text-gray-500">
+                        This document may not have been properly uploaded
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Buttons */}

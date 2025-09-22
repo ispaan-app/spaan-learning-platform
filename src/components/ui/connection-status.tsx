@@ -49,16 +49,23 @@ export function ConnectionStatus({ className }: ConnectionStatusProps) {
   }, [])
 
   const handleRetry = async () => {
+    if (isRetrying) return // Prevent multiple simultaneous retries
+    
     setIsRetrying(true)
     setRetryCount(prev => prev + 1)
     
     try {
       // Try to fetch a small resource to test connectivity
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000)
+      
       await fetch('/api/health', { 
         method: 'HEAD',
         cache: 'no-cache',
-        signal: AbortSignal.timeout(5000)
+        signal: controller.signal
       })
+      
+      clearTimeout(timeoutId)
       
       // If successful, trigger online event
       window.dispatchEvent(new Event('online'))

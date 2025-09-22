@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { ProgramService } from '@/lib/program-service'
+import { getAdminDashboardData, AdminStats, RecentApplicant, RecentLearner, RecentActivity } from '@/lib/admin-dashboard-service'
 import { 
   Users, 
   FileText, 
@@ -42,26 +44,7 @@ import {
 import { cn } from '@/lib/utils'
 import { StatCard, QuickAction, RecentActivityItem } from '@/components/ui/enhanced-dashboard-layout'
 
-interface AdminStats {
-  pendingApplicants: number
-  totalLearners: number
-  activePlacements: number
-  assignedLearners: number
-  totalApplications: number
-  approvedApplications: number
-  rejectedApplications: number
-  activeClasses: number
-}
 
-interface RecentApplicant {
-  id: string
-  firstName: string
-  lastName: string
-  email: string
-  program: string
-  applicationDate: string
-  status: 'pending' | 'approved' | 'rejected'
-}
 
 interface UrgentAlert {
   id: string
@@ -85,91 +68,88 @@ export function EnhancedAdminDashboard() {
   })
   
   const [recentApplicants, setRecentApplicants] = useState<RecentApplicant[]>([])
+  const [recentLearners, setRecentLearners] = useState<RecentLearner[]>([])
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([])
   const [urgentAlerts, setUrgentAlerts] = useState<UrgentAlert[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [error, setError] = useState<string>('')
+  const [programNames, setProgramNames] = useState<{ [key: string]: string }>({})
+  
+  const formatProgramName = (programId: string) => {
+    return programNames[programId] || programId || 'Unknown Program'
+  }
 
-  // Mock data - replace with real Firebase data
+  // Load real Firebase data
   useEffect(() => {
     const loadData = async () => {
-      setIsLoading(true)
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      setAdminStats({
-        pendingApplicants: 24,
-        totalLearners: 156,
-        activePlacements: 89,
-        assignedLearners: 67,
-        totalApplications: 234,
-        approvedApplications: 189,
-        rejectedApplications: 21,
-        activeClasses: 12
-      })
-      
-      setRecentApplicants([
-        {
-          id: '1',
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john.doe@email.com',
-          program: 'Computer Science',
-          applicationDate: '2024-01-15',
-          status: 'pending'
-        },
-        {
-          id: '2',
-          firstName: 'Jane',
-          lastName: 'Smith',
-          email: 'jane.smith@email.com',
-          program: 'Data Science',
-          applicationDate: '2024-01-14',
-          status: 'approved'
-        },
-        {
-          id: '3',
-          firstName: 'Mike',
-          lastName: 'Johnson',
-          email: 'mike.johnson@email.com',
-          program: 'Engineering',
-          applicationDate: '2024-01-13',
-          status: 'rejected'
-        }
-      ])
-      
-      setUrgentAlerts([
-        {
-          id: '1',
-          type: 'warning',
-          title: 'High Dropout Risk',
-          description: '5 learners are at risk of dropping out',
-          time: '2 hours ago',
-          priority: 'high'
-        },
-        {
-          id: '2',
-          type: 'error',
-          title: 'System Error',
-          description: 'Attendance tracking system is down',
-          time: '4 hours ago',
-          priority: 'high'
-        },
-        {
-          id: '3',
-          type: 'info',
-          title: 'New Applications',
-          description: '12 new applications received today',
-          time: '6 hours ago',
-          priority: 'medium'
-        }
-      ])
-      
-      setIsLoading(false)
+      try {
+        setIsLoading(true)
+        setError('')
+        
+        const data = await getAdminDashboardData()
+        
+        setAdminStats(data.stats)
+        setRecentApplicants(data.recentApplicants)
+        setRecentLearners(data.recentLearners)
+        setRecentActivities(data.recentActivities)
+        
+        // Mock urgent alerts for now (could be replaced with real alert system)
+        setUrgentAlerts([
+          {
+            id: '1',
+            type: 'warning',
+            title: 'High Dropout Risk',
+            description: '5 learners are at risk of dropping out',
+            time: '2 hours ago',
+            priority: 'high'
+          },
+          {
+            id: '2',
+            type: 'error',
+            title: 'System Error',
+            description: 'Attendance tracking system is down',
+            time: '4 hours ago',
+            priority: 'high'
+          },
+          {
+            id: '3',
+            type: 'info',
+            title: 'New Applications',
+            description: '12 new applications received today',
+            time: '6 hours ago',
+            priority: 'medium'
+          }
+        ])
+      } catch (err) {
+        console.error('Error loading admin dashboard data:', err)
+        setError('Failed to load dashboard data')
+      } finally {
+        setIsLoading(false)
+      }
     }
     
     loadData()
   }, [])
+
+  // Load program names for recent applicants
+  useEffect(() => {
+    if (recentApplicants.length > 0) {
+      const uniqueProgramIds = Array.from(new Set(recentApplicants.map(a => a.program).filter(Boolean)))
+      if (uniqueProgramIds.length > 0) {
+        ProgramService.getProgramNames(uniqueProgramIds)
+          .then(setProgramNames)
+          .catch(error => {
+            console.error('Error fetching program names:', error)
+            const fallbackMap: { [key: string]: string } = {}
+            uniqueProgramIds.forEach(id => {
+              fallbackMap[id] = id
+            })
+            setProgramNames(fallbackMap)
+          })
+      }
+    }
+  }, [recentApplicants])
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
@@ -397,7 +377,7 @@ export function EnhancedAdminDashboard() {
                         {applicant.firstName} {applicant.lastName}
                       </h4>
                       <p className="text-sm text-gray-600">{applicant.email}</p>
-                      <p className="text-sm text-gray-500">{applicant.program}</p>
+                      <p className="text-sm text-gray-500">{formatProgramName(applicant.program)}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">

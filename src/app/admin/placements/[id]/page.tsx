@@ -25,6 +25,7 @@ import { useRouter } from 'next/navigation'
 import { getPlacementByIdAction, Placement, enrollLearnerAction } from '../actions'
 import { candidateMatcherFlow } from '@/lib/ai/candidate-matcher'
 import { toast } from '@/lib/toast'
+import { ProgramService } from '@/lib/program-service'
 
 interface Candidate {
   id: string
@@ -46,6 +47,7 @@ export default function PlacementDetailsPage({ params }: { params: { id: string 
   const [isMatching, setIsMatching] = useState(false)
   const [isEnrolling, setIsEnrolling] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [programName, setProgramName] = useState<string>('')
 
   const loadPlacement = async () => {
     try {
@@ -53,6 +55,17 @@ export default function PlacementDetailsPage({ params }: { params: { id: string 
       const data = await getPlacementByIdAction(params.id)
       if (data) {
         setPlacement(data)
+        
+        // Fetch program name
+        if (data.programId) {
+          try {
+            const programName = await ProgramService.getProgramName(data.programId)
+            setProgramName(programName)
+          } catch (error) {
+            console.error('Error fetching program name:', error)
+            setProgramName(data.programId)
+          }
+        }
       } else {
         setError('Placement not found')
       }
@@ -223,7 +236,7 @@ export default function PlacementDetailsPage({ params }: { params: { id: string 
                     </div>
                     <div>
                       <h4 className="font-semibold text-sm mb-2" style={{ color: '#1E3D59', opacity: 0.7 }}>Program</h4>
-                      <p className="text-lg font-medium" style={{ color: '#1E3D59' }}>{placement.programId}</p>
+                      <p className="text-lg font-medium" style={{ color: '#1E3D59' }}>{programName || placement.programId}</p>
                     </div>
                     <div>
                       <h4 className="font-semibold text-sm mb-2" style={{ color: '#1E3D59', opacity: 0.7 }}>Address</h4>

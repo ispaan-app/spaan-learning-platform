@@ -34,29 +34,40 @@ import {
   MoreVertical
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
+import { notificationService } from '@/services/notificationService'
+import { db } from '@/lib/firebase'
+import { collection, getDocs, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore'
+import { toast } from 'sonner'
 
-interface Message {
+interface Notification {
   id: string
-  senderName: string
-  subject: string
-  content: string
-  timestamp: Date
-  isRead: boolean
-  isStarred: boolean
+  userId: string
+  type: string
+  title: string
+  message: string
+  read: boolean
+  priority: string
+  category: string
+  createdAt: string
+  senderName?: string
+  actionUrl?: string
 }
 
 interface AdminUser {
   id: string
   name: string
   email: string
+  firstName?: string
+  lastName?: string
+  role: string
 }
 
 export default function AdminInbox() {
   const { user } = useAuth()
   const [showCompose, setShowCompose] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([])
+  const [notifications, setNotifications] = useState<Notification[]>([])
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
-  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null)
+  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null)
   const [stats, setStats] = useState({
     totalMessages: 0,
     unreadMessages: 0,
@@ -64,14 +75,169 @@ export default function AdminInbox() {
     urgentMessages: 0,
     todayMessages: 0
   })
+  const [loading, setLoading] = useState(true)
 
   const [composeData, setComposeData] = useState({
     recipientId: '',
     subject: '',
     content: '',
-    priority: 'normal',
+    priority: 'medium',
     category: 'general'
   })
+
+  // Load notifications and admin users
+  useEffect(() => {
+    if (!user) return
+
+    const loadData = async () => {
+      try {
+        setLoading(true)
+        
+        // Load notifications
+        const notificationsData = await notificationService.getNotifications(user.uid, 50)
+        setNotifications(notificationsData)
+        
+        // Load admin users for messaging
+        const adminUsersQuery = query(
+          collection(db, 'users'),
+          where('role', 'in', ['admin', 'super-admin'])
+        )
+        const adminUsersSnapshot = await getDocs(adminUsersQuery)
+        const adminUsersData = adminUsersSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as AdminUser[]
+        setAdminUsers(adminUsersData)
+        
+        // Update stats
+        const unreadCount = notificationsData.filter(n => !n.read).length
+        const urgentCount = notificationsData.filter(n => n.priority === 'urgent').length
+        const todayCount = notificationsData.filter(n => {
+          const notificationDate = new Date(n.createdAt)
+          const today = new Date()
+          return notificationDate.toDateString() === today.toDateString()
+        }).length
+        
+        setStats({
+          totalMessages: notificationsData.length,
+          unreadMessages: unreadCount,
+          starredMessages: 0, // Not implemented yet
+          urgentMessages: urgentCount,
+          todayMessages: todayCount
+        })
+        
+      } catch (error) {
+        console.error('Error loading inbox data:', error)
+        toast.error('Failed to load inbox data')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+
+    // Set up real-time subscription
+    const unsubscribe = notificationService.subscribeToNotifications(
+      user.uid,
+      (realTimeNotifications) => {
+        setNotifications(realTimeNotifications)
+        
+        // Update stats with real-time data
+        const unreadCount = realTimeNotifications.filter(n => !n.read).length
+        const urgentCount = realTimeNotifications.filter(n => n.priority === 'urgent').length
+        const todayCount = realTimeNotifications.filter(n => {
+          const notificationDate = new Date(n.createdAt)
+          const today = new Date()
+          return notificationDate.toDateString() === today.toDateString()
+        }).length
+        
+        setStats({
+          totalMessages: realTimeNotifications.length,
+          unreadMessages: unreadCount,
+          starredMessages: 0,
+          urgentMessages: urgentCount,
+          todayMessages: todayCount
+        })
+      },
+      (error) => {
+        console.error('Real-time subscription error:', error)
+      }
+    )
+
+    return () => {
+      unsubscribe()
+    }
+  }, [user])
+
+  // Handle sending message/notification
+  const handleSendMessage = async () => {
+    if (!user || !composeData.recipientId || !composeData.subject || !composeData.content) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    try {
+      await notificationService.notifyUser(
+        composeData.recipientId,
+        'message_received' as any,
+        composeData.subject,
+        composeData.content,
+        {
+          priority: composeData.priority,
+          category: composeData.category,
+          fromAdmin: true,
+          senderId: user.uid
+        },
+        composeData.priority as any
+      )
+
+      toast.success('Message sent successfully')
+      setShowCompose(false)
+      setComposeData({
+        recipientId: '',
+        subject: '',
+        content: '',
+        priority: 'medium',
+        category: 'general'
+      })
+    } catch (error) {
+      console.error('Error sending message:', error)
+      toast.error('Failed to send message')
+    }
+  }
+
+  // Handle marking notification as read
+  const handleMarkAsRead = async (notificationId: string) => {
+    try {
+      await notificationService.markNotificationRead(notificationId)
+      toast.success('Marked as read')
+    } catch (error) {
+      console.error('Error marking notification as read:', error)
+      toast.error('Failed to mark as read')
+    }
+  }
+
+  // Handle marking all as read
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationService.markAllNotificationsRead(user!.uid)
+      toast.success('All notifications marked as read')
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error)
+      toast.error('Failed to mark all as read')
+    }
+  }
+
+  // Handle deleting notification
+  const handleDeleteNotification = async (notificationId: string) => {
+    try {
+      await notificationService.deleteNotification(notificationId)
+      toast.success('Notification deleted')
+    } catch (error) {
+      console.error('Error deleting notification:', error)
+      toast.error('Failed to delete notification')
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -94,6 +260,16 @@ export default function AdminInbox() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
+              {stats.unreadMessages > 0 && (
+                <Button
+                  onClick={handleMarkAllAsRead}
+                  variant="outline"
+                  className="flex items-center space-x-2 px-4 py-2 rounded-xl border-2 border-gray-200 hover:bg-gray-50 transition-all duration-300"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  <span className="font-semibold">Mark All Read</span>
+                </Button>
+              )}
               <Button
                 onClick={() => setShowCompose(true)}
                 className="flex items-center space-x-2 px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
@@ -203,59 +379,97 @@ export default function AdminInbox() {
               </CardTitle>
             </CardHeader>
             <CardContent className="relative">
-              {messages.length === 0 ? (
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6E40] mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading notifications...</p>
+                </div>
+              ) : notifications.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="p-6 rounded-full bg-gray-100/80 backdrop-blur-sm w-24 h-24 mx-auto mb-6 flex items-center justify-center">
-                    <MessageSquare className="h-12 w-12 text-gray-400" />
+                    <Bell className="h-12 w-12 text-gray-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-700 mb-2">No conversations yet</h3>
-                  <p className="text-gray-500 mb-6">Start a conversation with someone</p>
+                  <h3 className="text-xl font-semibold text-gray-700 mb-2">No notifications yet</h3>
+                  <p className="text-gray-500 mb-6">You'll see notifications and messages here</p>
                   <Button 
                     onClick={() => setShowCompose(true)} 
                     className="w-full px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                     style={{ backgroundColor: '#FF6E40' }}
                   >
                     <MessageSquare className="h-4 w-4 mr-2" />
-                    <span className="font-semibold">Start Conversation</span>
+                    <span className="font-semibold">Send Message</span>
                   </Button>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {messages.map((message) => (
+                  {notifications.map((notification) => (
                     <div
-                      key={message.id}
+                      key={notification.id}
                       className="group relative overflow-hidden bg-white/80 backdrop-blur-sm border-2 border-gray-200/50 rounded-xl p-4 cursor-pointer hover:shadow-lg hover:border-[#FF6E40]/30 transition-all duration-300 transform hover:-translate-y-1"
-                      onClick={() => setSelectedMessage(message)}
+                      onClick={() => setSelectedNotification(notification)}
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-[#1E3D59]/5 to-[#FF6E40]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       <div className="relative flex items-start space-x-3">
                         <div className="relative">
                           <Avatar className="w-10 h-10 ring-2 ring-white shadow-lg">
                             <AvatarFallback className="text-sm font-semibold bg-gradient-to-br from-[#FF6E40] to-[#FF8C69] text-white">
-                              {message.senderName?.charAt(0) || 'U'}
+                              {notification.title?.charAt(0) || 'N'}
                             </AvatarFallback>
-                      </Avatar>
-                          {!message.isRead && (
+                          </Avatar>
+                          {!notification.read && (
                             <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
                           )}
                         </div>
-                      <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
                             <h4 className="font-semibold text-sm truncate" style={{ color: '#1E3D59' }}>
-                              {message.senderName}
+                              {notification.title}
                             </h4>
-                            {message.isStarred && (
-                              <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                            )}
+                            <div className="flex items-center space-x-2">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                notification.priority === 'urgent' ? 'bg-red-100 text-red-700' :
+                                notification.priority === 'high' ? 'bg-orange-100 text-orange-700' :
+                                notification.priority === 'medium' ? 'bg-blue-100 text-blue-700' :
+                                'bg-gray-100 text-gray-700'
+                              }`}>
+                                {notification.priority}
+                              </span>
+                              {!notification.read && (
+                                <div className="w-2 h-2 bg-[#FF6E40] rounded-full"></div>
+                              )}
+                            </div>
                           </div>
-                          <p className="text-xs text-gray-600 truncate mb-2">{message.subject}</p>
+                          <p className="text-xs text-gray-600 truncate mb-2">{notification.message}</p>
                           <div className="flex items-center justify-between">
                             <p className="text-xs text-gray-500">
-                              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(notification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </p>
-                            {!message.isRead && (
-                              <div className="w-2 h-2 bg-[#FF6E40] rounded-full"></div>
-                            )}
+                            <div className="flex items-center space-x-1">
+                              {!notification.read && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleMarkAsRead(notification.id)
+                                  }}
+                                  className="h-6 px-2 text-xs"
+                                >
+                                  <CheckCircle className="h-3 w-3" />
+                                </Button>
+                              )}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteNotification(notification.id)
+                                }}
+                                className="h-6 px-2 text-xs text-red-500 hover:text-red-700"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -263,59 +477,75 @@ export default function AdminInbox() {
                   ))}
                 </div>
               )}
-                  </CardContent>
+            </CardContent>
                 </Card>
         </div>
 
-        {/* Main Conversation View */}
+        {/* Main Notification View */}
         <div className="lg:col-span-2">
           <Card className="relative overflow-hidden h-full">
             <div className="absolute inset-0 bg-gradient-to-r from-[#1E3D59]/3 to-[#FF6E40]/3 opacity-30"></div>
             <CardContent className="relative p-6 h-full">
-              {!selectedMessage ? (
+              {!selectedNotification ? (
                 <div className="flex flex-col items-center justify-center h-96 text-center">
                   <div className="p-8 rounded-full bg-gray-100/80 backdrop-blur-sm w-32 h-32 mx-auto mb-6 flex items-center justify-center">
-                    <MessageSquare className="h-16 w-16 text-gray-400" />
+                    <Bell className="h-16 w-16 text-gray-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-700 mb-2">Select a conversation</h3>
-                  <p className="text-gray-500">Choose a conversation from the sidebar to start messaging</p>
+                  <h3 className="text-xl font-semibold text-gray-700 mb-2">Select a notification</h3>
+                  <p className="text-gray-500">Choose a notification from the sidebar to view details</p>
                 </div>
               ) : (
                 <div className="space-y-6 h-full flex flex-col">
                   <div className="flex items-center space-x-4 pb-6 border-b border-gray-200/50">
                     <Avatar className="w-12 h-12 ring-2 ring-white shadow-lg">
                       <AvatarFallback className="text-lg font-semibold bg-gradient-to-br from-[#FF6E40] to-[#FF8C69] text-white">
-                        {selectedMessage.senderName?.charAt(0) || 'U'}
+                        {selectedNotification.title?.charAt(0) || 'N'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold" style={{ color: '#1E3D59' }}>{selectedMessage.senderName}</h3>
-                      <p className="text-sm text-gray-600">{selectedMessage.subject}</p>
+                      <h3 className="text-xl font-bold" style={{ color: '#1E3D59' }}>{selectedNotification.title}</h3>
+                      <p className="text-sm text-gray-600">Type: {selectedNotification.type.replace('_', ' ')}</p>
                       <p className="text-xs text-gray-500 mt-1">
-                        {selectedMessage.timestamp.toLocaleString()}
+                        {new Date(selectedNotification.createdAt).toLocaleString()}
                       </p>
                     </div>
                     <div className="flex items-center space-x-2">
-                      {selectedMessage.isStarred && (
-                        <Star className="h-5 w-5 text-yellow-500 fill-current" />
-                      )}
-                      {!selectedMessage.isRead && (
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        selectedNotification.priority === 'urgent' ? 'bg-red-100 text-red-700' :
+                        selectedNotification.priority === 'high' ? 'bg-orange-100 text-orange-700' :
+                        selectedNotification.priority === 'medium' ? 'bg-blue-100 text-blue-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {selectedNotification.priority}
+                      </span>
+                      {!selectedNotification.read && (
                         <div className="w-3 h-3 bg-[#FF6E40] rounded-full"></div>
-            )}
-          </div>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="flex-1 space-y-6">
                     <div className="bg-white/80 backdrop-blur-sm border-2 border-gray-200/50 p-6 rounded-2xl shadow-lg">
-                      <p className="whitespace-pre-wrap leading-relaxed text-gray-700">{selectedMessage.content}</p>
+                      <p className="whitespace-pre-wrap leading-relaxed text-gray-700">{selectedNotification.message}</p>
                     </div>
                     
                     <div className="flex items-center justify-between pt-4 border-t border-gray-200/50">
                       <div className="flex items-center space-x-3">
+                        {!selectedNotification.read && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleMarkAsRead(selectedNotification.id)}
+                            className="px-4 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                            style={{ backgroundColor: '#FF6E40' }}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            <span className="font-semibold">Mark as Read</span>
+                          </Button>
+                        )}
                         <Button 
                           size="sm" 
-                          className="px-4 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                          style={{ backgroundColor: '#FF6E40' }}
+                          variant="outline"
+                          className="px-4 py-2 rounded-xl border-2 border-gray-200 hover:bg-gray-50 transition-all duration-300"
                         >
                           <Reply className="h-4 w-4 mr-2" />
                           <span className="font-semibold">Reply</span>
@@ -323,18 +553,11 @@ export default function AdminInbox() {
                         <Button 
                           size="sm" 
                           variant="outline"
-                          className="px-4 py-2 rounded-xl border-2 border-gray-200 hover:bg-gray-50 transition-all duration-300"
+                          onClick={() => handleDeleteNotification(selectedNotification.id)}
+                          className="px-4 py-2 rounded-xl border-2 border-red-200 hover:bg-red-50 transition-all duration-300 text-red-600 hover:text-red-700"
                         >
-                          <Star className="h-4 w-4 mr-2" />
-                          <span className="font-semibold">Star</span>
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          className="px-4 py-2 rounded-xl border-2 border-gray-200 hover:bg-gray-50 transition-all duration-300"
-                        >
-                          <Archive className="h-4 w-4 mr-2" />
-                          <span className="font-semibold">Archive</span>
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          <span className="font-semibold">Delete</span>
                         </Button>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -381,9 +604,12 @@ export default function AdminInbox() {
                     <SelectValue placeholder="Select recipient" />
                   </SelectTrigger>
                 <SelectContent className="rounded-xl border-2 border-gray-200 shadow-xl">
-                    {adminUsers.map((user) => (
-                    <SelectItem key={user.id} value={user.id} className="rounded-lg">
-                        {user.name}
+                    {adminUsers.map((adminUser) => (
+                    <SelectItem key={adminUser.id} value={adminUser.id} className="rounded-lg">
+                        {adminUser.firstName && adminUser.lastName 
+                          ? `${adminUser.firstName} ${adminUser.lastName} (${adminUser.role})`
+                          : adminUser.name || adminUser.email
+                        }
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -423,6 +649,7 @@ export default function AdminInbox() {
                 Cancel
                 </Button>
               <Button
+                onClick={handleSendMessage}
                 className="px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                 style={{ backgroundColor: '#FF6E40' }}
               >

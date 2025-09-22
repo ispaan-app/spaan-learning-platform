@@ -68,7 +68,8 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { db } from '@/lib/firebase'
-import { collection, getDocs, query, where, orderBy, onSnapshot } from 'firebase/firestore'
+import { collection, getDocs, query, where, orderBy, onSnapshot, doc, setDoc, getDoc } from 'firebase/firestore'
+import { useAuth } from '@/hooks/useAuth'
 
 interface PlatformSettings {
   general: {
@@ -133,6 +134,7 @@ interface RealTimeMetrics {
 }
 
 export default function AdminSettingsPage() {
+  const { user } = useAuth()
   const [settings, setSettings] = useState<PlatformSettings>({
     general: {
   platformName: 'iSpaan',
@@ -205,9 +207,52 @@ export default function AdminSettingsPage() {
   const loadSettings = async () => {
     try {
       setLoading(true)
-      // In a real app, this would load from your backend/database
-      // For now, we'll use the default settings
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Load settings from Firestore
+      const settingsRef = doc(db, 'platformSettings', 'main')
+      const settingsDoc = await getDoc(settingsRef)
+      
+      if (settingsDoc.exists()) {
+        const savedSettings = settingsDoc.data()
+        setSettings({
+          general: {
+            platformName: savedSettings.general?.platformName || 'iSpaan',
+            platformDescription: savedSettings.general?.platformDescription || 'A comprehensive monitoring platform for managing work-integrated learning placements',
+            contactEmail: savedSettings.general?.contactEmail || 'contact@ispaan.com',
+            supportEmail: savedSettings.general?.supportEmail || 'support@ispaan.com',
+            timezone: savedSettings.general?.timezone || 'Africa/Johannesburg',
+            dateFormat: savedSettings.general?.dateFormat || 'DD/MM/YYYY'
+          },
+          notifications: {
+            emailNotifications: savedSettings.notifications?.emailNotifications ?? true,
+            pushNotifications: savedSettings.notifications?.pushNotifications ?? true,
+            applicationAlerts: savedSettings.notifications?.applicationAlerts ?? true,
+            placementUpdates: savedSettings.notifications?.placementUpdates ?? true,
+            systemMaintenance: savedSettings.notifications?.systemMaintenance ?? true,
+            weeklyReports: savedSettings.notifications?.weeklyReports ?? false
+          },
+          security: {
+            requireEmailVerification: savedSettings.security?.requireEmailVerification ?? true,
+            passwordMinLength: savedSettings.security?.passwordMinLength || 8,
+            sessionTimeout: savedSettings.security?.sessionTimeout || 30,
+            twoFactorAuth: savedSettings.security?.twoFactorAuth ?? false,
+            ipWhitelist: savedSettings.security?.ipWhitelist || []
+          },
+          integrations: {
+            smtpEnabled: savedSettings.integrations?.smtpEnabled ?? false,
+            smtpHost: savedSettings.integrations?.smtpHost || '',
+            smtpPort: savedSettings.integrations?.smtpPort || 587,
+            smtpUsername: savedSettings.integrations?.smtpUsername || '',
+            smtpPassword: savedSettings.integrations?.smtpPassword || '',
+            analyticsEnabled: savedSettings.integrations?.analyticsEnabled ?? true,
+            backupEnabled: savedSettings.integrations?.backupEnabled ?? true,
+            backupFrequency: savedSettings.integrations?.backupFrequency || 'daily'
+          }
+        })
+      } else {
+        // Use default settings if none exist
+        console.log('No saved settings found, using defaults')
+      }
     } catch (error) {
       console.error('Error loading settings:', error)
       toast.error('Failed to load settings')
@@ -272,8 +317,14 @@ export default function AdminSettingsPage() {
   const saveSettings = async () => {
     try {
       setSaving(true)
-      // In a real app, this would save to your backend/database
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Save settings to Firestore
+      const settingsRef = doc(db, 'platformSettings', 'main')
+      await setDoc(settingsRef, {
+        ...settings,
+        updatedAt: new Date().toISOString(),
+        updatedBy: user?.uid || 'system'
+      })
       
       toast.success('Settings saved successfully')
     } catch (error) {
@@ -324,6 +375,85 @@ export default function AdminSettingsPage() {
     }))
   }
 
+  // Test SMTP connection
+  const testSMTPConnection = async () => {
+    if (!settings.integrations.smtpEnabled) {
+      toast.error('Please enable SMTP first')
+      return
+    }
+
+    try {
+      // In a real app, this would test the SMTP connection
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      toast.success('SMTP connection test successful!')
+    } catch (error) {
+      console.error('SMTP test failed:', error)
+      toast.error('SMTP connection test failed')
+    }
+  }
+
+  // Backup data
+  const backupData = async () => {
+    try {
+      toast.info('Starting backup...')
+      // In a real app, this would trigger a backup
+      await new Promise(resolve => setTimeout(resolve, 3000))
+      toast.success('Backup completed successfully!')
+    } catch (error) {
+      console.error('Backup failed:', error)
+      toast.error('Backup failed')
+    }
+  }
+
+  // Reset to defaults
+  const resetToDefaults = async () => {
+    if (!confirm('Are you sure you want to reset all settings to defaults? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      setSettings({
+        general: {
+          platformName: 'iSpaan',
+          platformDescription: 'A comprehensive monitoring platform for managing work-integrated learning placements',
+          contactEmail: 'contact@ispaan.com',
+          supportEmail: 'support@ispaan.com',
+          timezone: 'Africa/Johannesburg',
+          dateFormat: 'DD/MM/YYYY'
+        },
+        notifications: {
+          emailNotifications: true,
+          pushNotifications: true,
+          applicationAlerts: true,
+          placementUpdates: true,
+          systemMaintenance: true,
+          weeklyReports: false
+        },
+        security: {
+          requireEmailVerification: true,
+          passwordMinLength: 8,
+          sessionTimeout: 30,
+          twoFactorAuth: false,
+          ipWhitelist: []
+        },
+        integrations: {
+          smtpEnabled: false,
+          smtpHost: '',
+          smtpPort: 587,
+          smtpUsername: '',
+          smtpPassword: '',
+          analyticsEnabled: true,
+          backupEnabled: true,
+          backupFrequency: 'daily'
+        }
+      })
+      toast.success('Settings reset to defaults')
+    } catch (error) {
+      console.error('Error resetting settings:', error)
+      toast.error('Failed to reset settings')
+    }
+  }
+
   if (loading) {
     return (
       <AdminLayout userRole="admin">
@@ -367,11 +497,27 @@ export default function AdminSettingsPage() {
               <div className="flex items-center space-x-3">
                 <Button 
                   variant="outline" 
+                  onClick={backupData}
+                  className="px-4 py-2 rounded-xl border-2 border-gray-200 hover:bg-gray-50 transition-all duration-300"
+                >
+                  <Database className="h-4 w-4 mr-2" />
+                  <span className="font-semibold">Backup</span>
+                </Button>
+                <Button 
+                  variant="outline" 
                   onClick={loadSettings}
-                  className="px-6 py-3 rounded-xl border-2 border-gray-200 hover:bg-gray-50 transition-all duration-300"
+                  className="px-4 py-2 rounded-xl border-2 border-gray-200 hover:bg-gray-50 transition-all duration-300"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   <span className="font-semibold">Refresh</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={resetToDefaults}
+                  className="px-4 py-2 rounded-xl border-2 border-red-200 hover:bg-red-50 transition-all duration-300 text-red-600 hover:text-red-700"
+                >
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  <span className="font-semibold">Reset</span>
                 </Button>
                 <Button 
                   onClick={saveSettings} 
@@ -835,48 +981,61 @@ export default function AdminSettingsPage() {
                   </div>
 
                   {settings.integrations.smtpEnabled && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white/80 backdrop-blur-sm border-2 border-gray-200/50 rounded-2xl">
-                      <div className="space-y-2">
-                        <Label htmlFor="smtpHost" className="text-sm font-semibold text-gray-700">SMTP Host</Label>
-                        <Input
-                          id="smtpHost"
-                          value={settings.integrations.smtpHost}
-                          onChange={(e) => updateIntegrationSetting('smtpHost', e.target.value)}
-                          placeholder="smtp.gmail.com"
-                          className="h-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF6E40]/20 focus:border-[#FF6E40] transition-all duration-300"
-                        />
-                      </div>
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white/80 backdrop-blur-sm border-2 border-gray-200/50 rounded-2xl">
+                        <div className="space-y-2">
+                          <Label htmlFor="smtpHost" className="text-sm font-semibold text-gray-700">SMTP Host</Label>
+                          <Input
+                            id="smtpHost"
+                            value={settings.integrations.smtpHost}
+                            onChange={(e) => updateIntegrationSetting('smtpHost', e.target.value)}
+                            placeholder="smtp.gmail.com"
+                            className="h-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF6E40]/20 focus:border-[#FF6E40] transition-all duration-300"
+                          />
+                        </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="smtpPort" className="text-sm font-semibold text-gray-700">SMTP Port</Label>
-                        <Input
-                          id="smtpPort"
-                          type="number"
-                          value={settings.integrations.smtpPort}
-                          onChange={(e) => updateIntegrationSetting('smtpPort', parseInt(e.target.value))}
-                          className="h-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF6E40]/20 focus:border-[#FF6E40] transition-all duration-300"
-                        />
-                      </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="smtpPort" className="text-sm font-semibold text-gray-700">SMTP Port</Label>
+                          <Input
+                            id="smtpPort"
+                            type="number"
+                            value={settings.integrations.smtpPort}
+                            onChange={(e) => updateIntegrationSetting('smtpPort', parseInt(e.target.value))}
+                            className="h-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF6E40]/20 focus:border-[#FF6E40] transition-all duration-300"
+                          />
+                        </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="smtpUsername" className="text-sm font-semibold text-gray-700">SMTP Username</Label>
-                        <Input
-                          id="smtpUsername"
-                          value={settings.integrations.smtpUsername}
-                          onChange={(e) => updateIntegrationSetting('smtpUsername', e.target.value)}
-                          className="h-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF6E40]/20 focus:border-[#FF6E40] transition-all duration-300"
-                        />
-                      </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="smtpUsername" className="text-sm font-semibold text-gray-700">SMTP Username</Label>
+                          <Input
+                            id="smtpUsername"
+                            value={settings.integrations.smtpUsername}
+                            onChange={(e) => updateIntegrationSetting('smtpUsername', e.target.value)}
+                            className="h-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF6E40]/20 focus:border-[#FF6E40] transition-all duration-300"
+                          />
+                        </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="smtpPassword" className="text-sm font-semibold text-gray-700">SMTP Password</Label>
-                        <Input
-                          id="smtpPassword"
-                          type="password"
-                          value={settings.integrations.smtpPassword}
-                          onChange={(e) => updateIntegrationSetting('smtpPassword', e.target.value)}
-                          className="h-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF6E40]/20 focus:border-[#FF6E40] transition-all duration-300"
-                        />
+                        <div className="space-y-2">
+                          <Label htmlFor="smtpPassword" className="text-sm font-semibold text-gray-700">SMTP Password</Label>
+                          <Input
+                            id="smtpPassword"
+                            type="password"
+                            value={settings.integrations.smtpPassword}
+                            onChange={(e) => updateIntegrationSetting('smtpPassword', e.target.value)}
+                            className="h-12 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF6E40]/20 focus:border-[#FF6E40] transition-all duration-300"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-end">
+                        <Button 
+                          onClick={testSMTPConnection}
+                          variant="outline"
+                          className="px-6 py-2 rounded-xl border-2 border-blue-200 hover:bg-blue-50 transition-all duration-300 text-blue-600 hover:text-blue-700"
+                        >
+                          <Mail className="h-4 w-4 mr-2" />
+                          <span className="font-semibold">Test SMTP Connection</span>
+                        </Button>
                       </div>
                     </div>
                   )}

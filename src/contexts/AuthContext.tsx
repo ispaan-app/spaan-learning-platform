@@ -29,23 +29,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRole] = useState<string | null>(null)
 
   useEffect(() => {
+    let isMounted = true
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!isMounted) return
+
       setUser(user)
       if (user) {
-        // Get user role from custom claims or Firestore
-        const role = await getUserRole(user.uid)
-        setUserRole(role)
-        
-        // Initialize session tracking for authenticated users
         try {
-          await sessionTracker.initializeSession({
-            userId: user.uid,
-            userEmail: user.email || '',
-            userName: user.displayName || user.email?.split('@')[0] || 'Unknown User',
-            userRole: role
-          })
+          // Get user role from custom claims or Firestore
+          const role = await getUserRole(user.uid)
+          if (isMounted) {
+            setUserRole(role)
+          }
+          
+          // Initialize session tracking for authenticated users
+          try {
+            await sessionTracker.initializeSession({
+              userId: user.uid,
+              userEmail: user.email || '',
+              userName: user.displayName || user.email?.split('@')[0] || 'Unknown User',
+              userRole: role
+            })
+          } catch (error) {
+            console.error('Error initializing session tracking:', error)
+          }
         } catch (error) {
-          console.error('Error initializing session tracking:', error)
+          console.error('Error getting user role:', error)
+          if (isMounted) {
+            setUserRole(null)
+          }
         }
       } else {
         // End session tracking when user logs out
@@ -57,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Check for test login data in localStorage
         const testRole = localStorage.getItem('userRole')
-        if (testRole) {
+        if (testRole && isMounted) {
           setUserRole(testRole)
           // Create a mock user object for test login
           setUser({
@@ -77,14 +90,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } catch (error) {
             console.error('Error initializing test session tracking:', error)
           }
-        } else {
+        } else if (isMounted) {
           setUserRole(null)
         }
       }
-      setLoading(false)
+      if (isMounted) {
+        setLoading(false)
+      }
     })
 
-    return () => unsubscribe()
+    return () => {
+      isMounted = false
+      unsubscribe()
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {
@@ -127,53 +145,72 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const getUserRole = async (uid: string): Promise<string> => {
     try {
-      // First check localStorage for current session
-      const storedRole = localStorage.getItem('userRole')
-      if (storedRole) {
-        return storedRole
+      // For test users, use localStorage (development only)
+      if (uid === 'test-user') {
+        const testRole = localStorage.getItem('userRole')
+        return testRole || 'learner'
       }
       
-      // Try to fetch from Firestore for authenticated users
-      if (uid && uid !== 'test-user') {
+      // For authenticated users, verify custom claims first
+      const user = auth.currentUser
+      if (user && user.uid === uid) {
         try {
-          const { doc, getDoc } = await import('firebase/firestore')
-          const { db } = await import('@/lib/firebase')
-          const userDoc = await getDoc(doc(db, 'users', uid))
+          // Get fresh ID token to ensure custom claims are up to date
+          const idTokenResult = await user.getIdTokenResult(true)
+          const customClaims = idTokenResult.claims
           
-          if (userDoc.exists()) {
-            const userData = userDoc.data()
-            const role = userData.role
-            
-            // Store in localStorage for future use
-            localStorage.setItem('userRole', role)
-            if (userData.displayName) {
-              localStorage.setItem('userName', userData.displayName)
-            }
-            if (userData.permissions) {
-              localStorage.setItem('userPermissions', JSON.stringify(userData.permissions))
-            }
-            
-            return role
+          if (customClaims.role) {
+            console.log('✅ Role from custom claims:', customClaims.role)
+            return customClaims.role as string
           }
-        } catch (firestoreError) {
-          console.warn('Could not fetch user role from Firestore:', firestoreError)
+        } catch (claimsError) {
+          console.warn('Could not fetch custom claims:', claimsError)
         }
       }
       
-      // Fallback to email-based role detection
-      const user = auth.currentUser
+      // Fallback to Firestore if custom claims not available
+      try {
+        const { doc, getDoc } = await import('firebase/firestore')
+        const { db } = await import('@/lib/firebase')
+        const userDoc = await getDoc(doc(db, 'users', uid))
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data()
+          const role = userData.role || 'learner'
+          
+          // Update custom claims if they're missing or different
+          if (user && user.uid === uid) {
+            try {
+              const idTokenResult = await user.getIdTokenResult()
+              const currentClaims = idTokenResult.claims
+              
+              if (!currentClaims.role || currentClaims.role !== role) {
+                // Update custom claims via server action
+                await fetch('/api/update-user-claims', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ uid, role })
+                })
+              }
+            } catch (updateError) {
+              console.warn('Could not update custom claims:', updateError)
+            }
+          }
+          
+          return role
+        }
+      } catch (firestoreError) {
+        console.warn('Could not fetch user role from Firestore:', firestoreError)
+      }
+      
+      // Final fallback to email-based role detection
       if (user?.email) {
-        // Special case for known super admin emails
         if (user.email === 'developer@ispaan.com') {
-          localStorage.setItem('userRole', 'super-admin')
-          localStorage.setItem('userName', 'iSpaan Developer')
           return 'super-admin'
         }
         
         if (user.email.includes('admin') || user.email.includes('super')) {
-          const role = user.email.includes('super') ? 'super-admin' : 'admin'
-          localStorage.setItem('userRole', role)
-          return role
+          return user.email.includes('super') ? 'super-admin' : 'admin'
         }
         if (user.email.includes('applicant')) {
           return 'applicant'
@@ -183,7 +220,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
       
-      return 'learner' // Default role
+      // Default fallback
+      return 'learner'
     } catch (error) {
       console.error('Error getting user role:', error)
       return 'learner'

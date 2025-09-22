@@ -113,55 +113,49 @@ const WaveLoader = React.forwardRef<
 ))
 WaveLoader.displayName = "WaveLoader"
 
-// Modern page loader with glassmorphism
+// Modern page loader with glassmorphism and #F5F0E1 background
 const PageLoader = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & { message?: string }
->(({ className, message = "Loading...", ...props }, ref) => (
+>(({ className, message = "Preparing your experience...", ...props }, ref) => (
   <div
     ref={ref}
     className={cn(
-      "fixed inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center z-50",
+      "fixed inset-0 flex items-center justify-center z-50",
       className
     )}
+    style={{ background: 'linear-gradient(135deg, #F5F0E1 0%, #F5F0E1 50%, #F5F0E1 100%)' }}
     {...props}
   >
-    {/* Animated background */}
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
-      <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+    {/* Background Pattern */}
+    <div className="absolute inset-0 opacity-5">
+      <div className="absolute top-0 right-0 w-96 h-96 rounded-full -translate-y-48 translate-x-48" style={{ background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(147, 51, 234, 0.15) 100%)' }}></div>
+      <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full translate-y-40 -translate-x-40" style={{ background: 'linear-gradient(45deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.15) 100%)' }}></div>
+      <div className="absolute top-1/2 left-1/2 w-64 h-64 rounded-full -translate-x-32 -translate-y-32" style={{ background: 'linear-gradient(90deg, rgba(236, 72, 153, 0.15) 0%, rgba(251, 146, 60, 0.15) 100%)' }}></div>
     </div>
     
-    <div className="relative z-10 text-center">
-      {/* Main loading card */}
-      <div className="relative group">
-        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-        <div className="relative bg-white/90 backdrop-blur-sm rounded-3xl p-12 border border-white/20 shadow-2xl">
-          {/* Logo */}
-          <div className="flex items-center justify-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-              <span className="text-white font-bold text-2xl">iS</span>
-            </div>
-          </div>
-          
-          {/* Loading animation */}
-          <div className="flex flex-col items-center space-y-6">
-            <div className="relative">
-              <GradientSpinner size="xl" className="mx-auto" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-blue-600 animate-pulse" />
-              </div>
-            </div>
-            
-            {/* Loading text with gradient */}
-            <div className="space-y-2">
-              <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                {message}
-              </h3>
-              <div className="flex items-center justify-center space-x-2">
-                <WaveLoader />
-              </div>
-            </div>
+    <div className="relative z-10 text-center space-y-8 p-8">
+      {/* Enhanced Loading Spinner */}
+      <div className="relative">
+        <div className="w-20 h-20 mx-auto">
+          <GradientSpinner size="xl" />
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 animate-pulse shadow-lg"></div>
+        </div>
+      </div>
+      
+      {/* Glassmorphism Card */}
+      <div className="bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl p-8 shadow-2xl max-w-md mx-auto">
+        <div className="space-y-4">
+          <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-blue-800 bg-clip-text text-transparent">
+            {message}
+          </h3>
+          <p className="text-gray-700 text-lg">
+            Please wait while we prepare everything for you
+          </p>
+          <div className="flex justify-center">
+            <DotsLoader />
           </div>
         </div>
       </div>

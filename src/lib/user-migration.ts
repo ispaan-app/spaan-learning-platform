@@ -80,7 +80,7 @@ export class UserMigrationManager {
     return allUsers.filter(user => user.firestoreData?.status === status)
   }
 
-  // Update user role in Firestore
+  // Update user role in Firestore and custom claims
   static async updateUserRole(uid: string, role: string, options: MigrationOptions = {}): Promise<boolean> {
     try {
       if (options.dryRun) {
@@ -88,6 +88,7 @@ export class UserMigrationManager {
         return true
       }
 
+      // Update Firestore first
       await adminDb.collection('users').doc(uid).update({
         role,
         updatedAt: new Date().toISOString()
@@ -96,7 +97,16 @@ export class UserMigrationManager {
       // Update custom claims
       await adminAuth.setCustomUserClaims(uid, { role })
 
-      console.log(`✅ Updated user ${uid} role to ${role}`)
+      // Validate the update
+      const userDoc = await adminDb.collection('users').doc(uid).get()
+      const userData = userDoc.data()
+      
+      if (userData?.role !== role) {
+        console.error(`❌ Role update validation failed for user ${uid}`)
+        return false
+      }
+
+      console.log(`✅ Updated user ${uid} role to ${role} and verified`)
       return true
     } catch (error) {
       console.error(`❌ Failed to update user ${uid} role:`, error)

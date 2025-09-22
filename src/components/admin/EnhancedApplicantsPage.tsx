@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Input } from '@/components/ui/input'
+import { ProgramService } from '@/lib/program-service'
+import { getApplicants, updateApplicantStatus, Applicant } from '@/lib/applicants-service'
 import { 
   Users, 
   Search, 
@@ -59,25 +61,6 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-interface Applicant {
-  id: string
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  program: string
-  applicationDate: Date
-  status: 'pending' | 'under-review' | 'approved' | 'rejected' | 'waitlisted'
-  priority: 'high' | 'medium' | 'low'
-  experience: number
-  education: string
-  location: string
-  documents: number
-  lastActivity: Date
-  notes?: string
-  reviewer?: string
-  reviewDate?: Date
-}
 
 interface ApplicationStats {
   total: number
@@ -106,95 +89,61 @@ export function EnhancedApplicantsPage() {
   const [selectedApplicants, setSelectedApplicants] = useState<string[]>([])
   const [showBulkActions, setShowBulkActions] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string>('')
+  const [programNames, setProgramNames] = useState<{ [key: string]: string }>({})
+  
+  const formatProgramName = (programId: string) => {
+    return programNames[programId] || programId || 'Unknown Program'
+  }
 
   useEffect(() => {
-    // Mock data
-    const mockApplicants: Applicant[] = [
-      {
-        id: '1',
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@email.com',
-        phone: '+1 (555) 123-4567',
-        program: 'Computer Science',
-        applicationDate: new Date('2024-01-15'),
-        status: 'pending',
-        priority: 'high',
-        experience: 2,
-        education: 'Bachelor of Computer Science',
-        location: 'New York, NY',
-        documents: 5,
-        lastActivity: new Date('2024-01-20')
-      },
-      {
-        id: '2',
-        firstName: 'Jane',
-        lastName: 'Smith',
-        email: 'jane.smith@email.com',
-        phone: '+1 (555) 234-5678',
-        program: 'Data Science',
-        applicationDate: new Date('2024-01-14'),
-        status: 'under-review',
-        priority: 'medium',
-        experience: 3,
-        education: 'Master of Data Science',
-        location: 'San Francisco, CA',
-        documents: 7,
-        lastActivity: new Date('2024-01-19'),
-        reviewer: 'Dr. Sarah Johnson'
-      },
-      {
-        id: '3',
-        firstName: 'Mike',
-        lastName: 'Johnson',
-        email: 'mike.johnson@email.com',
-        phone: '+1 (555) 345-6789',
-        program: 'Engineering',
-        applicationDate: new Date('2024-01-13'),
-        status: 'approved',
-        priority: 'high',
-        experience: 4,
-        education: 'Bachelor of Engineering',
-        location: 'Chicago, IL',
-        documents: 6,
-        lastActivity: new Date('2024-01-18'),
-        reviewer: 'Prof. Michael Chen',
-        reviewDate: new Date('2024-01-18')
-      },
-      {
-        id: '4',
-        firstName: 'Sarah',
-        lastName: 'Wilson',
-        email: 'sarah.wilson@email.com',
-        phone: '+1 (555) 456-7890',
-        program: 'Business Administration',
-        applicationDate: new Date('2024-01-12'),
-        status: 'rejected',
-        priority: 'low',
-        experience: 1,
-        education: 'Bachelor of Business',
-        location: 'Miami, FL',
-        documents: 4,
-        lastActivity: new Date('2024-01-17'),
-        reviewer: 'Dr. Emily Davis',
-        reviewDate: new Date('2024-01-17'),
-        notes: 'Insufficient experience for the program requirements'
+    const loadApplicants = async () => {
+      try {
+        setIsLoading(true)
+        setError('')
+        
+        const data = await getApplicants()
+        setApplicants(data)
+        
+        // Calculate stats
+        const newStats: ApplicationStats = {
+          total: data.length,
+          pending: data.filter(a => a.status === 'pending').length,
+          underReview: data.filter(a => a.status === 'under-review').length,
+          approved: data.filter(a => a.status === 'approved').length,
+          rejected: data.filter(a => a.status === 'rejected').length,
+          waitlisted: data.filter(a => a.status === 'waitlisted').length
+        }
+        setStats(newStats)
+      } catch (err) {
+        console.error('Error loading applicants:', err)
+        setError('Failed to load applicants')
+      } finally {
+        setIsLoading(false)
       }
-    ]
-
-    setApplicants(mockApplicants)
-    
-    // Calculate stats
-    const newStats: ApplicationStats = {
-      total: mockApplicants.length,
-      pending: mockApplicants.filter(a => a.status === 'pending').length,
-      underReview: mockApplicants.filter(a => a.status === 'under-review').length,
-      approved: mockApplicants.filter(a => a.status === 'approved').length,
-      rejected: mockApplicants.filter(a => a.status === 'rejected').length,
-      waitlisted: mockApplicants.filter(a => a.status === 'waitlisted').length
     }
-    setStats(newStats)
+    
+    loadApplicants()
   }, [])
+
+  // Load program names for applicants
+  useEffect(() => {
+    if (applicants.length > 0) {
+      const uniqueProgramIds = Array.from(new Set(applicants.map(a => a.program).filter(Boolean)))
+      if (uniqueProgramIds.length > 0) {
+        ProgramService.getProgramNames(uniqueProgramIds)
+          .then(setProgramNames)
+          .catch(error => {
+            console.error('Error fetching program names:', error)
+            const fallbackMap: { [key: string]: string } = {}
+            uniqueProgramIds.forEach(id => {
+              fallbackMap[id] = id
+            })
+            setProgramNames(fallbackMap)
+          })
+      }
+    }
+  }, [applicants])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -581,7 +530,7 @@ export function EnhancedApplicantsPage() {
                         {applicant.firstName} {applicant.lastName}
                       </h3>
                       <p className="text-sm text-gray-600">{applicant.email}</p>
-                      <p className="text-sm text-gray-500">{applicant.program}</p>
+                      <p className="text-sm text-gray-500">{formatProgramName(applicant.program)}</p>
                     </div>
                     
                     <div className="flex items-center justify-between">
