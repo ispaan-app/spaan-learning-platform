@@ -21,7 +21,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { WelcomeCard } from '@/components/ui/welcome-card'
 import { StatsSkeleton, ChartSkeleton, ListSkeleton } from '@/components/ui/skeleton'
 import React, { Suspense, useState, useEffect } from 'react'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/contexts/AuthContext'
+import { useDashboardData } from '@/hooks/useDashboardData'
 import { 
   Users, 
   GraduationCap, 
@@ -183,20 +184,12 @@ function AdminDashboardErrorBoundary({ children }: { children: React.ReactNode }
 
 function AdminDashboardContent() {
   const [searchRecent, setSearchRecent] = React.useState('')
-  const { user, userData } = useAuth()
+  const { user, userRole } = useAuth()
   
-  // Simplified state without problematic hooks
-  const [dashboardStats, setDashboardStats] = React.useState<DashboardStats>({
-    pendingApplicants: 0,
-    totalLearners: 0,
-    activePlacements: 0,
-    assignedLearners: 0,
-    attendanceRate: 0,
-    totalSessions: 0,
-    presentToday: 0,
-    absentToday: 0
-  })
-  const [recentApplicants, setRecentApplicants] = React.useState<RecentApplicant[]>([])
+  // Use optimized data fetching hook
+  const { stats: dashboardStats, recentApplicants, loading, error, refresh, lastUpdated } = useDashboardData()
+  
+  // Additional state for charts and other data
   const [applicationStatusData, setApplicationStatusData] = React.useState<ApplicationStatusData>({
     pending: 0,
     approved: 0,
@@ -204,8 +197,6 @@ function AdminDashboardContent() {
   })
   const [learnerProgramData, setLearnerProgramData] = React.useState<LearnerProgramData[]>([])
   const [placementStatusData, setPlacementStatusData] = React.useState<PlacementStatusData[]>([])
-  const [loading, setLoading] = React.useState(true)
-  const [error, setError] = React.useState<Error | null>(null)
   const [programNames, setProgramNames] = React.useState<{ [key: string]: string }>({})
   const [urgentAlerts, setUrgentAlerts] = React.useState<UrgentAlert[]>([])
   const [weather, setWeather] = React.useState<WeatherData | null>(null)
@@ -235,57 +226,14 @@ function AdminDashboardContent() {
     return () => clearInterval(timer)
   }, [])
 
-  // Simple data fetch without Firebase listeners
+  // Update application status data when dashboard stats change
   useEffect(() => {
-    let isMounted = true
-
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-
-        // Fetch basic dashboard data
-        const dashboardResponse = await fetch('/api/diagnose-admin')
-        const dashboardData = dashboardResponse.ok ? await dashboardResponse.json() : { queries: {} }
-
-        // Fetch attendance statistics
-        const attendanceResponse = await fetch('/api/attendance-stats')
-        const attendanceData = attendanceResponse.ok ? await attendanceResponse.json() : { queries: {} }
-
-        if (isMounted) {
-          setDashboardStats({
-            pendingApplicants: dashboardData.queries?.['Pending Applicants']?.count || 0,
-            totalLearners: dashboardData.queries?.['Total Learners']?.count || 0,
-            activePlacements: dashboardData.queries?.['Active Placements']?.count || 0,
-            assignedLearners: dashboardData.queries?.['Assigned Placements']?.count || 0,
-            attendanceRate: attendanceData.queries?.['Attendance Rate']?.count || 0,
-            totalSessions: attendanceData.queries?.['Total Sessions']?.count || 0,
-            presentToday: attendanceData.queries?.['Present Today']?.count || 0,
-            absentToday: attendanceData.queries?.['Absent Today']?.count || 0
-          })
-          setApplicationStatusData({
-            pending: dashboardData.queries?.['Pending Applicants']?.count || 0,
-            approved: 0,
-            rejected: 0
-          })
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err instanceof Error ? err : new Error('Failed to fetch data'))
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false)
-        }
-      }
-    }
-
-    fetchData()
-
-    return () => {
-      isMounted = false
-    }
-  }, []) // Empty dependency array - runs once only
+    setApplicationStatusData({
+      pending: dashboardStats.pendingApplicants,
+      approved: 0,
+      rejected: 0
+    })
+  }, [dashboardStats.pendingApplicants])
 
   // Simple urgent alerts calculation
   useEffect(() => {
@@ -311,18 +259,9 @@ function AdminDashboardContent() {
   const refreshAttendanceData = async () => {
     setAttendanceLoading(true)
     try {
-      const attendanceResponse = await fetch('/api/attendance-stats')
-      const attendanceData = attendanceResponse.ok ? await attendanceResponse.json() : { queries: {} }
-      
-      setDashboardStats(prev => ({
-        ...prev,
-        attendanceRate: attendanceData.queries?.['Attendance Rate']?.count || 0,
-        totalSessions: attendanceData.queries?.['Total Sessions']?.count || 0,
-        presentToday: attendanceData.queries?.['Present Today']?.count || 0,
-        absentToday: attendanceData.queries?.['Absent Today']?.count || 0
-      }))
+      await refresh()
     } catch (error) {
-      console.error('Error refreshing attendance data:', error)
+      console.error('Error refreshing data:', error)
     } finally {
       setAttendanceLoading(false)
     }
@@ -413,7 +352,7 @@ function AdminDashboardContent() {
             
             <div className="mb-4">
               <p className="text-sm text-red-700 mb-2">
-                <strong>Error:</strong> {error.message}
+                <strong>Error:</strong> {error}
               </p>
             </div>
             
@@ -455,7 +394,7 @@ function AdminDashboardContent() {
                   </div>
                   <div>
                     <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
-                      {getGreeting()}, {userData?.firstName || user?.displayName || "Admin"}!
+                      {getGreeting()}, {user?.displayName || "Admin"}!
                     </h1>
                     <p className="text-blue-100 text-lg font-medium">
                       {getAdminMessage()}
@@ -475,6 +414,20 @@ function AdminDashboardContent() {
                     <div className="flex items-center space-x-1">
                       <span>{formatDate(currentTime)}</span>
                     </div>
+                    {lastUpdated && (
+                      <div className="flex items-center space-x-1">
+                        <RefreshCw className="h-4 w-4" />
+                        <span>Updated {formatTime(lastUpdated)}</span>
+                      </div>
+                    )}
+                    <button
+                      onClick={refreshAttendanceData}
+                      disabled={attendanceLoading}
+                      className="flex items-center space-x-1 px-3 py-1 bg-white/20 rounded-lg hover:bg-white/30 transition-colors disabled:opacity-50"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${attendanceLoading ? 'animate-spin' : ''}`} />
+                      <span>Refresh</span>
+                    </button>
                   </div>
                 </div>
       </div>
@@ -950,7 +903,7 @@ function AdminDashboardContent() {
                     <div className="flex items-center space-x-3">
                       <Calendar className="w-5 h-5" />
                       <span className="text-sm font-medium">Manage Attendance</span>
-                    </div>
+                  </div>
                   </button>
           </div>
         </CardContent>
@@ -962,7 +915,7 @@ function AdminDashboardContent() {
         {urgentAlerts.length > 0 && (
           <div className="animate-in slide-in-from-bottom duration-1000 delay-500 ease-out">
             <UrgentAlertsPanel alerts={urgentAlerts} />
-      </div>
+                      </div>
         )}
 
         {/* AI-Powered Analytics */}
@@ -972,13 +925,13 @@ function AdminDashboardContent() {
             <div className="inline-flex items-center space-x-3 px-6 py-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-200/50">
               <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
                 <Brain className="w-5 h-5 text-white" />
-              </div>
+                  </div>
               <div className="text-left">
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                   AI-Powered Analytics
                 </h2>
                 <p className="text-sm text-slate-600">Intelligent insights powered by machine learning</p>
-              </div>
+                </div>
             </div>
           </div>
 
@@ -1050,9 +1003,9 @@ function AdminDashboardContent() {
                       <DropoutRiskAnalyzer learners={[]} />
                     </Suspense>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+          </div>
+        </CardContent>
+      </Card>
 
             {/* Learner Activity Feed Card */}
             <Card className="group relative overflow-hidden border-0 shadow-xl bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02]">
@@ -1070,7 +1023,7 @@ function AdminDashboardContent() {
                     <div>
                       <CardTitle className="text-xl font-bold text-slate-900 group-hover:text-blue-700 transition-colors duration-300">
                         Learner Activity Feed
-                      </CardTitle>
+          </CardTitle>
                       <p className="text-sm text-slate-600 mt-1">Real-time learner engagement tracking</p>
                     </div>
                   </div>
@@ -1081,7 +1034,7 @@ function AdminDashboardContent() {
                     <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
                   </div>
                 </div>
-              </CardHeader>
+        </CardHeader>
               
               <CardContent className="relative">
                 <div className="space-y-4">
@@ -1090,11 +1043,11 @@ function AdminDashboardContent() {
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
                         <Clock className="w-4 h-4 text-white" />
-                      </div>
+                  </div>
                       <div>
                         <p className="font-semibold text-slate-900">Real-time Monitoring</p>
                         <p className="text-xs text-slate-600">Tracking learner activities and progress</p>
-                      </div>
+                </div>
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-bold text-blue-600">24/7</p>
@@ -1120,9 +1073,9 @@ function AdminDashboardContent() {
                       <LearnerActivityFeed />
                     </Suspense>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+          </div>
+        </CardContent>
+      </Card>
           </div>
 
           {/* AI Insights Summary */}

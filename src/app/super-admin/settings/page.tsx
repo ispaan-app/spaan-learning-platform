@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { WelcomeCard } from '@/components/ui/welcome-card'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/contexts/AuthContext'
 import { 
   Settings, 
   Shield, 
@@ -25,7 +25,7 @@ import {
 } from 'lucide-react'
 
 export default function SuperAdminSettingsPage() {
-  const { user, userData } = useAuth()
+  const { user, userRole } = useAuth()
   
   return (
     <AdminLayout userRole="super-admin">
@@ -52,7 +52,7 @@ export default function SuperAdminSettingsPage() {
 
         {/* Welcome Card */}
         <WelcomeCard 
-          userName={user?.displayName || userData?.firstName || "Settings Admin"} 
+          userName={user?.displayName || "Settings Admin"} 
           userRole="super-admin" 
           className="mb-6"
         />

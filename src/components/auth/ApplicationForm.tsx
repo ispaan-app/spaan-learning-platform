@@ -1,14 +1,29 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { submitApplicationAction } from '@/app/actions/applications'
 // Removed unused form imports
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { LoadingButton } from '@/components/ui/loading'
+import { db } from '@/lib/firebase'
+import { collection, getDocs, query, orderBy } from 'firebase/firestore'
+
+interface Program {
+  id: string
+  name: string
+  description?: string
+  duration?: string
+  level?: string
+  status: 'active' | 'inactive'
+}
 
 export function ApplicationForm() {
+  const [programs, setPrograms] = useState<Program[]>([])
+  const [programsLoading, setProgramsLoading] = useState(true)
+  const [programsError, setProgramsError] = useState<string | null>(null)
+  
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -21,6 +36,35 @@ export function ApplicationForm() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+
+  // Fetch programs from Firestore
+  useEffect(() => {
+    const fetchPrograms = async () => {
+      try {
+        setProgramsLoading(true)
+        setProgramsError(null)
+        const programsQuery = query(
+          collection(db, 'programs'),
+          orderBy('name', 'asc')
+        )
+        const snapshot = await getDocs(programsQuery)
+        const programsData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Program[]
+        setPrograms(programsData)
+      } catch (error: any) {
+        console.error('Error fetching programs:', error)
+        setProgramsError(
+          error?.message ? `Failed to load programs: ${error.message}` : 'Failed to load programs from database.'
+        )
+        setPrograms([])
+      } finally {
+        setProgramsLoading(false)
+      }
+    }
+    fetchPrograms()
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({
@@ -173,12 +217,19 @@ export function ApplicationForm() {
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 >
                   <option value="">Select a program</option>
-                  <option value="computer-science">Computer Science</option>
-                  <option value="data-science">Data Science</option>
-                  <option value="artificial-intelligence">Artificial Intelligence</option>
-                  <option value="software-engineering">Software Engineering</option>
-                  <option value="cybersecurity">Cybersecurity</option>
-                  <option value="web-development">Web Development</option>
+                  {programsLoading ? (
+                    <option value="" disabled>Loading programs...</option>
+                  ) : programsError ? (
+                    <option value="" disabled>Error loading programs</option>
+                  ) : programs.length === 0 ? (
+                    <option value="" disabled>No programs available</option>
+                  ) : (
+                    programs.map((program) => (
+                      <option key={program.id} value={program.id}>
+                        {program.name}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 

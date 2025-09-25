@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "export": "next build && next export",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
@@ -21,6 +22,12 @@
     "test:all": "npm run test:ci && npm run test:e2e",
     "test:security": "npm audit --audit-level moderate",
     "test:performance": "lighthouse http://localhost:3000 --output=html --output-path=./lighthouse-report.html",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:smoke:production": "playwright test --grep @smoke --config=playwright.prod.config.ts",
+    "type-check": "tsc --noEmit",
+    "lint:security": "npm audit --audit-level high",
+    "lint:format": "prettier --check .",
+    "lint:format:fix": "prettier --write .",
     "setup:env": "node scripts/setup-comprehensive-env.js",
     "fix:permissions": "node scripts/fix-firebase-permissions.js",
     "validate:rules": "node scripts/validate-firestore-rules.js",
@@ -97,7 +104,13 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.0.0",
     "zod": "^3.25.76",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.8",
+    "ioredis": "^5.3.2",
+    "sharp": "^0.33.0",
+    "helmet": "^7.1.0",
+    "csurf": "^1.11.0",
+    "express-rate-limit": "^7.1.5",
+    "cron": "^3.1.6"
   },
   "devDependencies": {
     "@cypress/react": "^9.0.1",
@@ -128,6 +141,9 @@
     "stylelint-config-standard": "^39.0.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-react": "^3.29.0",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "prettier": "^3.1.0",
+    "codecov": "^3.8.3",
+    "snyk": "^1.1248.0"
   }
 }

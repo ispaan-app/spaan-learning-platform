@@ -1,11 +1,11 @@
-// Email service integration for iSpaan
 import nodemailer from 'nodemailer'
 
 interface EmailOptions {
-  to: string | string[]
+  to: string
   subject: string
-  text?: string
-  html?: string
+  body: string
+  template?: string
+  data?: Record<string, any>
   attachments?: Array<{
     filename: string
     content: Buffer | string
@@ -13,392 +13,299 @@ interface EmailOptions {
   }>
 }
 
-interface EmailTemplate {
-  subject: string
-  html: string
-  text: string
-}
-
 class EmailService {
-  private transporter: nodemailer.Transporter | null = null
-  private isConfigured = false
+  private static instance: EmailService
+  private transporter: nodemailer.Transporter
 
   constructor() {
-    this.initializeTransporter()
+    this.transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    })
   }
 
-  private async initializeTransporter() {
-    try {
-      const smtpConfig = {
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.SMTP_PORT || '587'),
-        secure: false, // true for 465, false for other ports
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS
-        }
-      }
-
-      if (!smtpConfig.auth.user || !smtpConfig.auth.pass) {
-        console.warn('Email service not configured: Missing SMTP credentials')
-        return
-      }
-
-      this.transporter = nodemailer.createTransport(smtpConfig)
-      
-      // Verify connection
-      await this.transporter.verify()
-      this.isConfigured = true
-      console.log('Email service configured successfully')
-    } catch (error) {
-      console.error('Failed to configure email service:', error)
-      this.isConfigured = false
+  static getInstance(): EmailService {
+    if (!EmailService.instance) {
+      EmailService.instance = new EmailService()
     }
+    return EmailService.instance
   }
 
-  async sendEmail(options: EmailOptions): Promise<boolean> {
-    if (!this.isConfigured || !this.transporter) {
-      console.warn('Email service not configured, skipping email send')
-      return false
-    }
-
+  // Send email
+  async sendEmail(options: EmailOptions): Promise<void> {
     try {
       const mailOptions = {
-        from: process.env.SMTP_FROM || process.env.SMTP_USER,
-        to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
+        from: process.env.SMTP_FROM || 'noreply@ispaan.com',
+        to: options.to,
         subject: options.subject,
-        text: options.text,
-        html: options.html,
+        html: options.body,
         attachments: options.attachments
       }
 
-      const result = await this.transporter.sendMail(mailOptions)
-      console.log('Email sent successfully:', result.messageId)
-      return true
+      await this.transporter.sendMail(mailOptions)
+      console.log(`Email sent to ${options.to}`)
     } catch (error) {
-      console.error('Failed to send email:', error)
-      return false
+      console.error('Error sending email:', error)
+      throw error
     }
   }
 
-  // Application approval email
-  async sendApplicationApprovalEmail(userEmail: string, userName: string) {
-    const template = this.getApplicationApprovalTemplate(userName)
+  // Send welcome email to new users
+  async sendWelcomeEmail(userEmail: string, userName: string, userRole: string): Promise<void> {
+    const subject = 'Welcome to iSpaan!'
+    const body = this.getWelcomeEmailTemplate(userName, userRole)
     
-    return await this.sendEmail({
+    await this.sendEmail({
       to: userEmail,
-      subject: template.subject,
-      html: template.html,
-      text: template.text
+      subject,
+      body
     })
   }
 
-  // Application rejection email
-  async sendApplicationRejectionEmail(userEmail: string, userName: string, reason?: string) {
-    const template = this.getApplicationRejectionTemplate(userName, reason)
+  // Send application status update
+  async sendApplicationStatusEmail(
+    userEmail: string,
+    userName: string,
+    status: 'approved' | 'rejected' | 'pending'
+  ): Promise<void> {
+    const subject = `Application ${status.charAt(0).toUpperCase() + status.slice(1)}`
+    const body = this.getApplicationStatusTemplate(userName, status)
     
-    return await this.sendEmail({
+    await this.sendEmail({
       to: userEmail,
-      subject: template.subject,
-      html: template.html,
-      text: template.text
+      subject,
+      body
     })
   }
 
-  // PIN reset email
-  async sendPinResetEmail(userEmail: string, userName: string, newPin: string) {
-    const template = this.getPinResetTemplate(userName, newPin)
+  // Send placement notification
+  async sendPlacementNotification(
+    userEmail: string,
+    userName: string,
+    companyName: string,
+    position: string
+  ): Promise<void> {
+    const subject = 'New Placement Assignment'
+    const body = this.getPlacementNotificationTemplate(userName, companyName, position)
     
-    return await this.sendEmail({
+    await this.sendEmail({
       to: userEmail,
-      subject: template.subject,
-      html: template.html,
-      text: template.text
+      subject,
+      body
     })
   }
 
-  // Document approval email
-  async sendDocumentApprovalEmail(userEmail: string, userName: string, documentType: string) {
-    const template = this.getDocumentApprovalTemplate(userName, documentType)
+  // Send document verification notification
+  async sendDocumentVerificationEmail(
+    userEmail: string,
+    userName: string,
+    documentName: string,
+    status: 'approved' | 'rejected'
+  ): Promise<void> {
+    const subject = `Document ${status.charAt(0).toUpperCase() + status.slice(1)}`
+    const body = this.getDocumentVerificationTemplate(userName, documentName, status)
     
-    return await this.sendEmail({
+    await this.sendEmail({
       to: userEmail,
-      subject: template.subject,
-      html: template.html,
-      text: template.text
+      subject,
+      body
     })
   }
 
-  // Document rejection email
-  async sendDocumentRejectionEmail(userEmail: string, userName: string, documentType: string, reason: string) {
-    const template = this.getDocumentRejectionTemplate(userName, documentType, reason)
+  // Send password reset email
+  async sendPasswordResetEmail(userEmail: string, resetLink: string): Promise<void> {
+    const subject = 'Password Reset Request'
+    const body = this.getPasswordResetTemplate(resetLink)
     
-    return await this.sendEmail({
+    await this.sendEmail({
       to: userEmail,
-      subject: template.subject,
-      html: template.html,
-      text: template.text
-    })
-  }
-
-  // Leave request approval email
-  async sendLeaveApprovalEmail(userEmail: string, userName: string, leaveDetails: any) {
-    const template = this.getLeaveApprovalTemplate(userName, leaveDetails)
-    
-    return await this.sendEmail({
-      to: userEmail,
-      subject: template.subject,
-      html: template.html,
-      text: template.text
-    })
-  }
-
-  // Leave request rejection email
-  async sendLeaveRejectionEmail(userEmail: string, userName: string, leaveDetails: any, reason: string) {
-    const template = this.getLeaveRejectionTemplate(userName, leaveDetails, reason)
-    
-    return await this.sendEmail({
-      to: userEmail,
-      subject: template.subject,
-      html: template.html,
-      text: template.text
-    })
-  }
-
-  // Announcement email
-  async sendAnnouncementEmail(recipients: string[], announcement: any) {
-    const template = this.getAnnouncementTemplate(announcement)
-    
-    return await this.sendEmail({
-      to: recipients,
-      subject: template.subject,
-      html: template.html,
-      text: template.text
-    })
-  }
-
-  // Password reset email
-  async sendPasswordResetEmail(userEmail: string, userName: string, resetToken: string) {
-    const template = this.getPasswordResetTemplate(userName, resetToken)
-    
-    return await this.sendEmail({
-      to: userEmail,
-      subject: template.subject,
-      html: template.html,
-      text: template.text
+      subject,
+      body
     })
   }
 
   // Email templates
-  private getApplicationApprovalTemplate(userName: string): EmailTemplate {
-    return {
-      subject: '🎉 Application Approved - Welcome to iSpaan!',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #4F46E5;">Congratulations, ${userName}!</h1>
-          <p>Your application to iSpaan has been approved!</p>
-          <p>You are now officially a learner and can access all platform features.</p>
-          <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3>Next Steps:</h3>
-            <ul>
-              <li>Log in to your dashboard</li>
-              <li>Complete your profile setup</li>
-              <li>Upload required documents</li>
-              <li>Start your learning journey!</li>
-            </ul>
+  private getWelcomeEmailTemplate(userName: string, userRole: string): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Welcome to iSpaan</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Welcome to iSpaan!</h1>
+            <p>Your AI-Powered Learning Platform</p>
           </div>
-          <p>If you have any questions, please don't hesitate to contact our support team.</p>
-          <p>Best regards,<br>The iSpaan Team</p>
-        </div>
-      `,
-      text: `Congratulations, ${userName}! Your application to iSpaan has been approved. You are now officially a learner and can access all platform features.`
-    }
-  }
-
-  private getApplicationRejectionTemplate(userName: string, reason?: string): EmailTemplate {
-    return {
-      subject: 'Application Status Update - iSpaan',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #4F46E5;">Application Update</h1>
-          <p>Dear ${userName},</p>
-          <p>Thank you for your interest in iSpaan. After careful review, we regret to inform you that your application was not approved at this time.</p>
-          ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
-          <p>We encourage you to reapply in the future when you meet the requirements.</p>
-          <p>If you have any questions, please contact our support team.</p>
-          <p>Best regards,<br>The iSpaan Team</p>
-        </div>
-      `,
-      text: `Dear ${userName}, Thank you for your interest in iSpaan. After careful review, we regret to inform you that your application was not approved at this time. ${reason ? `Reason: ${reason}` : ''}`
-    }
-  }
-
-  private getPinResetTemplate(userName: string, newPin: string): EmailTemplate {
-    return {
-      subject: 'PIN Reset - iSpaan',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #4F46E5;">PIN Reset</h1>
-          <p>Dear ${userName},</p>
-          <p>Your PIN has been reset by an administrator.</p>
-          <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3>Your New PIN:</h3>
-            <p style="font-size: 24px; font-weight: bold; color: #4F46E5;">${newPin}</p>
+          <div class="content">
+            <h2>Hello ${userName}!</h2>
+            <p>Welcome to iSpaan! We're excited to have you join our learning community.</p>
+            <p>Your account has been created with the role: <strong>${userRole}</strong></p>
+            <p>You can now access your dashboard and start your learning journey.</p>
+            <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" class="button">Access Dashboard</a>
+            <p>If you have any questions, please don't hesitate to contact our support team.</p>
+            <p>Best regards,<br>The iSpaan Team</p>
           </div>
-          <p>Please log in with your ID number and this new PIN. For security reasons, we recommend changing your PIN after your first login.</p>
-          <p>If you did not request this reset, please contact our support team immediately.</p>
-          <p>Best regards,<br>The iSpaan Team</p>
         </div>
-      `,
-      text: `Dear ${userName}, Your PIN has been reset by an administrator. Your new PIN is: ${newPin}. Please log in with your ID number and this new PIN.`
-    }
+      </body>
+      </html>
+    `
   }
 
-  private getDocumentApprovalTemplate(userName: string, documentType: string): EmailTemplate {
-    return {
-      subject: 'Document Approved - iSpaan',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #4F46E5;">Document Approved</h1>
-          <p>Dear ${userName},</p>
-          <p>Your ${documentType} document has been approved by our team.</p>
-          <p>You can continue with your application process or access your learner dashboard.</p>
-          <p>If you have any questions, please contact our support team.</p>
-          <p>Best regards,<br>The iSpaan Team</p>
-        </div>
-      `,
-      text: `Dear ${userName}, Your ${documentType} document has been approved by our team.`
-    }
-  }
-
-  private getDocumentRejectionTemplate(userName: string, documentType: string, reason: string): EmailTemplate {
-    return {
-      subject: 'Document Rejected - iSpaan',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #4F46E5;">Document Rejected</h1>
-          <p>Dear ${userName},</p>
-          <p>Your ${documentType} document has been rejected and needs to be resubmitted.</p>
-          <div style="background-color: #FEF2F2; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3>Reason for Rejection:</h3>
-            <p>${reason}</p>
-          </div>
-          <p>Please upload a new document that meets our requirements.</p>
-          <p>If you have any questions, please contact our support team.</p>
-          <p>Best regards,<br>The iSpaan Team</p>
-        </div>
-      `,
-      text: `Dear ${userName}, Your ${documentType} document has been rejected. Reason: ${reason}. Please upload a new document that meets our requirements.`
-    }
-  }
-
-  private getLeaveApprovalTemplate(userName: string, leaveDetails: any): EmailTemplate {
-    return {
-      subject: 'Leave Request Approved - iSpaan',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #4F46E5;">Leave Request Approved</h1>
-          <p>Dear ${userName},</p>
-          <p>Your leave request has been approved.</p>
-          <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3>Leave Details:</h3>
-            <p><strong>Type:</strong> ${leaveDetails.type}</p>
-            <p><strong>Start Date:</strong> ${leaveDetails.startDate}</p>
-            <p><strong>End Date:</strong> ${leaveDetails.endDate}</p>
-            <p><strong>Reason:</strong> ${leaveDetails.reason}</p>
-          </div>
-          <p>Please ensure you complete any pending work before your leave begins.</p>
-          <p>Best regards,<br>The iSpaan Team</p>
-        </div>
-      `,
-      text: `Dear ${userName}, Your leave request has been approved. Type: ${leaveDetails.type}, Start: ${leaveDetails.startDate}, End: ${leaveDetails.endDate}`
-    }
-  }
-
-  private getLeaveRejectionTemplate(userName: string, leaveDetails: any, reason: string): EmailTemplate {
-    return {
-      subject: 'Leave Request Rejected - iSpaan',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #4F46E5;">Leave Request Rejected</h1>
-          <p>Dear ${userName},</p>
-          <p>Your leave request has been rejected.</p>
-          <div style="background-color: #FEF2F2; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3>Request Details:</h3>
-            <p><strong>Type:</strong> ${leaveDetails.type}</p>
-            <p><strong>Start Date:</strong> ${leaveDetails.startDate}</p>
-            <p><strong>End Date:</strong> ${leaveDetails.endDate}</p>
-            <p><strong>Reason for Rejection:</strong> ${reason}</p>
-          </div>
-          <p>Please contact your supervisor if you have any questions.</p>
-          <p>Best regards,<br>The iSpaan Team</p>
-        </div>
-      `,
-      text: `Dear ${userName}, Your leave request has been rejected. Reason: ${reason}`
-    }
-  }
-
-  private getAnnouncementTemplate(announcement: any): EmailTemplate {
-    return {
-      subject: announcement.title || 'Important Announcement - iSpaan',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #4F46E5;">${announcement.title || 'Important Announcement'}</h1>
-          <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            ${announcement.content}
-          </div>
-          <p>Best regards,<br>The iSpaan Team</p>
-        </div>
-      `,
-      text: `${announcement.title || 'Important Announcement'}\n\n${announcement.content}`
-    }
-  }
-
-  private getPasswordResetTemplate(userName: string, resetToken: string): EmailTemplate {
-    const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${resetToken}`
+  private getApplicationStatusTemplate(userName: string, status: string): string {
+    const statusColor = status === 'approved' ? '#28a745' : status === 'rejected' ? '#dc3545' : '#ffc107'
+    const statusText = status.charAt(0).toUpperCase() + status.slice(1)
     
-    return {
-      subject: 'Password Reset - iSpaan',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #4F46E5;">Password Reset Request</h1>
-          <p>Dear ${userName},</p>
-          <p>You have requested to reset your password for your iSpaan account.</p>
-          <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
-            <a href="${resetUrl}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Reset Password</a>
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Application ${statusText}</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: ${statusColor}; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Application ${statusText}</h1>
           </div>
-          <p>This link will expire in 1 hour for security reasons.</p>
-          <p>If you did not request this reset, please ignore this email.</p>
-          <p>Best regards,<br>The iSpaan Team</p>
+          <div class="content">
+            <h2>Hello ${userName}!</h2>
+            <p>Your application has been <strong>${statusText}</strong>.</p>
+            ${status === 'approved' ? '<p>Congratulations! You can now access your learner dashboard.</p>' : ''}
+            ${status === 'rejected' ? '<p>We appreciate your interest. Please feel free to apply again in the future.</p>' : ''}
+            ${status === 'pending' ? '<p>Your application is being reviewed. We will notify you once a decision is made.</p>' : ''}
+            <p>Best regards,<br>The iSpaan Team</p>
+          </div>
         </div>
-      `,
-      text: `Dear ${userName}, You have requested to reset your password. Click this link to reset: ${resetUrl}`
-    }
+      </body>
+      </html>
+    `
   }
 
-  // Health check
-  async healthCheck() {
-    if (!this.isConfigured) {
-      return { status: 'not_configured', error: 'Email service not configured' }
-    }
+  private getPlacementNotificationTemplate(userName: string, companyName: string, position: string): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>New Placement Assignment</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #28a745; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>New Placement Assignment</h1>
+          </div>
+          <div class="content">
+            <h2>Hello ${userName}!</h2>
+            <p>Great news! You have been assigned to a new placement:</p>
+            <ul>
+              <li><strong>Company:</strong> ${companyName}</li>
+              <li><strong>Position:</strong> ${position}</li>
+            </ul>
+            <p>Please check your dashboard for more details and next steps.</p>
+            <p>Best regards,<br>The iSpaan Team</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+  }
 
-    try {
-      if (this.transporter) {
-        await this.transporter.verify()
-        return { status: 'healthy', error: null }
-      }
-      return { status: 'error', error: 'Transporter not initialized' }
-    } catch (error) {
-      return { status: 'error', error: error instanceof Error ? error.message : 'Unknown error' }
-    }
+  private getDocumentVerificationTemplate(userName: string, documentName: string, status: string): string {
+    const statusColor = status === 'approved' ? '#28a745' : '#dc3545'
+    const statusText = status.charAt(0).toUpperCase() + status.slice(1)
+    
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Document ${statusText}</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: ${statusColor}; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Document ${statusText}</h1>
+          </div>
+          <div class="content">
+            <h2>Hello ${userName}!</h2>
+            <p>Your document "${documentName}" has been <strong>${statusText}</strong>.</p>
+            ${status === 'approved' ? '<p>Your document is now verified and on file.</p>' : ''}
+            ${status === 'rejected' ? '<p>Please upload a new document that meets our requirements.</p>' : ''}
+            <p>Best regards,<br>The iSpaan Team</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+  }
+
+  private getPasswordResetTemplate(resetLink: string): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Password Reset</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #dc3545; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .button { display: inline-block; background: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Password Reset Request</h1>
+          </div>
+          <div class="content">
+            <h2>Password Reset</h2>
+            <p>You have requested to reset your password. Click the button below to reset it:</p>
+            <a href="${resetLink}" class="button">Reset Password</a>
+            <p>This link will expire in 1 hour for security reasons.</p>
+            <p>If you didn't request this reset, please ignore this email.</p>
+            <p>Best regards,<br>The iSpaan Team</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
   }
 }
 
-// Singleton instance
-export const emailService = new EmailService()
-
-// Export types
-export interface EmailHealthCheck {
-  status: 'healthy' | 'error' | 'not_configured'
-  error: string | null
-}
+export const emailService = EmailService.getInstance()
+export const sendEmail = emailService.sendEmail.bind(emailService)

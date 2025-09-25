@@ -200,7 +200,7 @@ export default function AdminApplicantsPage() {
       // Fetch program names for all unique program IDs
       const uniqueProgramIds = Array.from(new Set(applicantsData.map(a => a.program).filter(Boolean)))
       if (uniqueProgramIds.length > 0) {
-        ProgramService.getProgramNames(uniqueProgramIds)
+        ProgramService.getProgramNamesByIds(uniqueProgramIds)
           .then(setProgramNames)
           .catch(error => {
             console.error('Error fetching program names:', error)
@@ -243,7 +243,7 @@ export default function AdminApplicantsPage() {
       const uniqueProgramIds = Array.from(new Set(applicantsData.map(a => a.program).filter(Boolean)))
       if (uniqueProgramIds.length > 0) {
         try {
-          const programNamesMap = await ProgramService.getProgramNames(uniqueProgramIds)
+          const programNamesMap = await ProgramService.getProgramNamesByIds(uniqueProgramIds)
           setProgramNames(programNamesMap)
         } catch (error) {
           console.error('Error fetching program names:', error)

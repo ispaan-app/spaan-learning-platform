@@ -69,7 +69,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { db } from '@/lib/firebase'
 import { collection, getDocs, query, where, orderBy, onSnapshot, doc, setDoc, getDoc } from 'firebase/firestore'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface PlatformSettings {
   general: {

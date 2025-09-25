@@ -27,6 +27,11 @@ const nextConfig = {
       };
     }
     
+    // Fix for originalFactory undefined error
+    config.resolve.alias = {
+      ...config.resolve.alias,
+    };
+    
     // Optimize chunk loading for development
     if (dev) {
       config.optimization = {

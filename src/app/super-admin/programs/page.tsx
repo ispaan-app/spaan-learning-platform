@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { ProgramService, Program } from '@/lib/program-service'
+import { ProgramModal } from '@/components/super-admin/ProgramModal'
 import { toast } from 'sonner'
 import {
   DropdownMenu,
@@ -35,6 +36,9 @@ export default function ProgramsManagementPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [levelFilter, setLevelFilter] = useState('all')
   const [sortBy, setSortBy] = useState<'name' | 'duration' | 'maxStudents'>('name')
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedProgram, setSelectedProgram] = useState<Program | null>(null)
+  const [modalTitle, setModalTitle] = useState('')
 
   const levels = ['all', 'Beginner', 'Intermediate', 'Advanced']
 
@@ -98,19 +102,59 @@ export default function ProgramsManagementPage() {
     }
   }
 
+  const handleAddProgram = () => {
+    setSelectedProgram(null)
+    setModalTitle('Add New Program')
+    setIsModalOpen(true)
+  }
+
   const handleViewProgram = (program: Program) => {
-    // TODO: Implement program details modal
-    toast.info(`Viewing ${program.name}`)
+    setSelectedProgram(program)
+    setModalTitle(`View Program: ${program.name}`)
+    setIsModalOpen(true)
   }
 
   const handleEditProgram = (program: Program) => {
-    // TODO: Implement program edit modal
-    toast.info(`Editing ${program.name}`)
+    setSelectedProgram(program)
+    setModalTitle(`Edit Program: ${program.name}`)
+    setIsModalOpen(true)
   }
 
-  const handleDeleteProgram = (program: Program) => {
-    // TODO: Implement program deletion
-    toast.info(`Deleting ${program.name}`)
+  const handleDeleteProgram = async (program: Program) => {
+    if (window.confirm(`Are you sure you want to delete "${program.name}"? This action cannot be undone.`)) {
+      try {
+        await ProgramService.deleteProgram(program.id)
+        toast.success(`Program "${program.name}" deleted successfully`)
+        loadPrograms() // Reload programs
+      } catch (error) {
+        console.error('Error deleting program:', error)
+        toast.error('Failed to delete program')
+      }
+    }
+  }
+
+  const handleSaveProgram = async (programData: Omit<Program, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      if (selectedProgram) {
+        // Update existing program
+        await ProgramService.updateProgram(selectedProgram.id, programData)
+        toast.success(`Program "${programData.name}" updated successfully`)
+      } else {
+        // Create new program
+        await ProgramService.createProgram(programData)
+        toast.success(`Program "${programData.name}" created successfully`)
+      }
+      loadPrograms() // Reload programs
+    } catch (error) {
+      console.error('Error saving program:', error)
+      toast.error('Failed to save program')
+      throw error
+    }
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setSelectedProgram(null)
   }
 
   if (loading) {
@@ -137,7 +181,7 @@ export default function ProgramsManagementPage() {
             <h1 className="text-3xl font-bold">Programs Management</h1>
             <p className="text-gray-600 mt-2">Manage and view all available programs</p>
           </div>
-          <Button className="flex items-center space-x-2">
+          <Button onClick={handleAddProgram} className="flex items-center space-x-2">
             <Plus className="w-4 h-4" />
             <span>Add Program</span>
           </Button>
@@ -381,13 +425,22 @@ export default function ProgramsManagementPage() {
                   : 'No programs have been created yet.'
                 }
               </p>
-              <Button>
+              <Button onClick={handleAddProgram}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add First Program
               </Button>
             </CardContent>
           </Card>
         )}
+
+        {/* Program Modal */}
+        <ProgramModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onSave={handleSaveProgram}
+          program={selectedProgram}
+          title={modalTitle}
+        />
       </div>
     </AdminLayout>
   )

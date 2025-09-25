@@ -127,23 +127,15 @@ export function CompactUserForm({ user, onClose, onSave }: CompactUserFormProps)
         console.log('Programs data:', programsData)
         setPrograms(programsData)
         
-        // If no programs exist, create some sample programs
+        // If no programs exist, show empty state
         if (programsData.length === 0) {
-          console.log('No programs found, creating sample programs...')
-          const samplePrograms = [
-            { id: 'sample-1', name: 'Software Development', description: 'Full-stack web development program' },
-            { id: 'sample-2', name: 'Data Science', description: 'Data analysis and machine learning program' },
-            { id: 'sample-3', name: 'Digital Marketing', description: 'Online marketing and social media program' }
-          ]
-          setPrograms(samplePrograms)
+          console.log('No programs found in database')
+          setPrograms([])
         }
       } catch (error) {
         console.error('Error loading programs:', error)
-        // Set some fallback programs if loading fails
-        const fallbackPrograms = [
-          { id: 'fallback-1', name: 'General Program', description: 'Default program for admin management' }
-        ]
-        setPrograms(fallbackPrograms)
+        // No fallback programs - show empty state
+        setPrograms([])
       } finally {
         setLoadingPrograms(false)
       }

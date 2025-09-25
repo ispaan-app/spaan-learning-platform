@@ -67,7 +67,7 @@ import { UserManagementTable } from '@/components/super-admin/UserManagementTabl
 import { CompactUserForm } from '@/components/super-admin/CompactUserForm'
 import { UserStats } from '@/components/super-admin/UserStats'
 import { useToast } from '@/hooks/use-toast'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface User {
   id: string

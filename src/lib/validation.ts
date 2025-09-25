@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { InputSanitizer } from './sanitizer'
+import { sanitizer } from './sanitizer'
 
 // Enhanced validation schemas with comprehensive security checks
 export const emailSchema = z
@@ -126,7 +126,7 @@ export const issueReportSchema = z.object({
 
 // Enhanced validation with sanitization
 export class ValidationService {
-  private static sanitizer = new InputSanitizer()
+  private static sanitizer = sanitizer
 
   static validateAndSanitize<T>(schema: z.ZodSchema<T>, data: unknown): {
     success: boolean
@@ -135,7 +135,7 @@ export class ValidationService {
   } {
     try {
       // First sanitize the input
-      const sanitizedData = this.sanitizer.sanitizeObject(data)
+      const sanitizedData = this.sanitizer.sanitize(data)
       
       // Then validate
       const result = schema.safeParse(sanitizedData)
@@ -176,11 +176,11 @@ export class ValidationService {
   }
 
   static sanitizeString(input: string): string {
-    return this.sanitizer.sanitizeString(input)
+    return this.sanitizer.sanitize(input)
   }
 
   static sanitizeObject(obj: any): any {
-    return this.sanitizer.sanitizeObject(obj)
+    return this.sanitizer.sanitize(obj)
   }
 }
 

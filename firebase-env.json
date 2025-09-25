@@ -1,0 +1,21 @@
+{
+  "NODE_ENV": "production",
+  "NEXT_PUBLIC_FIREBASE_API_KEY": "your-api-key",
+  "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN": "ispaan-app.firebaseapp.com",
+  "NEXT_PUBLIC_FIREBASE_PROJECT_ID": "ispaan-app",
+  "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET": "ispaan-app.appspot.com",
+  "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "your-sender-id",
+  "NEXT_PUBLIC_FIREBASE_APP_ID": "your-app-id",
+  "NEXT_PUBLIC_APP_URL": "https://ispaan.web.app",
+  "NEXT_PUBLIC_ENABLE_ANALYTICS": "true",
+  "GOOGLE_AI_API_KEY": "your-google-ai-api-key",
+  "SMTP_HOST": "smtp.gmail.com",
+  "SMTP_PORT": "587",
+  "SMTP_USER": "your-email@gmail.com",
+  "SMTP_PASS": "your-app-password",
+  "SMTP_FROM": "noreply@ispaan.co.za",
+  "JWT_SECRET": "your-super-secret-jwt-key-here",
+  "JWT_REFRESH_SECRET": "your-super-secret-refresh-key-here",
+  "CORS_ORIGIN": "https://ispaan.web.app",
+  "CORS_CREDENTIALS": "true"
+}

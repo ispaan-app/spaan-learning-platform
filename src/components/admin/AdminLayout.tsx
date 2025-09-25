@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/contexts/AuthContext'
 import { EnhancedAdminSidebar } from './EnhancedAdminSidebar'
 import { ConnectionStatus } from '@/components/ui/connection-status'
 import { Header } from '@/components/ui/header'
@@ -17,7 +17,7 @@ interface AdminLayoutProps {
 export function AdminLayout({ children, userRole }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  const { user, loading } = useAuth()
+  const { user, loading, userRole: authUserRole } = useAuth()
 
   useEffect(() => {
     const checkMobile = () => {

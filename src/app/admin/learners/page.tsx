@@ -307,7 +307,7 @@ export default function AdminLearnersPage() {
     if (learners.length > 0) {
       const uniqueProgramIds = Array.from(new Set(learners.map(l => l.program).filter(Boolean)))
       if (uniqueProgramIds.length > 0) {
-        ProgramService.getProgramNames(uniqueProgramIds)
+        ProgramService.getProgramNamesByIds(uniqueProgramIds)
           .then(setProgramNames)
           .catch(error => {
             console.error('Error fetching program names:', error)

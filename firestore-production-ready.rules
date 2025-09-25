@@ -2,223 +2,149 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Helper function to get user role from custom claims or Firestore
+    function getUserRole() {
+      return request.auth.token.role != null ? request.auth.token.role : 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    // Helper function to check if user is admin or super-admin
+    function isAdmin() {
+      return getUserRole() in ['admin', 'super-admin'];
+    }
     
-    // Helper functions
+    // Helper function to check if user is super-admin
+    function isSuperAdmin() {
+      return getUserRole() == 'super-admin';
+    }
+    
+    // Helper function to check if user is learner
+    function isLearner() {
+      return getUserRole() == 'learner';
+    }
+
+    // Helper function to check if user is applicant
+    function isApplicant() {
+      return getUserRole() == 'applicant';
+    }
+
+    // Helper function to check if user is authenticated
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
+    // Helper function to check if user owns the resource
     function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+      return request.auth.uid == userId;
     }
-    
-    function isAdmin() {
-      return isAuthenticated() && (
-        request.auth.token.role in ['admin', 'super-admin'] ||
-        request.auth.token.email in ['developer@ispaan.com', 'sifiso@thegaselagroup.co.za', 'skitzoc9@gmail.com']
-      );
-    }
-    
-    function isSuperAdmin() {
-      return isAuthenticated() && (
-        request.auth.token.role == 'super-admin' ||
-        request.auth.token.email in ['developer@ispaan.com', 'sifiso@thegaselagroup.co.za', 'skitzoc9@gmail.com']
-      );
-    }
-    
-    function isLearner() {
-      return isAuthenticated() && (
-        request.auth.token.role in ['learner', 'applicant'] ||
-        (request.auth.token.role == null && !isAdmin())
-      );
-    }
-    
-    // Users collection - comprehensive access
+
+    // Users collection - users can read/write their own data
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
-      allow read, write: if isAdmin();
-      allow read, write: if isSuperAdmin();
-      allow read: if isAuthenticated(); // Allow reading for dashboard stats
-      allow create: if isAuthenticated();
+      allow read, write: if isAuthenticated() && isOwner(userId);
+      // Admins can read all user documents
+      allow read: if isAuthenticated() && isAdmin();
+      // Super admins can write to any user document
+      allow write: if isAuthenticated() && isSuperAdmin();
     }
-    
-    // Applications collection
-    match /applications/{applicationId} {
-      allow create: if isLearner();
-      allow read, write: if isAdmin();
-      allow read, write: if isSuperAdmin();
-      allow read: if isOwner(resource.data.userId);
-      allow read: if isAuthenticated(); // Allow reading for dashboard stats
+
+    // Learner profiles - users can read/write their own, admins can read all
+    match /learnerProfiles/{userId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+      allow read: if isAuthenticated() && isAdmin();
     }
-    
-    // Programs collection - public read for application forms
-    match /programs/{programId} {
-      allow read: if true; // Public programs for application
-      allow write: if isAdmin();
-      allow write: if isSuperAdmin();
-    }
-    
-    // Placements collection
+
+    // Placements collection - admins can manage, learners can read their own
     match /placements/{placementId} {
-      allow read, write: if isAdmin();
-      allow read, write: if isSuperAdmin();
-      allow read: if isAuthenticated(); // Allow reading for dashboard stats
+      allow read: if isAuthenticated() && (isAdmin() || isLearner());
+      allow write: if isAuthenticated() && isAdmin();
     }
-    
-    // Attendance collection
-    match /attendance/{attendanceId} {
-      allow read: if isOwner(resource.data.userId);
-      allow read, write: if isAdmin();
-      allow read, write: if isSuperAdmin();
-      allow create: if isLearner();
-      allow read: if isAuthenticated(); // Allow reading for dashboard stats
-    }
-    
-    // Leave requests collection
-    match /leaveRequests/{leaveId} {
-      allow read, create: if isOwner(resource.data.userId);
-      allow read, write: if isAdmin();
-      allow read, write: if isSuperAdmin();
-      allow read: if isAuthenticated(); // Allow reading for dashboard stats
-    }
-    
-    // Stipend reports collection
-    match /stipendReports/{reportId} {
-      allow read, create: if isOwner(resource.data.userId);
-      allow read, write: if isAdmin();
-      allow read, write: if isSuperAdmin();
-      allow read: if isAuthenticated(); // Allow reading for dashboard stats
-      allow create: if isAuthenticated();
-    }
-    
-    // Issue reports collection
-    match /issueReports/{issueId} {
-      allow read, create: if isOwner(resource.data.userId);
-      allow read, write: if isAdmin();
-      allow read, write: if isSuperAdmin();
-      allow read: if isAuthenticated(); // Allow reading for dashboard stats
-    }
-    
-    // Learner profiles collection
-    match /learnerProfiles/{profileId} {
-      allow read, write: if isOwner(resource.data.userId);
-      allow read, write: if isAdmin();
-      allow read, write: if isSuperAdmin();
-      allow create: if isLearner();
-      allow read: if isAuthenticated(); // Allow reading for dashboard stats
-    }
-    
-    // Notifications collection
-    match /notifications/{notificationId} {
-      allow read, write: if isOwner(resource.data.userId);
-      allow read, write: if isAdmin();
-      allow read, write: if isSuperAdmin();
-      allow read: if isAuthenticated(); // Allow reading for dashboard stats
-    }
-    
-    // Settings collection - public read for appearance, admin write
-    match /settings/{settingId} {
-      allow read: if true; // Public read for appearance settings
-      allow write: if isSuperAdmin();
-    }
-    
-    // Activities collection
-    match /activities/{activityId} {
-      allow read, write: if isAdmin();
-      allow read, write: if isSuperAdmin();
-      allow create: if isAuthenticated();
-      allow read: if isOwner(resource.data.userId);
-      allow read: if isAuthenticated(); // Allow reading for dashboard stats
-    }
-    
-    // Documents collection
+
+    // Documents collection - users can manage their own documents
     match /documents/{documentId} {
-      allow read, write: if isOwner(resource.data.userId);
-      allow read, write: if isAdmin();
-      allow read, write: if isSuperAdmin();
-      allow create: if isAuthenticated();
-      allow read: if isAuthenticated(); // Allow reading for dashboard stats
+      allow read, write: if isAuthenticated() && 
+        (isOwner(resource.data.userId) || isAdmin());
+      allow create: if isAuthenticated() && 
+        (isOwner(request.resource.data.userId) || isAdmin());
     }
-    
-    // Additional collections for admin dashboard
-    match /classSessions/{sessionId} {
-      allow read, write: if isAdmin();
-      allow read, write: if isSuperAdmin();
+
+    // Work hours collection - learners can create/read their own, admins can read all
+    match /work-hours/{workHourId} {
+      allow read, write: if isAuthenticated() && 
+        (isOwner(resource.data.learnerId) || isAdmin());
+      allow create: if isAuthenticated() && 
+        (isOwner(request.resource.data.learnerId) || isAdmin());
+    }
+
+    // Attendance collection - learners can create/read their own, admins can read all
+    match /attendance/{attendanceId} {
+      allow read, write: if isAuthenticated() && 
+        (isOwner(resource.data.userId) || isAdmin());
+      allow create: if isAuthenticated() && 
+        (isOwner(request.resource.data.userId) || isAdmin());
+    }
+
+    // Programs collection - admins can manage, all authenticated users can read
+    match /programs/{programId} {
       allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isAdmin();
     }
-    
-    match /certificates/{certificateId} {
-      allow read, write: if isAdmin();
-      allow read, write: if isSuperAdmin();
-      allow read: if isOwner(resource.data.userId);
-      allow read: if isAuthenticated();
+
+    // Applications collection - applicants can manage their own, admins can read all
+    match /applications/{applicationId} {
+      allow read, write: if isAuthenticated() && 
+        (isOwner(resource.data.applicantId) || isAdmin());
+      allow create: if isAuthenticated() && 
+        (isOwner(request.resource.data.applicantId) || isAdmin());
     }
-    
-    match /learnerCourses/{courseId} {
-      allow read, write: if isAdmin();
-      allow read, write: if isSuperAdmin();
-      allow read: if isOwner(resource.data.userId);
-      allow read: if isAuthenticated();
+
+    // Notifications collection - users can read their own, admins can read all
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && 
+        (isOwner(resource.data.userId) || isAdmin());
+      allow write: if isAuthenticated() && isAdmin();
     }
-    
-    // Super admin only collections
-    match /auditLogs/{logId} {
-      allow read, write: if isSuperAdmin();
-    }
-    
+
+    // Audit logs - only admins can read
     match /audit-logs/{logId} {
-      allow read, write: if isSuperAdmin();
+      allow read: if isAuthenticated() && isAdmin();
+      allow write: if isAuthenticated() && isAdmin();
     }
-    
-    match /performance/{perfId} {
-      allow read, write: if isSuperAdmin();
+
+    // Settings collection - only super admins can manage
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isSuperAdmin();
     }
-    
-    match /securityLogs/{logId} {
-      allow read, write: if isSuperAdmin();
+
+    // Announcements collection - all authenticated users can read, admins can write
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isAdmin();
     }
-    
-    match /active-sessions/{sessionId} {
-      allow read, write: if isSuperAdmin();
-      allow create: if isAuthenticated();
-      allow read, update: if isOwner(resource.data.userId);
+
+    // Chat messages - users can read/write their own conversations
+    match /chat-messages/{messageId} {
+      allow read, write: if isAuthenticated() && 
+        (isOwner(resource.data.senderId) || isOwner(resource.data.receiverId) || isAdmin());
+      allow create: if isAuthenticated() && 
+        (isOwner(request.resource.data.senderId) || isAdmin());
     }
-    
-    match /health/{healthId} {
-      allow read, write: if isAdmin();
-      allow read, write: if isSuperAdmin();
+
+    // AI reports - admins can read all, learners can read their own
+    match /ai-reports/{reportId} {
+      allow read: if isAuthenticated() && 
+        (isOwner(resource.data.userId) || isAdmin());
+      allow write: if isAuthenticated() && isAdmin();
     }
-    
-    // Emergency fallback rule - more permissive for admin access
-    match /{collection}/{document} {
-      allow read: if isAuthenticated() && (
-        request.auth.token.role in ['admin', 'super-admin'] ||
-        request.auth.token.email in ['developer@ispaan.com', 'sifiso@thegaselagroup.co.za', 'skitzoc9@gmail.com']
-      );
-      allow write: if isAuthenticated() && (
-        request.auth.token.role in ['admin', 'super-admin'] ||
-        request.auth.token.email in ['developer@ispaan.com', 'sifiso@thegaselagroup.co.za', 'skitzoc9@gmail.com']
-      );
+
+    // Performance metrics - only admins can access
+    match /performance-metrics/{metricId} {
+      allow read, write: if isAuthenticated() && isAdmin();
+    }
+
+    // Security logs - only super admins can access
+    match /security-logs/{logId} {
+      allow read, write: if isAuthenticated() && isSuperAdmin();
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

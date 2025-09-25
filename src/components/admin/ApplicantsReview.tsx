@@ -101,7 +101,7 @@ export function ApplicantsReview() {
     if (applicants.length > 0) {
       const uniqueProgramIds = Array.from(new Set(applicants.map(a => a.program).filter(Boolean)))
       if (uniqueProgramIds.length > 0) {
-        ProgramService.getProgramNames(uniqueProgramIds)
+        ProgramService.getProgramNamesByIds(uniqueProgramIds)
           .then(setProgramNames)
           .catch(error => {
             console.error('Error fetching program names:', error)

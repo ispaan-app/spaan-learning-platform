@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { db } from '@/lib/firebase'
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore'
+import { useProgramNames } from '@/hooks/useProgramNames'
 import { ArrowLeft, ArrowRight, CheckCircle, User, GraduationCap, MapPin, Phone, Mail, Calendar, FileText, Sparkles, Zap, Shield, Star, Award, Target, Globe, Brain, Users, Clock, Check, Key } from 'lucide-react'
 
 interface Program {
@@ -61,6 +62,7 @@ const applyFormSchema = z.object({
 type ApplyFormData = z.infer<typeof applyFormSchema>
 
 export function ApplyForm({ programs: initialPrograms }: ApplyFormProps) {
+  const { programNamesList, loading: programNamesLoading, error: programNamesError } = useProgramNames()
   const [programs, setPrograms] = useState<Program[]>(initialPrograms || [])
   const [programsLoading, setProgramsLoading] = useState(!initialPrograms)
   const [error, setError] = useState('')
@@ -120,39 +122,8 @@ export function ApplyForm({ programs: initialPrograms }: ApplyFormProps) {
           setProgramsError(
             error?.message ? `Failed to load programs: ${error.message}` : 'Failed to load programs from database.'
           )
-          // Fallback to default programs if Firestore fails
-          setPrograms([
-            {
-              id: 'computer-science',
-              name: 'Computer Science',
-              description: 'Comprehensive computer science fundamentals',
-              duration: '12 months',
-              level: 'Beginner to Advanced',
-              status: 'active',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            },
-            {
-              id: 'data-science',
-              name: 'Data Science',
-              description: 'Data analysis, machine learning, and statistics',
-              duration: '10 months',
-              level: 'Intermediate',
-              status: 'active',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            },
-            {
-              id: 'web-development',
-              name: 'Web Development',
-              description: 'Full-stack web development with modern frameworks',
-              duration: '8 months',
-              level: 'Beginner',
-              status: 'active',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            }
-          ])
+          // No fallback programs - let the user know programs need to be created
+          setPrograms([])
         } finally {
           setProgramsLoading(false)
         }

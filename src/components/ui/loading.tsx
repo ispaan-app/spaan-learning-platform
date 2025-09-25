@@ -165,7 +165,7 @@ const PageLoader = React.forwardRef<
 PageLoader.displayName = "PageLoader"
 
 // Modern loading button with glassmorphism
-const LoadingButton = React.forwardRef<
+export const LoadingButton = React.forwardRef<
   HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement> & { loading?: boolean }
 >(({ className, loading = false, children, disabled, ...props }, ref) => (
@@ -238,7 +238,6 @@ export {
   DotsLoader, 
   WaveLoader,
   PageLoader, 
-  LoadingButton,
   SkeletonLoader
 }
 

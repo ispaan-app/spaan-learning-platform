@@ -60,7 +60,7 @@ import { updateProfile, updatePassword } from 'firebase/auth'
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage'
 import { uploadAvatar } from '@/lib/fileUpload'
 import { AvatarUpload } from '@/components/ui/file-upload'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface AdminProfile {
   id: string

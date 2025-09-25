@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect } from 'react'
 import { 
   User, 
   signInWithEmailAndPassword, 
@@ -9,24 +9,37 @@ import {
   onAuthStateChanged,
   updateProfile
 } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
+import { auth, db } from '@/lib/firebase'
 import { sessionTracker } from '@/lib/session-tracker'
+import { useAppStore, useAuth as useStoreAuth, UserData } from '@/lib/state-manager'
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 
 interface AuthContextType {
   user: User | null
+  userData: UserData | null
+  userRole: string | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
   signUp: (email: string, password: string, firstName: string, lastName: string) => Promise<{ success: boolean; error?: string }>
   logout: () => Promise<void>
-  userRole: string | null
+  updateUserProfile: (updates: Partial<UserData>) => Promise<{ success: boolean; error?: string }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [userRole, setUserRole] = useState<string | null>(null)
+  const { 
+    user, 
+    userData, 
+    isAuthenticated, 
+    isLoading, 
+    authError,
+    login, 
+    logout: storeLogout, 
+    updateUserData
+  } = useStoreAuth()
+  
+  const { setLoading, setAuthError } = useAppStore()
 
   useEffect(() => {
     let isMounted = true
@@ -34,13 +47,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!isMounted) return
 
-      setUser(user)
       if (user) {
         try {
-          // Get user role from custom claims or Firestore
-          const role = await getUserRole(user.uid)
-          if (isMounted) {
-            setUserRole(role)
+          // Get user data from Firestore
+          const userDoc = await getDoc(doc(db, 'users', user.uid))
+          if (userDoc.exists()) {
+            const data = userDoc.data() as UserData
+            login(user, data)
+          } else {
+            // Create user document if it doesn't exist
+            const newUserData: UserData = {
+              id: user.uid,
+              firstName: user.displayName?.split(' ')[0] || '',
+              lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+              email: user.email || '',
+              role: 'applicant',
+              status: 'pending',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            }
+            await setDoc(doc(db, 'users', user.uid), {
+              ...newUserData,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+            })
+            login(user, newUserData)
           }
           
           // Initialize session tracking for authenticated users
@@ -49,16 +80,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               userId: user.uid,
               userEmail: user.email || '',
               userName: user.displayName || user.email?.split('@')[0] || 'Unknown User',
-              userRole: role
+              userRole: userData?.role || 'applicant'
             })
           } catch (error) {
             console.error('Error initializing session tracking:', error)
           }
         } catch (error) {
-          console.error('Error getting user role:', error)
-          if (isMounted) {
-            setUserRole(null)
-          }
+          console.error('Error fetching user data:', error)
+          setAuthError('Failed to fetch user data')
         }
       } else {
         // End session tracking when user logs out
@@ -71,13 +100,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Check for test login data in localStorage
         const testRole = localStorage.getItem('userRole')
         if (testRole && isMounted) {
-          setUserRole(testRole)
-          // Create a mock user object for test login
-          setUser({
+          const testUserData: UserData = {
+            id: 'test-user',
+            firstName: localStorage.getItem('userName')?.split(' ')[0] || 'Test',
+            lastName: localStorage.getItem('userName')?.split(' ').slice(1).join(' ') || 'User',
+            email: 'test@example.com',
+            role: testRole as any,
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+          
+          const testUser = {
             uid: 'test-user',
             email: 'test@example.com',
             displayName: localStorage.getItem('userName') || 'Test User'
-          } as any)
+          } as User
+          
+          login(testUser, testUserData)
           
           // Initialize session tracking for test user
           try {
@@ -90,8 +130,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } catch (error) {
             console.error('Error initializing test session tracking:', error)
           }
-        } else if (isMounted) {
-          setUserRole(null)
+        } else {
+          storeLogout()
         }
       }
       if (isMounted) {
@@ -103,26 +143,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isMounted = false
       unsubscribe()
     }
-  }, [])
+  }, [login, storeLogout, setLoading, setAuthError])
 
   const signIn = async (email: string, password: string) => {
     try {
+      setLoading(true)
+      setAuthError(null)
       await signInWithEmailAndPassword(auth, email, password)
       return { success: true }
     } catch (error: any) {
+      setAuthError(error.message)
       return { success: false, error: error.message }
+    } finally {
+      setLoading(false)
     }
   }
 
   const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
     try {
+      setLoading(true)
+      setAuthError(null)
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
       await updateProfile(userCredential.user, {
         displayName: `${firstName} ${lastName}`
       })
       return { success: true }
     } catch (error: any) {
+      setAuthError(error.message)
       return { success: false, error: error.message }
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -136,105 +186,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('userRole')
       localStorage.removeItem('userName')
       localStorage.removeItem('userPermissions')
-      setUser(null)
-      setUserRole(null)
+      storeLogout()
     } catch (error) {
       console.error('Error signing out:', error)
+      setAuthError('Failed to sign out')
     }
   }
 
-  const getUserRole = async (uid: string): Promise<string> => {
+  const updateUserProfile = async (updates: Partial<UserData>) => {
+    if (!user || !userData) {
+      return { success: false, error: 'No user logged in' }
+    }
+
     try {
-      // For test users, use localStorage (development only)
-      if (uid === 'test-user') {
-        const testRole = localStorage.getItem('userRole')
-        return testRole || 'learner'
-      }
-      
-      // For authenticated users, verify custom claims first
-      const user = auth.currentUser
-      if (user && user.uid === uid) {
-        try {
-          // Get fresh ID token to ensure custom claims are up to date
-          const idTokenResult = await user.getIdTokenResult(true)
-          const customClaims = idTokenResult.claims
-          
-          if (customClaims.role) {
-            console.log('✅ Role from custom claims:', customClaims.role)
-            return customClaims.role as string
-          }
-        } catch (claimsError) {
-          console.warn('Could not fetch custom claims:', claimsError)
-        }
-      }
-      
-      // Fallback to Firestore if custom claims not available
-      try {
-        const { doc, getDoc } = await import('firebase/firestore')
-        const { db } = await import('@/lib/firebase')
-        const userDoc = await getDoc(doc(db, 'users', uid))
-        
-        if (userDoc.exists()) {
-          const userData = userDoc.data()
-          const role = userData.role || 'learner'
-          
-          // Update custom claims if they're missing or different
-          if (user && user.uid === uid) {
-            try {
-              const idTokenResult = await user.getIdTokenResult()
-              const currentClaims = idTokenResult.claims
-              
-              if (!currentClaims.role || currentClaims.role !== role) {
-                // Update custom claims via server action
-                await fetch('/api/update-user-claims', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ uid, role })
-                })
-              }
-            } catch (updateError) {
-              console.warn('Could not update custom claims:', updateError)
-            }
-          }
-          
-          return role
-        }
-      } catch (firestoreError) {
-        console.warn('Could not fetch user role from Firestore:', firestoreError)
-      }
-      
-      // Final fallback to email-based role detection
-      if (user?.email) {
-        if (user.email === 'developer@ispaan.com') {
-          return 'super-admin'
-        }
-        
-        if (user.email.includes('admin') || user.email.includes('super')) {
-          return user.email.includes('super') ? 'super-admin' : 'admin'
-        }
-        if (user.email.includes('applicant')) {
-          return 'applicant'
-        }
-        if (user.email.includes('learner')) {
-          return 'learner'
-        }
-      }
-      
-      // Default fallback
-      return 'learner'
-    } catch (error) {
-      console.error('Error getting user role:', error)
-      return 'learner'
+      const updatedData = { ...userData, ...updates, updatedAt: new Date().toISOString() }
+      await setDoc(doc(db, 'users', user.uid), {
+        ...updatedData,
+        updatedAt: serverTimestamp()
+      })
+      updateUserData(updates)
+      return { success: true }
+    } catch (error: any) {
+      setAuthError(error.message)
+      return { success: false, error: error.message }
     }
   }
 
   const value = {
     user,
-    loading,
+    userData,
+    userRole: userData?.role || null,
+    loading: isLoading,
     signIn,
     signUp,
     logout,
-    userRole
+    updateUserProfile
   }
 
   return (
@@ -251,4 +237,6 @@ export function useAuth() {
   }
   return context
 }
+
+
 

@@ -48,6 +48,8 @@ import {
 } from 'lucide-react'
 import { collection, getDocs, query, where, orderBy, updateDoc, doc, onSnapshot, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import { ProgramService } from '@/lib/program-service'
+import { useProgramNames } from '@/hooks/useProgramNames'
 import { toast as sonnerToast } from 'sonner'
 import { useRouter } from 'next/navigation'
 // import { getInitials } from '@/lib/utils'
@@ -176,6 +178,7 @@ export default function SuperAdminLearnersPage() {
   const [riskFilter, setRiskFilter] = useState('all')
   const [placementFilter, setPlacementFilter] = useState('all')
   const [availablePrograms, setAvailablePrograms] = useState<string[]>([])
+  const { programNames, programNamesList, loading: programNamesLoading, getProgramName } = useProgramNames()
   const [stats, setStats] = useState<DashboardStats>({
     totalLearners: 0,
     activeLearners: 0,
@@ -195,6 +198,7 @@ export default function SuperAdminLearnersPage() {
   useEffect(() => {
     loadLearners()
   }, [])
+
 
   const loadLearners = async () => {
     try {
@@ -678,7 +682,9 @@ export default function SuperAdminLearnersPage() {
                         </SelectItem>
                       ) : (
                         availablePrograms.map(program => (
-                          <SelectItem key={program} value={program}>{program}</SelectItem>
+                          <SelectItem key={program} value={program}>
+                            {getProgramName(program)}
+                          </SelectItem>
                         ))
                       )}
                     </SelectContent>
@@ -757,7 +763,7 @@ export default function SuperAdminLearnersPage() {
                         <div className="space-y-2 text-sm text-gray-700">
                           <div className="flex items-center space-x-2">
                             <BookOpen className="h-4 w-4 text-purple-500" />
-                            <span>Program: <span className="font-medium">{learner.program}</span></span>
+                            <span>Program: <span className="font-medium">{getProgramName(learner.program)}</span></span>
                           </div>
                           <div className="flex items-center space-x-2">
                             <Calendar className="h-4 w-4 text-indigo-500" />

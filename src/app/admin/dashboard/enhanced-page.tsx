@@ -357,7 +357,7 @@ export function EnhancedAdminDashboardContent() {
     if (recentApplicants.length > 0) {
       const uniqueProgramIds = Array.from(new Set(recentApplicants.map(a => a.program).filter(Boolean)))
       if (uniqueProgramIds.length > 0) {
-        ProgramService.getProgramNames(uniqueProgramIds)
+        ProgramService.getProgramNamesByIds(uniqueProgramIds)
           .then(setProgramNames)
           .catch(error => {
             console.error('Error fetching program names:', error)

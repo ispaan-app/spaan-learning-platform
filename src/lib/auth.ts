@@ -184,8 +184,8 @@ class AuthManager {
       }
 
       // Sanitize inputs
-      const sanitizedIdNumber = sanitizer.sanitizeText(idNumber)
-      const sanitizedPin = sanitizer.sanitizeText(pin)
+      const sanitizedIdNumber = sanitizer.sanitize(idNumber)
+      const sanitizedPin = sanitizer.sanitize(pin)
 
       if (!sanitizedIdNumber || !sanitizedPin) {
         return { success: false, error: 'Invalid input' }
