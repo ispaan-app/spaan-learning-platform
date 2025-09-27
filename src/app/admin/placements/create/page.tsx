@@ -13,6 +13,7 @@ export default function CreatePlacementPage() {
     const loadPrograms = async () => {
       try {
         const data = await getProgramsAction()
+        console.log('🎯 CreatePlacementPage: Loaded programs:', data)
         setPrograms(data)
       } catch (error) {
         console.error('Error loading programs:', error)
@@ -40,6 +41,10 @@ export default function CreatePlacementPage() {
     </AdminLayout>
   )
 }
+
+
+
+
 
 
 

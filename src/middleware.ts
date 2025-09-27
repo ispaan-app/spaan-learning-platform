@@ -19,14 +19,13 @@ export function middleware(request: NextRequest) {
     "font-src 'self' https://fonts.gstatic.com; " +
     "img-src 'self' data: https: blob:; " +
     "media-src 'self' blob:; " +
-    "connect-src 'self' https://www.google-analytics.com https://api.firebase.com wss: ws:; " +
+    "connect-src 'self' https://securetoken.googleapis.com https://www.google-analytics.com https://api.firebase.com https://*.googleapis.com https://*.firebase.com https://*.firebaseapp.com wss: ws:; " +
     "frame-src 'self' https://www.google.com; " +
     "object-src 'none'; " +
     "base-uri 'self'; " +
     "form-action 'self'; " +
     "frame-ancestors 'none'; " +
-    "upgrade-insecure-requests; " +
-    "block-all-mixed-content"
+    "upgrade-insecure-requests"
   )
   
   return response

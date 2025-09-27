@@ -9,9 +9,9 @@ import {
   onAuthStateChanged,
   updateProfile
 } from 'firebase/auth'
-import { auth, db } from '@/lib/firebase'
+import { auth, db, initializeClientSideErrorHandling } from '@/lib/firebase'
 import { sessionTracker } from '@/lib/session-tracker'
-import { useAppStore, useAuth as useStoreAuth, UserData } from '@/lib/state-manager'
+import { useAppStore, UserData } from '@/lib/state-manager'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 
 interface AuthContextType {
@@ -28,21 +28,23 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { 
-    user, 
-    userData, 
-    isAuthenticated, 
-    isLoading, 
-    authError,
-    login, 
-    logout: storeLogout, 
-    updateUserData
-  } = useStoreAuth()
-  
-  const { setLoading, setAuthError } = useAppStore()
+  // Use individual selectors to prevent unnecessary re-renders
+  const user = useAppStore((state) => state.user)
+  const userData = useAppStore((state) => state.userData)
+  const isAuthenticated = useAppStore((state) => state.isAuthenticated)
+  const isLoading = useAppStore((state) => state.isLoading)
+  const authError = useAppStore((state) => state.authError)
+  const login = useAppStore((state) => state.login)
+  const storeLogout = useAppStore((state) => state.logout)
+  const updateUserData = useAppStore((state) => state.updateUserData)
+  const setLoading = useAppStore((state) => state.setLoading)
+  const setAuthError = useAppStore((state) => state.setAuthError)
 
   useEffect(() => {
     let isMounted = true
+
+    // Initialize client-side error handling
+    initializeClientSideErrorHandling()
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!isMounted) return
@@ -143,7 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isMounted = false
       unsubscribe()
     }
-  }, [login, storeLogout, setLoading, setAuthError])
+  }, []) // Remove dependencies to prevent infinite re-renders
 
   const signIn = async (email: string, password: string) => {
     try {

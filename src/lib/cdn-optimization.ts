@@ -1,4 +1,3 @@
-import { Storage } from 'firebase/storage'
 import { ref, uploadBytes, getDownloadURL, deleteObject, getMetadata } from 'firebase/storage'
 import { dbPool } from './database-connection-pool'
 
@@ -170,7 +169,7 @@ class CDNOptimizer {
       await deleteObject(storageRef)
       
       // Remove from cache
-      for (const [key, value] of this.cache.entries()) {
+      for (const [key, value] of Array.from(this.cache.entries())) {
         if (key.startsWith(path)) {
           this.cache.delete(key)
         }

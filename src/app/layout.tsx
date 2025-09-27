@@ -8,6 +8,7 @@ import { AppErrorBoundary } from '@/components/AppErrorBoundary'
 import { ConnectionStatus } from '@/components/ui/connection-status'
 import { Toaster } from '@/components/ui/toaster'
 import { ThemeProvider } from '@/components/theme-provider'
+import { FirebaseSetupGuide } from '@/components/FirebaseSetupGuide'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -74,9 +75,11 @@ export default function RootLayout({
           <AppErrorBoundary>
             <ErrorBoundary>
               <AuthProvider>
-                <ConnectionStatus />
-                {children}
-                <Toaster />
+                <FirebaseSetupGuide>
+                  <ConnectionStatus />
+                  {children}
+                  <Toaster />
+                </FirebaseSetupGuide>
               </AuthProvider>
             </ErrorBoundary>
           </AppErrorBoundary>

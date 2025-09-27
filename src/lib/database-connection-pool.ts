@@ -123,7 +123,7 @@ class DatabaseConnectionPool {
 
   async getConnection(): Promise<DatabaseConnection> {
     // Find available connection
-    for (const [id, connection] of this.connections) {
+    for (const [id, connection] of Array.from(this.connections.entries())) {
       if (connection.isActive && connection.errorCount < 3) {
         connection.lastUsed = new Date()
         return connection
@@ -143,7 +143,7 @@ class DatabaseConnectionPool {
       }, this.config.connectionTimeout)
 
       const checkForConnection = () => {
-        for (const [id, connection] of this.connections) {
+        for (const [id, connection] of Array.from(this.connections.entries())) {
           if (connection.isActive && connection.errorCount < 3) {
             clearTimeout(timeout)
             connection.lastUsed = new Date()
@@ -189,7 +189,7 @@ class DatabaseConnectionPool {
     const now = Date.now()
     const idleThreshold = this.config.idleTimeout
 
-    for (const [id, connection] of this.connections) {
+    for (const [id, connection] of Array.from(this.connections.entries())) {
       const timeSinceLastUse = now - connection.lastUsed.getTime()
       
       // Remove idle connections if we have more than minimum
@@ -217,7 +217,7 @@ class DatabaseConnectionPool {
     let idleConnections = 0
     let errorConnections = 0
 
-    for (const connection of this.connections.values()) {
+    for (const connection of Array.from(this.connections.values())) {
       if (!connection.isActive) continue
       
       if (connection.errorCount > 0) {
@@ -256,7 +256,9 @@ export const dbPool = DatabaseConnectionPool.getInstance({
   maxConnections: parseInt(process.env.DATABASE_POOL_SIZE || '50'),
   minConnections: parseInt(process.env.DATABASE_MIN_CONNECTIONS || '5'),
   connectionTimeout: parseInt(process.env.DATABASE_CONNECTION_TIMEOUT || '30000'),
-  idleTimeout: parseInt(process.env.DATABASE_IDLE_TIMEOUT || '300000')
+  idleTimeout: parseInt(process.env.DATABASE_IDLE_TIMEOUT || '300000'),
+  retryAttempts: parseInt(process.env.DATABASE_RETRY_ATTEMPTS || '3'),
+  retryDelay: parseInt(process.env.DATABASE_RETRY_DELAY || '1000')
 })
 
 export { DatabaseConnectionPool }

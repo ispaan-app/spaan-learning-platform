@@ -312,7 +312,7 @@ export function EnhancedAdminSidebar({ userRole, isCollapsed = false, onToggle }
               <span className="text-white font-bold text-xl">iS</span>
             </div>
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold text-white">
                 iSpaan
               </h1>
               <div className="flex items-center space-x-2">

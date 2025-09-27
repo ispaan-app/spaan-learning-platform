@@ -225,7 +225,7 @@ class BandwidthOptimizer extends EventEmitter {
 
   private getCacheSize(): number {
     let totalSize = 0
-    for (const item of this.cache.values()) {
+    for (const item of Array.from(this.cache.values())) {
       totalSize += item.size
     }
     return totalSize
@@ -235,7 +235,7 @@ class BandwidthOptimizer extends EventEmitter {
     let oldestKey = ''
     let oldestTime = Date.now()
 
-    for (const [key, item] of this.cache.entries()) {
+    for (const [key, item] of Array.from(this.cache.entries())) {
       if (item.timestamp < oldestTime) {
         oldestTime = item.timestamp
         oldestKey = key

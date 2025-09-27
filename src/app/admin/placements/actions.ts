@@ -183,14 +183,20 @@ export async function getProgramsAction() {
     const programsRef = adminDb.collection('programs')
     const snapshot = await programsRef.get()
     
-    return snapshot.docs.map(doc => {
+    console.log('🔍 getProgramsAction: Found', snapshot.size, 'programs in database')
+    
+    const programs = snapshot.docs.map(doc => {
       const data = doc.data()
-      return {
+      const program = {
         id: doc.id,
         name: data.name || '',
         description: data.description || ''
       }
+      console.log('📝 Program:', program)
+      return program
     })
+    
+    return programs
   } catch (error) {
     console.error('Error fetching programs:', error)
     return []

@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { useAuth } from '@/hooks/useAuth'
-import { PageLoader } from '@/components/ui/loading'
 import { db } from '@/lib/firebase'
 import { doc, getDoc, getDocs, collection, query, where, orderBy, onSnapshot, limit } from 'firebase/firestore'
 import { toast } from 'sonner'
@@ -440,7 +439,18 @@ export default function ApplicantDashboardPage() {
   }, [user, role])
 
   if (loading || isLoadingData) {
-    return <PageLoader message="Loading your dashboard..." />
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative">
+            <div className="w-24 h-24 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full animate-pulse"></div>
+            <div className="absolute inset-0 w-24 h-24 border-4 border-transparent border-t-indigo-600 rounded-full animate-spin"></div>
+          </div>
+          <p className="mt-6 text-lg font-semibold text-slate-700">Loading your dashboard...</p>
+          <p className="mt-2 text-sm text-slate-500">Please wait while we fetch your data</p>
+        </div>
+      </div>
+    )
   }
 
   if (!user || role !== 'applicant') {

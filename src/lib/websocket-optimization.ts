@@ -263,7 +263,7 @@ class WebSocketOptimizer extends EventEmitter {
   async broadcast(topic: string, data: any, options: any = {}): Promise<number> {
     let sentCount = 0
 
-    for (const [connectionId, connection] of this.connections) {
+    for (const [connectionId, connection] of Array.from(this.connections.entries())) {
       if (connection.isAlive && connection.subscriptions.has(topic)) {
         const success = await this.sendMessage(connectionId, data, options)
         if (success) sentCount++
@@ -352,7 +352,7 @@ class WebSocketOptimizer extends EventEmitter {
   private performHeartbeat(): void {
     const now = Date.now()
 
-    for (const [connectionId, connection] of this.connections) {
+    for (const [connectionId, connection] of Array.from(this.connections.entries())) {
       if (!connection.isAlive) continue
 
       // Check for stale connections
@@ -383,7 +383,7 @@ class WebSocketOptimizer extends EventEmitter {
     const now = Date.now()
     const staleThreshold = 300000 // 5 minutes
 
-    for (const [connectionId, connection] of this.connections) {
+    for (const [connectionId, connection] of Array.from(this.connections.entries())) {
       const timeSinceLastActivity = now - Math.max(connection.lastPing, connection.lastPong)
       
       if (timeSinceLastActivity > staleThreshold) {
@@ -401,7 +401,7 @@ class WebSocketOptimizer extends EventEmitter {
   }
 
   private async processMessageBatches(): Promise<void> {
-    for (const [connectionId, connection] of this.connections) {
+    for (const [connectionId, connection] of Array.from(this.connections.entries())) {
       if (connection.messageQueue.length === 0) continue
 
       const batch = connection.messageQueue.splice(0, this.config.messageQueueSize)
@@ -499,7 +499,7 @@ class WebSocketOptimizer extends EventEmitter {
     let totalErrors = 0
     let totalAge = 0
 
-    for (const connection of this.connections.values()) {
+    for (const connection of Array.from(this.connections.values())) {
       if (connection.isAlive) {
         active++
       } else {
@@ -567,7 +567,7 @@ class WebSocketOptimizer extends EventEmitter {
     }
 
     // Close all connections
-    for (const [connectionId] of this.connections) {
+    for (const [connectionId] of Array.from(this.connections.entries())) {
       this.closeConnection(connectionId)
     }
 

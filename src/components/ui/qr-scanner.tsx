@@ -72,12 +72,12 @@ export function QRScanner({ onScan, onError, className }: QRScannerProps) {
       const qrData = detectQRCode(imageData)
       if (qrData) {
         onScan?.(qrData)
-        stopScanning()
+        setIsScanning(false) // Directly set state instead of calling stopScanning
       }
     } catch (err) {
       console.error('QR code detection error:', err)
     }
-  }, [onScan, stopScanning])
+  }, [onScan])
 
   // Placeholder QR code detection function
   const detectQRCode = (imageData: ImageData): string | null => {
@@ -91,7 +91,7 @@ export function QRScanner({ onScan, onError, className }: QRScannerProps) {
       const interval = setInterval(scanQRCode, 100)
       return () => clearInterval(interval)
     }
-  }, [isScanning, scanQRCode]) // Added scanQRCode dependency
+  }, [isScanning]) // Removed scanQRCode dependency to prevent infinite re-renders
 
   useEffect(() => {
     return () => {

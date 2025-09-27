@@ -49,7 +49,7 @@ class AdvancedDatabaseOptimizer {
     const connection = await dbPool.getConnection()
     
     try {
-      let firestoreQuery = collection(connection.firestore, config.collection)
+      let firestoreQuery: any = collection(connection.firestore, config.collection)
 
       // Apply filters
       if (config.filters) {
@@ -75,7 +75,7 @@ class AdvancedDatabaseOptimizer {
       const snapshot = await getDocs(firestoreQuery)
       const data = snapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...(doc.data() as any)
       }))
 
       // Cache the result

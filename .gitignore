@@ -84,6 +84,8 @@ firestore-debug.log
 # Service account keys
 serviceAccountKey.json
 *-service-account-key.json
+credentials/service-account-key.json
+credentials/*.json
 
 # Logs
 logs
@@ -121,6 +123,7 @@ temp/
 # Backup files
 *.backup
 *.bak
+auth-backup.json
 
 # Test files and pages - DO NOT DEPLOY
 test-results/

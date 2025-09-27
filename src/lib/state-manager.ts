@@ -211,12 +211,7 @@ export const useAppStore = create<AppState>()(
         
         const now = Date.now()
         if (now - item.timestamp > item.ttl) {
-          // Auto-cleanup expired cache
-          set((state) => {
-            const newCache = { ...state.cache }
-            delete newCache[key]
-            return { cache: newCache }
-          })
+          // Don't auto-cleanup in getter - let it be handled elsewhere
           return null
         }
         
@@ -333,46 +328,86 @@ export const useAppStore = create<AppState>()(
   )
 )
 
-// Selectors for better performance
-export const useAuth = () => useAppStore((state) => ({
-  user: state.user,
-  userData: state.userData,
-  isAuthenticated: state.isAuthenticated,
-  isLoading: state.isLoading,
-  authError: state.authError,
-  login: state.login,
-  logout: state.logout,
-  updateUserData: state.updateUserData
-}))
+// Individual selectors for better performance and to prevent re-renders
+export const useAuth = () => {
+  const user = useAppStore((state) => state.user)
+  const userData = useAppStore((state) => state.userData)
+  const isAuthenticated = useAppStore((state) => state.isAuthenticated)
+  const isLoading = useAppStore((state) => state.isLoading)
+  const authError = useAppStore((state) => state.authError)
+  const login = useAppStore((state) => state.login)
+  const logout = useAppStore((state) => state.logout)
+  const updateUserData = useAppStore((state) => state.updateUserData)
+  
+  return {
+    user,
+    userData,
+    isAuthenticated,
+    isLoading,
+    authError,
+    login,
+    logout,
+    updateUserData
+  }
+}
 
-export const useNotifications = () => useAppStore((state) => ({
-  notifications: state.notifications,
-  unreadCount: state.unreadCount,
-  addNotification: state.addNotification,
-  markNotificationRead: state.markNotificationRead,
-  markAllNotificationsRead: state.markAllNotificationsRead,
-  removeNotification: state.removeNotification,
-  clearNotifications: state.clearNotifications
-}))
+export const useNotifications = () => {
+  const notifications = useAppStore((state) => state.notifications)
+  const unreadCount = useAppStore((state) => state.unreadCount)
+  const addNotification = useAppStore((state) => state.addNotification)
+  const markNotificationRead = useAppStore((state) => state.markNotificationRead)
+  const markAllNotificationsRead = useAppStore((state) => state.markAllNotificationsRead)
+  const removeNotification = useAppStore((state) => state.removeNotification)
+  const clearNotifications = useAppStore((state) => state.clearNotifications)
+  
+  return {
+    notifications,
+    unreadCount,
+    addNotification,
+    markNotificationRead,
+    markAllNotificationsRead,
+    removeNotification,
+    clearNotifications
+  }
+}
 
-export const useUI = () => useAppStore((state) => ({
-  sidebarOpen: state.sidebarOpen,
-  theme: state.theme,
-  online: state.online,
-  currentPage: state.currentPage,
-  setSidebarOpen: state.setSidebarOpen,
-  toggleSidebar: state.toggleSidebar,
-  setTheme: state.setTheme,
-  setOnline: state.setOnline,
-  setCurrentPage: state.setCurrentPage
-}))
+export const useUI = () => {
+  const sidebarOpen = useAppStore((state) => state.sidebarOpen)
+  const theme = useAppStore((state) => state.theme)
+  const online = useAppStore((state) => state.online)
+  const currentPage = useAppStore((state) => state.currentPage)
+  const setSidebarOpen = useAppStore((state) => state.setSidebarOpen)
+  const toggleSidebar = useAppStore((state) => state.toggleSidebar)
+  const setTheme = useAppStore((state) => state.setTheme)
+  const setOnline = useAppStore((state) => state.setOnline)
+  const setCurrentPage = useAppStore((state) => state.setCurrentPage)
+  
+  return {
+    sidebarOpen,
+    theme,
+    online,
+    currentPage,
+    setSidebarOpen,
+    toggleSidebar,
+    setTheme,
+    setOnline,
+    setCurrentPage
+  }
+}
 
-export const useCache = () => useAppStore((state) => ({
-  setCache: state.setCache,
-  getCache: state.getCache,
-  clearCache: state.clearCache,
-  invalidateCache: state.invalidateCache
-}))
+export const useCache = () => {
+  const setCache = useAppStore((state) => state.setCache)
+  const getCache = useAppStore((state) => state.getCache)
+  const clearCache = useAppStore((state) => state.clearCache)
+  const invalidateCache = useAppStore((state) => state.invalidateCache)
+  
+  return {
+    setCache,
+    getCache,
+    clearCache,
+    invalidateCache
+  }
+}
 
 export const useRealtimeData = (key: string) => useAppStore((state) => ({
   data: state.realtimeData[key]?.data || null,

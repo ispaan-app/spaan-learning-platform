@@ -463,7 +463,10 @@ function AdminDashboardContent() {
                     <p className="text-blue-100 text-sm mb-4">
                       View detailed platform analytics and insights
                     </p>
-                    <button className="w-full bg-white/20 hover:bg-white/30 text-white border-white/30 rounded-xl py-3 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                    <button 
+                      onClick={() => window.location.href = '/admin/analytics'}
+                      className="w-full bg-white/20 hover:bg-white/30 text-white border-white/30 rounded-xl py-3 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                    >
                       <BarChart className="h-4 w-4 mr-2 inline" />
                       View Analytics
                     </button>
@@ -576,7 +579,11 @@ function AdminDashboardContent() {
                 >
                   <RefreshCw className={`w-4 h-4 text-slate-600 ${attendanceLoading ? 'animate-spin' : ''}`} />
                 </button>
-                <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="Export attendance report">
+                <button 
+                  onClick={() => window.location.href = '/admin/reports'}
+                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors" 
+                  title="Export attendance report"
+                >
                   <Download className="w-4 h-4 text-slate-600" />
                 </button>
               </div>
@@ -643,11 +650,17 @@ function AdminDashboardContent() {
                   <Calendar className="w-5 h-5" />
                   <span>Manage Attendance</span>
                 </button>
-                <button className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 hover:border-slate-400 px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2">
+                <button 
+                  onClick={() => window.location.href = '/admin/analytics'}
+                  className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 hover:border-slate-400 px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
+                >
                   <BarChart3 className="w-5 h-5" />
                   <span>View Analytics</span>
                 </button>
-                <button className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 hover:border-slate-400 px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2">
+                <button 
+                  onClick={() => window.location.href = '/admin/reports'}
+                  className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 hover:border-slate-400 px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
+                >
                   <Download className="w-5 h-5" />
                   <span>Export Report</span>
                 </button>
@@ -670,7 +683,10 @@ function AdminDashboardContent() {
                     </div>
                     <span className="text-lg font-semibold text-slate-900">Recent Activity</span>
               </CardTitle>
-                  <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                  <button 
+                    onClick={refreshAttendanceData}
+                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                  >
                     <RefreshCw className="w-4 h-4 text-slate-600" />
                   </button>
                 </div>
@@ -701,10 +717,16 @@ function AdminDashboardContent() {
                     <span className="text-lg font-semibold text-slate-900">Recent Applicants</span>
               </CardTitle>
                   <div className="flex items-center space-x-2">
-                    <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                    <button 
+                      onClick={() => window.location.href = '/admin/applicants?filter=true'}
+                      className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                    >
                       <Filter className="w-4 h-4 text-slate-600" />
                     </button>
-                    <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                    <button 
+                      onClick={() => window.location.href = '/admin/reports'}
+                      className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                    >
                       <Download className="w-4 h-4 text-slate-600" />
                     </button>
                   </div>
@@ -771,13 +793,24 @@ function AdminDashboardContent() {
                                 {applicant.status ? applicant.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown'}
                               </span>
                               <div className="flex items-center space-x-1">
-                                <button className="p-2 hover:bg-white rounded-lg transition-colors">
+                                <button 
+                                  onClick={() => window.location.href = `/admin/applicants/${applicant.id}`}
+                                  className="p-2 hover:bg-white rounded-lg transition-colors"
+                                >
                                   <Eye className="w-4 h-4 text-slate-600" />
                                 </button>
-                                <button className="p-2 hover:bg-white rounded-lg transition-colors">
+                                <button 
+                                  onClick={() => window.location.href = `/admin/applicants/${applicant.id}`}
+                                  className="p-2 hover:bg-white rounded-lg transition-colors"
+                                  title="Edit applicant"
+                                >
                                   <Edit className="w-4 h-4 text-slate-600" />
                                 </button>
-                                <button className="p-2 hover:bg-white rounded-lg transition-colors">
+                                <button 
+                                  onClick={() => window.location.href = `/admin/applicants/${applicant.id}`}
+                                  className="p-2 hover:bg-white rounded-lg transition-colors"
+                                  title="More actions"
+                                >
                                   <MoreHorizontal className="w-4 h-4 text-slate-600" />
                                 </button>
                       </div>
@@ -804,7 +837,10 @@ function AdminDashboardContent() {
                     </div>
                     <span className="text-lg font-semibold text-slate-900">Application Status</span>
                   </CardTitle>
-                  <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                  <button 
+                    onClick={() => window.location.href = '/admin/analytics'}
+                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                  >
                     <BarChart3 className="w-4 h-4 text-slate-600" />
                   </button>
                 </div>
@@ -826,7 +862,10 @@ function AdminDashboardContent() {
                     </div>
                     <span className="text-lg font-semibold text-slate-900">Program Distribution</span>
                   </CardTitle>
-                  <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                  <button 
+                    onClick={() => window.location.href = '/admin/analytics'}
+                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                  >
                     <TrendingUp className="w-4 h-4 text-slate-600" />
                   </button>
                 </div>
@@ -848,7 +887,10 @@ function AdminDashboardContent() {
                     </div>
                     <span className="text-lg font-semibold text-slate-900">Placement Status</span>
                   </CardTitle>
-                  <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                  <button 
+                    onClick={() => window.location.href = '/admin/placements'}
+                    className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                  >
                     <Activity className="w-4 h-4 text-slate-600" />
                   </button>
                 </div>
@@ -872,25 +914,37 @@ function AdminDashboardContent() {
         </CardHeader>
         <CardContent>
                 <div className="grid grid-cols-2 gap-3">
-                  <button className="p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-left">
+                  <button 
+                    onClick={() => window.location.href = '/admin/applicants'}
+                    className="p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-left"
+                  >
                     <div className="flex items-center space-x-3">
                       <Users className="w-5 h-5" />
                       <span className="text-sm font-medium">Review Applications</span>
                   </div>
                   </button>
-                  <button className="p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-left">
+                  <button 
+                    onClick={() => window.location.href = '/admin/learners'}
+                    className="p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-left"
+                  >
                     <div className="flex items-center space-x-3">
                       <GraduationCap className="w-5 h-5" />
                       <span className="text-sm font-medium">Manage Learners</span>
                       </div>
                   </button>
-                  <button className="p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-left">
+                  <button 
+                    onClick={() => window.location.href = '/admin/placements'}
+                    className="p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-left"
+                  >
                     <div className="flex items-center space-x-3">
                       <Building2 className="w-5 h-5" />
                       <span className="text-sm font-medium">Create Placements</span>
                   </div>
                   </button>
-                  <button className="p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-left">
+                  <button 
+                    onClick={() => window.location.href = '/admin/inbox'}
+                    className="p-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors text-left"
+                  >
                     <div className="flex items-center space-x-3">
                       <Bell className="w-5 h-5" />
                       <span className="text-sm font-medium">Send Notifications</span>

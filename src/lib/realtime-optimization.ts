@@ -34,7 +34,7 @@ interface MessageQueue {
 class RealtimeOptimizer extends EventEmitter {
   private static instance: RealtimeOptimizer
   private config: RealtimeConfig
-  private listeners: Map<string, ListenerInfo> = new Map()
+  private firestoreListeners: Map<string, ListenerInfo> = new Map()
   private messageQueue: MessageQueue
   private heartbeatInterval: NodeJS.Timeout | null = null
   private cleanupInterval: NodeJS.Timeout | null = null
@@ -98,7 +98,7 @@ class RealtimeOptimizer extends EventEmitter {
     const listenerId = `listener_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     
     // Check listener limit
-    if (this.listeners.size >= this.config.maxListeners) {
+    if (this.firestoreListeners.size >= this.config.maxListeners) {
       throw new Error('Maximum number of listeners reached')
     }
 
@@ -106,7 +106,7 @@ class RealtimeOptimizer extends EventEmitter {
     
     try {
       // Build Firestore query
-      let firestoreQuery = collection(connection.firestore, collectionName)
+      let firestoreQuery: any = collection(connection.firestore, collectionName)
       
       if (queryConfig.filters) {
         for (const filter of queryConfig.filters) {
@@ -146,7 +146,7 @@ class RealtimeOptimizer extends EventEmitter {
       )
 
       listenerInfo.unsubscribe = unsubscribe
-      this.listeners.set(listenerId, listenerInfo)
+      this.firestoreListeners.set(listenerId, listenerInfo)
 
       this.emit('listenerCreated', { id: listenerId, collection: collectionName })
       return listenerId
@@ -212,7 +212,7 @@ class RealtimeOptimizer extends EventEmitter {
   }
 
   private handleSnapshot(listenerId: string, snapshot: QuerySnapshot, options: any): void {
-    const listener = this.listeners.get(listenerId)
+    const listener = this.firestoreListeners.get(listenerId)
     if (!listener || !listener.isActive) return
 
     try {
@@ -240,7 +240,7 @@ class RealtimeOptimizer extends EventEmitter {
   }
 
   private handleListenerError(listenerId: string, error: any): void {
-    const listener = this.listeners.get(listenerId)
+    const listener = this.firestoreListeners.get(listenerId)
     if (!listener) return
 
     listener.errorCount++
@@ -254,13 +254,13 @@ class RealtimeOptimizer extends EventEmitter {
 
     // Remove listener if too many errors
     if (listener.errorCount >= this.config.reconnectAttempts) {
-      this.removeListener(listenerId)
+      this.removeFirestoreListener(listenerId)
     }
   }
 
   // Remove listener
-  removeListener(listenerId: string): boolean {
-    const listener = this.listeners.get(listenerId)
+  removeFirestoreListener(listenerId: string): boolean {
+    const listener = this.firestoreListeners.get(listenerId)
     if (!listener) return false
 
     try {
@@ -270,7 +270,7 @@ class RealtimeOptimizer extends EventEmitter {
       }
 
       // Remove from listeners map
-      this.listeners.delete(listenerId)
+      this.firestoreListeners.delete(listenerId)
 
       this.emit('listenerRemoved', { id: listenerId })
       return true
@@ -291,17 +291,17 @@ class RealtimeOptimizer extends EventEmitter {
     const now = Date.now()
     const timeout = this.config.listenerTimeout
 
-    for (const [id, listener] of this.listeners) {
+    for (const [id, listener] of Array.from(this.firestoreListeners.entries())) {
       const timeSinceActivity = now - listener.lastActivity.getTime()
       
       if (timeSinceActivity > timeout) {
         console.log(`Removing inactive listener: ${id}`)
-        this.removeListener(id)
+        this.removeFirestoreListener(id)
       }
     }
 
     this.emit('heartbeat', {
-      activeListeners: this.listeners.size,
+      activeListeners: this.firestoreListeners.size,
       messageQueueSize: this.messageQueue.messages.length
     })
   }
@@ -322,10 +322,10 @@ class RealtimeOptimizer extends EventEmitter {
 
     // Clean up inactive listeners
     const now = Date.now()
-    for (const [id, listener] of this.listeners) {
+    for (const [id, listener] of Array.from(this.firestoreListeners.entries())) {
       const timeSinceActivity = now - listener.lastActivity.getTime()
       if (timeSinceActivity > this.config.listenerTimeout) {
-        this.removeListener(id)
+        this.removeFirestoreListener(id)
       }
     }
   }
@@ -343,7 +343,7 @@ class RealtimeOptimizer extends EventEmitter {
     let totalErrors = 0
     let totalAge = 0
 
-    for (const listener of this.listeners.values()) {
+    for (const listener of Array.from(this.firestoreListeners.values())) {
       if (listener.isActive) {
         active++
       } else {
@@ -355,11 +355,11 @@ class RealtimeOptimizer extends EventEmitter {
     }
 
     return {
-      total: this.listeners.size,
+      total: this.firestoreListeners.size,
       active,
       inactive,
-      errorRate: this.listeners.size > 0 ? totalErrors / this.listeners.size : 0,
-      averageAge: this.listeners.size > 0 ? totalAge / this.listeners.size : 0
+      errorRate: this.firestoreListeners.size > 0 ? totalErrors / this.firestoreListeners.size : 0,
+      averageAge: this.firestoreListeners.size > 0 ? totalAge / this.firestoreListeners.size : 0
     }
   }
 
@@ -431,8 +431,8 @@ class RealtimeOptimizer extends EventEmitter {
     }
 
     // Remove all listeners
-    for (const [id] of this.listeners) {
-      this.removeListener(id)
+    for (const [id] of Array.from(this.firestoreListeners.entries())) {
+      this.removeFirestoreListener(id)
     }
 
     // Clear message queue
